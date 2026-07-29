@@ -1,0 +1,1234 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>TRIP TOOLKIT</title>
+  
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  
+  <style>
+    :root {
+      --bg-cream: #f8f6f0;
+      --card-bg: #ffffff;
+      --primary-navy: #1e4d6b;
+      --accent-blue: #2563eb;
+      --text-main: #1f2937;
+      --text-muted: #6b7280;
+      --border-color: #e5e7eb;
+      
+      --icon-blue-bg: #1e638d;
+      --icon-green-bg: #0d9488;
+      --icon-yellow-bg: #7c3aed;
+      --icon-purple-bg: #f59e0b;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      background-color: var(--bg-cream);
+      color: var(--text-main);
+      padding-bottom: 40px;
+    }
+
+    .app-page { display: none; }
+    .app-page.active { display: block; }
+
+    /* Header */
+    .app-header {
+      background: #ffffff; color: var(--primary-navy);
+      padding: 16px; text-align: center; position: relative;
+      border-bottom: 1px solid var(--border-color);
+    }
+    .app-header h1 { font-size: 18px; font-weight: 800; }
+    
+    .btn-rounded-light {
+      background: #f1f5f9; border: 1px solid #cbd5e1; color: var(--primary-navy);
+      padding: 6px 14px; border-radius: 20px; font-size: 13px; font-weight: 700;
+      cursor: pointer; display: inline-flex; align-items: center; gap: 4px;
+    }
+    .back-btn { position: absolute; left: 14px; top: 12px; }
+    .mode-toggle-btn { position: absolute; right: 14px; top: 12px; }
+
+    .container { max-width: 600px; margin: 0 auto; padding: 16px; }
+
+    /* 首頁卡片 */
+    .trip-card {
+      background: var(--card-bg); border-radius: 18px; padding: 18px; margin-bottom: 14px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.03); border: 1px solid var(--border-color);
+      display: flex; justify-content: space-between; align-items: center;
+    }
+    .trip-card-main { cursor: pointer; flex: 1; }
+    .trip-card-title { font-size: 18px; font-weight: 800; color: var(--primary-navy); }
+    .trip-card-date { font-size: 12px; color: var(--text-muted); margin-top: 4px; }
+
+    .fab-add {
+      position: fixed; right: 20px; bottom: 20px; width: 54px; height: 54px; border-radius: 27px;
+      background: var(--primary-navy); color: #fff; font-size: 28px; border: none;
+      box-shadow: 0 6px 16px rgba(0,0,0,0.15); cursor: pointer; z-index: 99;
+      display: flex; align-items: center; justify-content: center;
+    }
+
+    #map { width: 100%; height: 160px; border-radius: 16px; margin-bottom: 14px; border: 1px solid var(--border-color); }
+    
+    .main-nav { display: flex; background: #e2e8f0; border-radius: 12px; padding: 4px; margin-bottom: 16px; }
+    .main-nav-btn {
+      flex: 1; padding: 10px 0; border: none; background: none; border-radius: 9px;
+      font-weight: 800; color: var(--text-muted); cursor: pointer; text-align: center; font-size: 14px;
+    }
+    .main-nav-btn.active { background: #fff; color: var(--primary-navy); box-shadow: 0 2px 4px rgba(0,0,0,0.06); }
+
+    /* 天數頁籤 */
+    .tabs-wrapper { display: flex; align-items: center; gap: 6px; margin-bottom: 14px; }
+    .tabs { display: flex; gap: 8px; overflow-x: auto; flex: 1; padding-bottom: 4px; }
+    .tab-btn {
+      flex: 0 0 auto; padding: 8px 14px; border: none; border-radius: 12px;
+      background-color: #e2e8f0; color: var(--text-muted); font-weight: bold; cursor: pointer; text-align: center; font-size: 12px;
+    }
+    .tab-btn.active { background: var(--primary-navy); color: white; }
+
+    /* Banner */
+    .day-banner {
+      background: #fff; padding: 14px 18px; border-radius: 16px; margin-bottom: 14px;
+      display: flex; align-items: center; gap: 14px; border: 1px solid var(--border-color);
+    }
+    .day-banner-badge {
+      display: flex; align-items: baseline; gap: 2px;
+      background: #e0f2fe; color: var(--primary-navy); padding: 6px 12px; border-radius: 10px;
+    }
+    .day-banner-badge .big-num { font-size: 24px; font-weight: 900; }
+    .day-banner-badge .total-num { font-size: 12px; opacity: 0.7; }
+    .day-banner-content { flex: 1; }
+    .day-banner-date { font-size: 12px; font-weight: bold; color: var(--text-muted); }
+    .day-banner-area { font-size: 16px; font-weight: 800; color: var(--text-main); margin-top: 2px; }
+
+    /* 行程卡片 */
+    .card {
+      background: var(--card-bg); border-radius: 16px; padding: 14px; margin-bottom: 10px;
+      border: 1px solid var(--border-color); display: flex; align-items: flex-start; gap: 10px;
+    }
+    .drag-handle { cursor: grab; font-size: 18px; color: #cbd5e1; display: none; }
+    .edit-mode-active .drag-handle { display: block; }
+    .card-main { flex: 1; }
+    .card-header-row { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; margin-bottom: 4px; }
+    .card-time { font-size: 13px; font-weight: 800; color: var(--primary-navy); }
+    .tag-badge { font-size: 10px; font-weight: bold; color: #fff; padding: 2px 8px; border-radius: 12px; }
+    .tag-spot { background: #0284c7; } .tag-food { background: #d97706; } .tag-shop { background: #db2777; }
+    
+    .card-title-link { font-size: 15px; font-weight: 800; color: var(--text-main); text-decoration: none; }
+    .card-note { font-size: 12px; color: var(--text-muted); margin-top: 4px; background: #f8fafc; padding: 6px 10px; border-radius: 8px; }
+
+    /* 工具箱 UI */
+    .toolkit-title-block { margin-bottom: 16px; }
+    .toolkit-main-title { font-size: 24px; font-weight: 900; color: var(--primary-navy); }
+    .toolkit-sub-title { font-size: 11px; font-weight: 700; color: #94a3b8; letter-spacing: 1.5px; text-transform: uppercase; margin-top: 2px; }
+
+    .exchange-top-box {
+      background: #fff; border-radius: 18px; padding: 16px; margin-bottom: 16px;
+      border: 1px solid var(--border-color); box-shadow: 0 2px 8px rgba(0,0,0,0.02);
+    }
+    .exchange-top-title { font-size: 13px; font-weight: 800; color: var(--primary-navy); margin-bottom: 10px; display: flex; justify-content: space-between; }
+    .exchange-input-row { display: flex; align-items: center; gap: 10px; }
+    .exchange-input-row input {
+      flex: 1; padding: 10px; border: 1px solid var(--border-color); border-radius: 10px; font-size: 14px; font-weight: bold;
+    }
+
+    .tools-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+    .tool-card {
+      background: #ffffff; border-radius: 20px; padding: 20px 16px; text-align: left;
+      border: 1px solid var(--border-color); cursor: pointer; transition: transform 0.1s;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.02); display: flex; flex-direction: column; gap: 12px;
+    }
+    .tool-card:active { transform: scale(0.98); }
+    .tool-icon-wrapper {
+      width: 44px; height: 44px; border-radius: 14px; display: flex; align-items: center; justify-content: center; color: #fff; font-size: 20px;
+    }
+    .tool-card-info h3 { font-size: 15px; font-weight: 800; color: var(--text-main); }
+    .tool-card-info p { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
+
+    .section-card {
+      background: #ffffff; border-radius: 20px; padding: 18px; margin-bottom: 14px;
+      border: 1px solid var(--border-color); box-shadow: 0 2px 8px rgba(0,0,0,0.02);
+    }
+    .section-card-title { font-size: 15px; font-weight: 800; color: var(--primary-navy); margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center; }
+
+    .payer-summary-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 14px; }
+    .payer-summary-card { background: #f8fafc; border: 1px solid var(--border-color); border-radius: 14px; padding: 12px; text-align: center; }
+    .payer-name { font-size: 12px; font-weight: 700; color: var(--text-muted); }
+    .payer-amount { font-size: 16px; font-weight: 900; color: var(--primary-navy); margin-top: 4px; }
+
+    .shop-box { background: #fff; border: 1px solid var(--border-color); border-radius: 16px; padding: 14px; margin-bottom: 12px; }
+    .shop-box-title { font-size: 14px; font-weight: 800; color: var(--primary-navy); margin-bottom: 8px; }
+
+    .item-row { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px dashed #f1f5f9; font-size: 13px; }
+    .item-row:last-child { border-bottom: none; }
+
+    .delete-btn { background: none; border: none; color: #ef4444; font-size: 14px; cursor: pointer; display: none; }
+    .edit-mode-active .delete-btn { display: block; }
+    .icon-btn-del { background: none; border: none; color: #ef4444; font-size: 14px; cursor: pointer; }
+
+    .autocomplete-items {
+      position: absolute; border: 1px solid var(--border-color); z-index: 99;
+      top: 100%; left: 0; right: 0; background-color: #fff; border-radius: 0 0 10px 10px; max-height: 160px; overflow-y: auto;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    }
+    .autocomplete-items div { padding: 10px; cursor: pointer; font-size: 12px; border-bottom: 1px solid #f1f5f9; }
+
+    .add-form { background: #fff; padding: 16px; border-radius: 16px; border: 1px solid var(--border-color); margin-top: 14px; }
+    .form-group { margin-bottom: 10px; position: relative; }
+    .form-group label { display: block; font-size: 11px; color: var(--text-muted); margin-bottom: 4px; font-weight: 700; }
+    .form-group input, .form-group select { width: 100%; padding: 8px 10px; border: 1px solid var(--border-color); border-radius: 8px; font-size: 13px; }
+    .form-row { display: flex; gap: 8px; }
+    .save-btn { width: 100%; padding: 10px; background: var(--primary-navy); color: #fff; border: none; border-radius: 10px; font-weight: 800; cursor: pointer; font-size: 13px; }
+
+    .read-mode-hide { display: block; }
+    .is-read-mode .read-mode-hide { display: none !important; }
+  </style>
+</head>
+<body class="is-read-mode">
+
+  <!-- ===== 1. 首頁：行程管理 ===== -->
+  <div id="pageHome" class="app-page active">
+    <div class="app-header">
+      <h1>我的旅遊行程</h1>
+      <button class="mode-toggle-btn btn-rounded-light" id="homeModeToggleBtn" onclick="toggleEditMode()">🔒 閱讀模式</button>
+    </div>
+    <div class="container">
+      <div id="tripListContainer"></div>
+    </div>
+    <button class="fab-add" onclick="createNewTrip()">+</button>
+  </div>
+
+  <!-- ===== 2. 詳細行程總覽 ===== -->
+  <div id="pageDetail" class="app-page">
+    <div class="app-header">
+      <button class="back-btn btn-rounded-light" onclick="goToHome()">‹ 首頁</button>
+      <h1 id="headerTripTitle" onclick="editTripTitle()">大阪京都之旅</h1>
+      <div style="font-size: 11px; opacity: 0.7; margin-top:2px;" id="headerTripDates" onclick="editTripDates()">2026/10/16 - 2026/10/24</div>
+      <button class="mode-toggle-btn btn-rounded-light" id="detailModeToggleBtn" onclick="toggleEditMode()">🔒 閱讀模式</button>
+    </div>
+
+    <div class="container">
+      <div id="map"></div>
+
+      <div class="main-nav">
+        <button class="main-nav-btn active" id="navTripBtn" onclick="switchMainView('trip')">🗺️ 行程總覽</button>
+        <button class="main-nav-btn" id="navToolsBtn" onclick="switchMainView('tools')">🧰 工具箱</button>
+      </div>
+
+      <!-- 行程總覽內容 -->
+      <div id="tripViewSection">
+        <div class="tabs-wrapper">
+          <div class="tabs" id="tabContainer"></div>
+        </div>
+
+        <div class="day-banner">
+          <div class="day-banner-badge">
+            <span class="big-num" id="bannerDayCur">1</span>
+            <span class="total-num" id="bannerDayTotal">/ 9</span>
+          </div>
+          <div class="day-banner-content">
+            <div class="day-banner-date" id="bannerDate">10/16 五</div>
+            <div class="day-banner-area" id="bannerArea" onclick="editDayArea()">難波、心齋橋 ✏️</div>
+          </div>
+        </div>
+
+        <div id="spotList"></div>
+
+        <div class="add-form read-mode-hide" id="spotFormBlock">
+          <h4 id="formTitle" style="font-size:14px; font-weight:800; color:var(--primary-navy); margin-bottom:8px;">➕ 新增行程景點</h4>
+          <input type="hidden" id="editSpotIndex" value="-1">
+          
+          <div class="form-row">
+            <div class="form-group" style="flex:1;">
+              <label>類別</label>
+              <select id="inputCategory">
+                <option value="景點">景點</option>
+                <option value="餐廳">餐廳</option>
+                <option value="逛街">逛街</option>
+                <option value="住宿">住宿</option>
+              </select>
+            </div>
+            <div class="form-group" style="flex:1;">
+              <label>預約備註</label>
+              <input type="text" id="inputReservedTime" placeholder="例: 已預約 18:30">
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group" style="flex:1;">
+              <label>時間 - 時</label>
+              <select id="inputHour"></select>
+            </div>
+            <div class="form-group" style="flex:1;">
+              <label>時間 - 分</label>
+              <select id="inputMinute"></select>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label>名稱</label>
+            <input type="text" id="inputTitle" placeholder="輸入地點名稱">
+          </div>
+
+          <div class="form-group">
+            <label>地址</label>
+            <input type="text" id="inputAddress" placeholder="輸入關鍵字或地址" oninput="onAddressInput(this.value)">
+            <div id="addressAutocomplete" class="autocomplete-items" style="display:none;"></div>
+          </div>
+
+          <div class="form-group">
+            <label>備註</label>
+            <input type="text" id="inputNote" placeholder="注意事項、備忘錄">
+          </div>
+
+          <button class="save-btn" id="saveSpotBtn" onclick="saveSpot()">儲存行程</button>
+        </div>
+      </div>
+
+      <!-- ===== 3. 工具箱主頁 ===== -->
+      <div id="toolsViewSection" style="display:none;">
+        <div class="toolkit-title-block">
+          <div class="toolkit-main-title">工具箱</div>
+          <div class="toolkit-sub-title">TRIP TOOLKIT</div>
+        </div>
+
+        <div class="exchange-top-box">
+          <div class="exchange-top-title">
+            <span>🧮 匯率算盤</span>
+            <span style="font-size:11px; color:var(--text-muted);">匯率 0.21</span>
+          </div>
+          <div class="exchange-input-row">
+            <input type="number" id="topJpyInput" placeholder="日幣 JPY" oninput="calcTopExchange()">
+            <span style="font-weight:bold; color:var(--text-muted);">➔</span>
+            <div style="flex:1; font-weight:900; font-size:16px; color:var(--primary-navy);">
+              NT$ <span id="topTwdResult">0</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="tools-grid">
+          <div class="tool-card" onclick="navigateToSubPage('pageToolFlight')">
+            <div class="tool-icon-wrapper" style="background: var(--icon-blue-bg);">✈️</div>
+            <div class="tool-card-info">
+              <h3>航班 / 天氣</h3>
+              <p>航班資訊 • 每日預報</p>
+            </div>
+          </div>
+
+          <div class="tool-card" onclick="navigateToSubPage('pageToolShopping')">
+            <div class="tool-icon-wrapper" style="background: var(--icon-green-bg);">🛍️</div>
+            <div class="tool-card-info">
+              <h3>必買清單</h3>
+              <p>分區採購項目</p>
+            </div>
+          </div>
+
+          <div class="tool-card" onclick="navigateToSubPage('pageToolAccounting')">
+            <div class="tool-icon-wrapper" style="background: var(--icon-yellow-bg);">🧾</div>
+            <div class="tool-card-info">
+              <h3>記帳</h3>
+              <p>成員拆帳統計</p>
+            </div>
+          </div>
+
+          <div class="tool-card" onclick="navigateToSubPage('pageToolPrep')">
+            <div class="tool-icon-wrapper" style="background: var(--icon-purple-bg);">🎒</div>
+            <div class="tool-card-info">
+              <h3>事前準備</h3>
+              <p>護照、網卡、行前提醒</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ===== 4. 左上：航班 / 天氣 ===== -->
+  <div id="pageToolFlight" class="app-page">
+    <div class="app-header">
+      <button class="back-btn btn-rounded-light" onclick="backToToolkit()">‹ 工具箱</button>
+      <h1>航班 / 天氣</h1>
+    </div>
+    <div class="container">
+      <div class="toolkit-title-block">
+        <div class="toolkit-main-title">航班 / 天氣</div>
+        <div class="toolkit-sub-title">FLIGHT & WEATHER</div>
+      </div>
+
+      <div class="section-card">
+        <div class="section-card-title">
+          <span>✈️ 航班資訊</span>
+          <button class="btn-rounded-light" onclick="editFlightInfo()">✏️ 編輯航班</button>
+        </div>
+        <div id="flightDisplay"></div>
+      </div>
+
+      <div class="section-card">
+        <div class="section-card-title">🌤️ 每日天氣預報</div>
+        <div id="weatherDisplay">資料載入中...</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== 5. 右上：必買清單 ===== -->
+  <div id="pageToolShopping" class="app-page">
+    <div class="app-header">
+      <button class="back-btn btn-rounded-light" onclick="backToToolkit()">‹ 工具箱</button>
+      <h1>必買清單</h1>
+    </div>
+    <div class="container">
+      <div class="toolkit-title-block">
+        <div class="toolkit-main-title">必買清單</div>
+        <div class="toolkit-sub-title">SHOPPING LIST</div>
+      </div>
+
+      <div class="add-form" style="margin-bottom:14px; margin-top:0;">
+        <div style="font-size:12px; font-weight:800; color:var(--primary-navy); margin-bottom:6px;">➕ 新增採購項目</div>
+        <div class="form-group">
+          <input type="text" id="shopAreaInput" placeholder="地點，如: 心齋橋藥妝、梅田BicCamera">
+        </div>
+        <div class="form-group">
+          <input type="text" id="shopItemInput" placeholder="商品名稱">
+        </div>
+        <button class="save-btn" onclick="addShoppingItem()">+ 新增</button>
+      </div>
+
+      <div id="shoppingAreaBoxes"></div>
+    </div>
+  </div>
+
+  <!-- ===== 6. 左下：記帳 ===== -->
+  <div id="pageToolAccounting" class="app-page">
+    <div class="app-header">
+      <button class="back-btn btn-rounded-light" onclick="backToToolkit()">‹ 工具箱</button>
+      <h1>記帳</h1>
+    </div>
+    <div class="container">
+      <div class="toolkit-title-block">
+        <div class="toolkit-main-title">記帳</div>
+        <div class="toolkit-sub-title">EXPENSE SPLITTING</div>
+      </div>
+
+      <div class="payer-summary-grid" id="payerSummaryGrid"></div>
+
+      <div class="add-form" style="margin-top:0; margin-bottom:14px;">
+        <div style="font-size:12px; font-weight:800; color:var(--primary-navy); margin-bottom:6px;">➕ 新增消費紀錄</div>
+        <div class="form-row">
+          <div class="form-group" style="flex:1;">
+            <label>付款人</label>
+            <select id="expPayerSelect"></select>
+          </div>
+          <div class="form-group" style="flex:1;">
+            <label>自訂成員</label>
+            <button class="btn-rounded-light" style="width:100%; padding:7px; font-size:11px; justify-content:center;" onclick="addNewPayer()">+ 成員</button>
+          </div>
+        </div>
+        <div class="form-group">
+          <label>品項名稱</label>
+          <input type="text" id="expTitle" placeholder="如: 晚餐、藥妝採購">
+        </div>
+        <div class="form-group">
+          <label>金額 JPY</label>
+          <input type="number" id="expAmount" placeholder="輸入日幣金額">
+        </div>
+        <button class="save-btn" onclick="addExpenseRecord()">+ 記一筆</button>
+      </div>
+
+      <div class="section-card">
+        <div class="section-card-title">🧾 消費明細</div>
+        <div id="expenseRecordList"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== 7. 右下：事前準備 ===== -->
+  <div id="pageToolPrep" class="app-page">
+    <div class="app-header">
+      <button class="back-btn btn-rounded-light" onclick="backToToolkit()">‹ 工具箱</button>
+      <h1>事前準備</h1>
+    </div>
+    <div class="container">
+      <div class="toolkit-title-block">
+        <div class="toolkit-main-title">事前準備</div>
+        <div class="toolkit-sub-title">PREPARATION</div>
+      </div>
+
+      <div class="section-card">
+        <div class="section-card-title">🎒 行前檢查清單</div>
+        <div style="margin-bottom:10px;">
+          <div class="form-row">
+            <input type="text" id="prepItemInput" placeholder="新增項目，如: 護照、網卡" style="flex:1; padding:8px; border:1px solid var(--border-color); border-radius:8px; font-size:12px;">
+            <button class="save-btn" style="width:auto; padding:8px 12px;" onclick="addPrepItem()">新增</button>
+          </div>
+        </div>
+        <div id="prepList"></div>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
+
+  <script>
+    const DEFAULT_TRIPS = [
+      {
+        id: "trip-1",
+        title: "大阪京都之旅",
+        startDate: "2026/10/16",
+        endDate: "2026/10/24",
+        flightOut: { route: "TPE ➔ KIX", time: "14:20 - 18:05", code: "CI172" },
+        flightIn: { route: "KIX ➔ TPE", time: "13:10 - 15:05", code: "CI157" },
+        payers: ["夫", "楊"],
+        expenses: [
+          { id: 1, payer: "夫", title: "飯店住宿", amount: 45000 },
+          { id: 2, payer: "楊", title: "心齋橋藥妝", amount: 12800 }
+        ], 
+        shoppingList: [
+          { area: "藥妝店", text: "合利他命", note: "幫親友帶2瓶", done: false },
+          { area: "關西機場", text: "東京牛奶起司工房", note: "夾心餅乾", done: true }
+        ], 
+        prepList: [
+          { text: "護照 確認6個月以上效期", done: true },
+          { text: "日本 eSIM 網卡開通", done: false }
+        ],
+        days: []
+      }
+    ];
+
+    let allTrips = [];
+    let currentTripIdx = 0;
+    let currentDayIdx = 0;
+    let isEditMode = false;
+    let map = null, markers = [], sortableInstance = null;
+    let searchDebounce = null;
+
+    /* localStorage 強效寫入與讀取 */
+    function saveData() {
+      try {
+        const jsonStr = JSON.stringify(allTrips);
+        localStorage.setItem('TRIP_APP_PERSISTENT_DATA', jsonStr);
+      } catch (e) {
+        console.error("儲存資料失敗:", e);
+      }
+    }
+
+    function loadData() {
+      try {
+        const dataStr = localStorage.getItem('TRIP_APP_PERSISTENT_DATA');
+        if (dataStr && dataStr !== "[]") {
+          allTrips = JSON.parse(dataStr);
+        } else {
+          allTrips = DEFAULT_TRIPS;
+          saveData();
+        }
+      } catch (e) {
+        allTrips = DEFAULT_TRIPS;
+      }
+      
+      allTrips.forEach(trip => generateDaysFromDates(trip));
+    }
+
+    function init() {
+      setupTimeSelects();
+      loadData();
+      renderTripList();
+    }
+
+    function setupTimeSelects() {
+      const hSelect = document.getElementById('inputHour');
+      const mSelect = document.getElementById('inputMinute');
+      if (!hSelect || !mSelect) return;
+      hSelect.innerHTML = ''; mSelect.innerHTML = '';
+
+      for (let i = 0; i < 24; i++) {
+        const val = i.toString().padStart(2, '0');
+        hSelect.innerHTML += `<option value="${val}">${val} 時</option>`;
+      }
+      for (let i = 0; i < 60; i += 5) {
+        const val = i.toString().padStart(2, '0');
+        mSelect.innerHTML += `<option value="${val}">${val} 分</option>`;
+      }
+    }
+
+    function generateDaysFromDates(trip) {
+      if (!trip.startDate || !trip.endDate) return;
+      const start = new Date(trip.startDate);
+      const end = new Date(trip.endDate);
+      const daysArr = [];
+      const weekDays = ["日", "一", "二", "三", "四", "五", "六"];
+
+      let cur = new Date(start);
+      let dayCount = 1;
+
+      while (cur <= end) {
+        const mm = (cur.getMonth() + 1).toString().padStart(2, '0');
+        const dd = cur.getDate().toString().padStart(2, '0');
+        const w = weekDays[cur.getDay()];
+        
+        const existingDay = (trip.days && trip.days[dayCount - 1]) ? trip.days[dayCount - 1] : null;
+        daysArr.push({
+          dayNum: dayCount,
+          dateStr: `${mm}/${dd} ${w}`,
+          rawDate: `${cur.getFullYear()}-${mm}-${dd}`,
+          area: existingDay ? existingDay.area : "市區景點",
+          spots: existingDay ? existingDay.spots : []
+        });
+
+        cur.setDate(cur.getDate() + 1);
+        dayCount++;
+      }
+      trip.days = daysArr;
+    }
+
+    function renderTripList() {
+      const container = document.getElementById('tripListContainer');
+      container.innerHTML = '';
+      allTrips.forEach((trip, index) => {
+        const card = document.createElement('div');
+        card.className = 'trip-card';
+        card.innerHTML = `
+          <div class="trip-card-main" onclick="openTripDetail(${index})">
+            <div class="trip-card-title">${trip.title}</div>
+            <div class="trip-card-date">🗓️ ${trip.startDate} - ${trip.endDate} • ${trip.days.length} 天</div>
+          </div>
+          <button class="icon-btn-del read-mode-hide" onclick="deleteTrip(${index})">🗑️</button>
+        `;
+        container.appendChild(card);
+      });
+    }
+
+    function createNewTrip() {
+      const title = prompt("請輸入行程名稱：", "東京自由行");
+      if (!title) return;
+      const dates = prompt("請輸入日期區間 格式 YYYY/MM/DD - YYYY/MM/DD：", "2026/11/01 - 2026/11/05");
+
+      const newTrip = {
+        id: "trip-" + Date.now(),
+        title: title,
+        startDate: dates ? dates.split('-')[0].trim() : "2026/11/01",
+        endDate: dates ? dates.split('-')[1]?.trim() || "2026/11/05" : "2026/11/05",
+        flightOut: { route: "TPE ➔ NRT", time: "08:00 - 12:00", code: "航班號碼" },
+        flightIn: { route: "NRT ➔ TPE", time: "15:00 - 18:00", code: "航班號碼" },
+        payers: ["我"],
+        expenses: [], shoppingList: [], prepList: [], days: []
+      };
+
+      generateDaysFromDates(newTrip);
+      allTrips.push(newTrip);
+      saveData();
+      renderTripList();
+      openTripDetail(allTrips.length - 1);
+    }
+
+    function deleteTrip(index) {
+      if (confirm(`確定要刪除「${allTrips[index].title}」嗎？`)) {
+        allTrips.splice(index, 1);
+        saveData();
+        renderTripList();
+      }
+    }
+
+    function openTripDetail(index) {
+      currentTripIdx = index;
+      currentDayIdx = 0;
+
+      updateTripHeaderInfo();
+      document.querySelectorAll('.app-page').forEach(p => p.classList.remove('active'));
+      document.getElementById('pageDetail').classList.add('active');
+
+      switchMainView('trip');
+
+      setTimeout(() => {
+        initMap();
+        renderTabs();
+        renderDayView();
+      }, 100);
+    }
+
+    function goToHome() {
+      document.querySelectorAll('.app-page').forEach(p => p.classList.remove('active'));
+      document.getElementById('pageHome').classList.add('active');
+      renderTripList();
+    }
+
+    function updateTripHeaderInfo() {
+      const trip = allTrips[currentTripIdx];
+      document.getElementById('headerTripTitle').innerText = trip.title;
+      document.getElementById('headerTripDates').innerText = `${trip.startDate} - ${trip.endDate}`;
+    }
+
+    function editTripTitle() {
+      if (!isEditMode) return;
+      const newTitle = prompt("修改行程標題：", allTrips[currentTripIdx].title);
+      if (newTitle) { 
+        allTrips[currentTripIdx].title = newTitle; 
+        saveData();
+        updateTripHeaderInfo(); 
+      }
+    }
+
+    function editTripDates() {
+      if (!isEditMode) return;
+      const newDates = prompt("修改日期區間 格式 YYYY/MM/DD - YYYY/MM/DD：", `${allTrips[currentTripIdx].startDate} - ${allTrips[currentTripIdx].endDate}`);
+      if (newDates && newDates.includes('-')) {
+        const trip = allTrips[currentTripIdx];
+        trip.startDate = newDates.split('-')[0].trim();
+        trip.endDate = newDates.split('-')[1].trim();
+        generateDaysFromDates(trip);
+        saveData();
+        updateTripHeaderInfo();
+        renderTabs();
+        renderDayView();
+      }
+    }
+
+    function toggleEditMode() {
+      isEditMode = !isEditMode;
+      const txt = isEditMode ? "💾 完成編輯" : "🔒 閱讀模式";
+      
+      document.getElementById('homeModeToggleBtn').innerText = txt;
+      document.getElementById('detailModeToggleBtn').innerText = txt;
+
+      if (isEditMode) {
+        document.body.classList.remove('is-read-mode');
+        document.getElementById('tripViewSection').classList.add('edit-mode-active');
+      } else {
+        document.body.classList.add('is-read-mode');
+        document.getElementById('tripViewSection').classList.remove('edit-mode-active');
+      }
+
+      if (document.getElementById('pageDetail').classList.contains('active')) {
+        renderDayView();
+      }
+    }
+
+    function initMap() {
+      if (!map) {
+        map = L.map('map').setView([34.6687, 135.5013], 11);
+        L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png').addTo(map);
+      }
+      loadMapMarkers();
+    }
+
+    function loadMapMarkers() {
+      markers.forEach(m => map.removeLayer(m));
+      markers = [];
+      const currentDay = allTrips[currentTripIdx]?.days[currentDayIdx];
+      if (!currentDay) return;
+
+      if (currentDay.spots.length > 0 && currentDay.spots[0].lat) {
+        map.panTo([currentDay.spots[0].lat, currentDay.spots[0].lng]);
+      }
+
+      currentDay.spots.forEach((spot, idx) => {
+        if (spot.lat && spot.lng) {
+          const marker = L.marker([spot.lat, spot.lng]).addTo(map).bindPopup(`<b>${idx + 1}. ${spot.title}</b>`);
+          markers.push(marker);
+        }
+      });
+    }
+
+    function renderTabs() {
+      const tabContainer = document.getElementById('tabContainer');
+      tabContainer.innerHTML = '';
+      const trip = allTrips[currentTripIdx];
+
+      trip.days.forEach((day, index) => {
+        const btn = document.createElement('button');
+        btn.className = `tab-btn ${index === currentDayIdx ? 'active' : ''}`;
+        btn.innerHTML = `DAY ${day.dayNum}<br><span style="font-size:10px;">${day.dateStr}</span>`;
+        btn.onclick = () => switchDay(index);
+        tabContainer.appendChild(btn);
+      });
+    }
+
+    function renderDayView() {
+      const trip = allTrips[currentTripIdx];
+      const currentDay = trip?.days[currentDayIdx];
+      if (!currentDay) return;
+
+      document.getElementById('bannerDayCur').innerText = currentDay.dayNum;
+      document.getElementById('bannerDayTotal').innerText = `/ ${trip.days.length}`;
+      document.getElementById('bannerDate').innerText = `DAY ${currentDay.dayNum} - ${currentDay.dateStr}`;
+      document.getElementById('bannerArea').innerText = currentDay.area || '未設定區域';
+
+      const listContainer = document.getElementById('spotList');
+      listContainer.innerHTML = '';
+
+      currentDay.spots.forEach((spot, idx) => {
+        const card = document.createElement('div');
+        card.className = 'card';
+        const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(spot.address || spot.title)}&hl=zh-TW`;
+
+        let tagClass = "tag-spot";
+        if (spot.category === "餐廳") tagClass = "tag-food";
+        if (spot.category === "逛街") tagClass = "tag-shop";
+
+        card.innerHTML = `
+          <div class="drag-handle">≡</div>
+          <div class="card-main">
+            <div class="card-header-row">
+              <span class="card-time">${spot.time}</span>
+              <span class="tag-badge ${tagClass}">${spot.category || '景點'}</span>
+              ${spot.reservedTime ? `<span class="tag-badge" style="background:#f97316;">✓ ${spot.reservedTime}</span>` : ''}
+            </div>
+            <a href="${mapsUrl}" target="_blank" class="card-title-link">
+              📍 ${idx + 1}. ${spot.title}
+            </a>
+            ${spot.note ? `<div class="card-note">${spot.note}</div>` : ''}
+          </div>
+          <div style="display:flex; gap:6px;">
+            <button class="delete-btn" onclick="prepareEditSpot(${idx})">✏️</button>
+            <button class="delete-btn" onclick="deleteSpot(${idx})">🗑️</button>
+          </div>
+        `;
+        listContainer.appendChild(card);
+      });
+
+      initSortable();
+      loadMapMarkers();
+    }
+
+    function initSortable() {
+      const el = document.getElementById('spotList');
+      if (sortableInstance) sortableInstance.destroy();
+
+      sortableInstance = Sortable.create(el, {
+        handle: '.drag-handle',
+        animation: 150,
+        onEnd: function (evt) {
+          const currentDay = allTrips[currentTripIdx].days[currentDayIdx];
+          const movedItem = currentDay.spots.splice(evt.oldIndex, 1)[0];
+          currentDay.spots.splice(evt.newIndex, 0, movedItem);
+          saveData();
+          renderDayView();
+        }
+      });
+    }
+
+    function switchDay(index) {
+      currentDayIdx = index;
+      renderTabs();
+      renderDayView();
+    }
+
+    function editDayArea() {
+      if (!isEditMode) return;
+      const currentDay = allTrips[currentTripIdx].days[currentDayIdx];
+      const newArea = prompt("修改主要區域：", currentDay.area);
+      if (newArea) { 
+        currentDay.area = newArea; 
+        saveData();
+        renderDayView(); 
+      }
+    }
+
+    function onAddressInput(val) {
+      clearTimeout(searchDebounce);
+      const box = document.getElementById('addressAutocomplete');
+      if (!val || val.length < 2) { box.style.display = 'none'; return; }
+
+      searchDebounce = setTimeout(async () => {
+        try {
+          const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&accept-language=zh-TW&q=${encodeURIComponent(val)}&limit=4`);
+          const data = await res.json();
+          box.innerHTML = '';
+          if (data && data.length > 0) {
+            data.forEach(item => {
+              const div = document.createElement('div');
+              div.innerText = item.display_name;
+              div.onclick = () => {
+                document.getElementById('inputAddress').value = item.display_name;
+                box.style.display = 'none';
+              };
+              box.appendChild(div);
+            });
+            box.style.display = 'block';
+          } else { box.style.display = 'none'; }
+        } catch (e) { box.style.display = 'none'; }
+      }, 400);
+    }
+
+    async function saveSpot() {
+      const editIndex = parseInt(document.getElementById('editSpotIndex').value);
+      const hour = document.getElementById('inputHour').value;
+      const min = document.getElementById('inputMinute').value;
+      const timeStr = `${hour}:${min}`;
+      
+      const category = document.getElementById('inputCategory').value;
+      const reservedTime = document.getElementById('inputReservedTime').value;
+      const title = document.getElementById('inputTitle').value;
+      const address = document.getElementById('inputAddress').value;
+      const note = document.getElementById('inputNote').value || "";
+
+      if (!title) return alert("請輸入名稱！");
+
+      let lat = 34.6687, lng = 135.5013;
+      if (address) {
+        try {
+          const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&accept-language=zh-TW&q=${encodeURIComponent(address)}`);
+          const data = await res.json();
+          if (data && data.length > 0) { lat = parseFloat(data[0].lat); lng = parseFloat(data[0].lon); }
+        } catch (e) {}
+      }
+
+      const spotData = { id: Date.now(), time: timeStr, category, reservedTime, title, address, note, lat, lng };
+      const currentDay = allTrips[currentTripIdx].days[currentDayIdx];
+
+      if (editIndex >= 0) {
+        currentDay.spots[editIndex] = spotData;
+      } else {
+        currentDay.spots.push(spotData);
+      }
+
+      currentDay.spots.sort((a, b) => a.time.localeCompare(b.time));
+
+      saveData();
+      resetSpotForm();
+      renderDayView();
+    }
+
+    function prepareEditSpot(idx) {
+      const spot = allTrips[currentTripIdx].days[currentDayIdx].spots[idx];
+      document.getElementById('editSpotIndex').value = idx;
+      
+      const timeParts = spot.time.split(':');
+      if (timeParts.length === 2) {
+        document.getElementById('inputHour').value = timeParts[0];
+        document.getElementById('inputMinute').value = timeParts[1];
+      }
+
+      document.getElementById('inputCategory').value = spot.category || '景點';
+      document.getElementById('inputReservedTime').value = spot.reservedTime || '';
+      document.getElementById('inputTitle').value = spot.title;
+      document.getElementById('inputAddress').value = spot.address;
+      document.getElementById('inputNote').value = spot.note;
+
+      document.getElementById('formTitle').innerText = "✏️ 編輯行程內容";
+      document.getElementById('saveSpotBtn').innerText = "更新行程";
+    }
+
+    function resetSpotForm() {
+      document.getElementById('editSpotIndex').value = "-1";
+      document.getElementById('inputTitle').value = '';
+      document.getElementById('inputAddress').value = '';
+      document.getElementById('inputNote').value = '';
+      document.getElementById('inputReservedTime').value = '';
+      document.getElementById('formTitle').innerText = "➕ 新增行程景點";
+      document.getElementById('saveSpotBtn').innerText = "儲存行程";
+    }
+
+    function deleteSpot(idx) {
+      if (confirm("確定要刪除嗎？")) {
+        allTrips[currentTripIdx].days[currentDayIdx].spots.splice(idx, 1);
+        saveData();
+        renderDayView();
+      }
+    }
+
+    function switchMainView(view) {
+      document.getElementById('navTripBtn').classList.toggle('active', view === 'trip');
+      document.getElementById('navToolsBtn').classList.toggle('active', view === 'tools');
+
+      document.getElementById('tripViewSection').style.display = (view === 'trip') ? 'block' : 'none';
+      document.getElementById('toolsViewSection').style.display = (view === 'tools') ? 'block' : 'none';
+      document.getElementById('map').style.display = (view === 'trip') ? 'block' : 'none';
+    }
+
+    function navigateToSubPage(pageId) {
+      document.querySelectorAll('.app-page').forEach(p => p.classList.remove('active'));
+      document.getElementById(pageId).classList.add('active');
+
+      if (pageId === 'pageToolFlight') { renderFlightInfo(); fetchWeather(); }
+      if (pageId === 'pageToolShopping') { renderShoppingBoxes(); }
+      if (pageId === 'pageToolAccounting') { renderPayerOptions(); renderExpenseList(); }
+      if (pageId === 'pageToolPrep') { renderPrepList(); }
+    }
+
+    function backToToolkit() {
+      document.querySelectorAll('.app-page').forEach(p => p.classList.remove('active'));
+      document.getElementById('pageDetail').classList.add('active');
+      switchMainView('tools');
+    }
+
+    function calcTopExchange() {
+      const jpy = parseFloat(document.getElementById('topJpyInput').value) || 0;
+      document.getElementById('topTwdResult').innerText = Math.round(jpy * 0.21);
+    }
+
+    function renderFlightInfo() {
+      const trip = allTrips[currentTripIdx];
+      
+      const outDateStr = trip.startDate ? trip.startDate.split('/')[1] + '/' + trip.startDate.split('/')[2] : "去程";
+      const inDateStr = trip.endDate ? trip.endDate.split('/')[1] + '/' + trip.endDate.split('/')[2] : "回程";
+
+      const flightOut = trip.flightOut || { route: "TPE ➔ ---", time: "--:--", code: "---" };
+      const flightIn = trip.flightIn || { route: "--- ➔ TPE", time: "--:--", code: "---" };
+
+      document.getElementById('flightDisplay').innerHTML = `
+        <div style="background:#f8fafc; border:1px solid var(--border-color); border-radius:12px; padding:12px; margin-bottom:8px;">
+          <div style="font-size:11px; font-weight:800; color:var(--primary-navy);">去程 • ${outDateStr} (${flightOut.code})</div>
+          <div style="display:flex; justify-content:space-between; font-weight:800; font-size:15px; margin-top:4px;">
+            <span>${flightOut.route.split('➔')[0] || ''}</span>
+            <span style="color:var(--accent-blue);">✈️ ${flightOut.time}</span>
+            <span>${flightOut.route.split('➔')[1] || ''}</span>
+          </div>
+        </div>
+        <div style="background:#f8fafc; border:1px solid var(--border-color); border-radius:12px; padding:12px;">
+          <div style="font-size:11px; font-weight:800; color:#d97706;">回程 • ${inDateStr} (${flightIn.code})</div>
+          <div style="display:flex; justify-content:space-between; font-weight:800; font-size:15px; margin-top:4px;">
+            <span>${flightIn.route.split('➔')[0] || ''}</span>
+            <span style="color:#d97706;">✈️ ${flightIn.time}</span>
+            <span>${flightIn.route.split('➔')[1] || ''}</span>
+          </div>
+        </div>
+      `;
+    }
+
+    function editFlightInfo() {
+      const trip = allTrips[currentTripIdx];
+      
+      const outCode = prompt("去程班機號碼：", trip.flightOut?.code || "CI172");
+      const outRoute = prompt("去程航線 (例: TPE ➔ KIX)：", trip.flightOut?.route || "TPE ➔ KIX");
+      const outTime = prompt("去程時間 (例: 14:20 - 18:05)：", trip.flightOut?.time || "14:20 - 18:05");
+
+      const inCode = prompt("回程班機號碼：", trip.flightIn?.code || "CI157");
+      const inRoute = prompt("回程航線 (例: KIX ➔ TPE)：", trip.flightIn?.route || "KIX ➔ TPE");
+      const inTime = prompt("回程時間 (例: 13:10 - 15:05)：", trip.flightIn?.time || "13:10 - 15:05");
+
+      trip.flightOut = { route: outRoute, time: outTime, code: outCode };
+      trip.flightIn = { route: inRoute, time: inTime, code: inCode };
+
+      saveData();
+      renderFlightInfo();
+    }
+
+    async function fetchWeather() {
+      const container = document.getElementById('weatherDisplay');
+      const trip = allTrips[currentTripIdx];
+
+      try {
+        const res = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=34.6937&longitude=135.5023&daily=weathercode,temperature_2m_max,temperature_2m_min&timezone=Asia%2FTokyo`);
+        const data = await res.json();
+        
+        container.innerHTML = '';
+        trip.days.forEach((day, i) => {
+          const maxTemp = data.daily ? Math.round(data.daily.temperature_2m_max[i % 7]) : 22;
+          const minTemp = data.daily ? Math.round(data.daily.temperature_2m_min[i % 7]) : 15;
+          const code = data.daily ? data.daily.weathercode[i % 7] : 0;
+          
+          let icon = "☀️ 晴朗";
+          if (code > 2) icon = "⛅ 多雲";
+          if (code > 50) icon = "🌧️ 雨天";
+
+          container.innerHTML += `
+            <div class="item-row">
+              <div><b>DAY ${day.dayNum}</b> ${day.dateStr}</div>
+              <div>${icon}</div>
+              <div><b>${maxTemp}°C</b> / ${minTemp}°C</div>
+            </div>
+          `;
+        });
+      } catch(e) {
+        container.innerHTML = "氣象連線中...";
+      }
+    }
+
+    function addShoppingItem() {
+      const area = document.getElementById('shopAreaInput').value || "一般採購";
+      const text = document.getElementById('shopItemInput').value;
+      if (!text) return alert("請輸入商品名稱！");
+
+      allTrips[currentTripIdx].shoppingList.push({ area, text, note: "", done: false });
+      document.getElementById('shopItemInput').value = '';
+      saveData();
+      renderShoppingBoxes();
+    }
+
+    function renderShoppingBoxes() {
+      const container = document.getElementById('shoppingAreaBoxes');
+      const list = allTrips[currentTripIdx].shoppingList;
+      container.innerHTML = '';
+
+      const groups = {};
+      list.forEach((item, index) => {
+        if (!groups[item.area]) groups[item.area] = [];
+        groups[item.area].push({ ...item, originalIndex: index });
+      });
+
+      for (let areaName in groups) {
+        const box = document.createElement('div');
+        box.className = 'shop-box';
+        
+        let itemsHtml = '';
+        groups[areaName].forEach(item => {
+          itemsHtml += `
+            <div style="padding: 8px 0; border-bottom: 1px dashed #f1f5f9;">
+              <div style="display:flex; justify-content:space-between; align-items:center;">
+                <label style="display:flex; align-items:center; gap:8px; cursor:pointer;">
+                  <input type="checkbox" ${item.done ? 'checked' : ''} onchange="toggleShopItem(${item.originalIndex})">
+                  <span style="font-weight:bold; ${item.done ? 'text-decoration:line-through; color:#cbd5e1;' : ''}">${item.text}</span>
+                </label>
+                <button class="icon-btn-del" onclick="deleteShopItem(${item.originalIndex})">🗑️</button>
+              </div>
+              ${item.note ? `<div style="font-size:11px; color:var(--text-muted); margin-left:24px; margin-top:2px;">${item.note}</div>` : ''}
+            </div>
+          `;
+        });
+
+        box.innerHTML = `
+          <div class="shop-box-title">🧴 ${areaName}</div>
+          <div>${itemsHtml}</div>
+        `;
+        container.appendChild(box);
+      }
+    }
+
+    function toggleShopItem(idx) {
+      allTrips[currentTripIdx].shoppingList[idx].done = !allTrips[currentTripIdx].shoppingList[idx].done;
+      saveData();
+      renderShoppingBoxes();
+    }
+
+    function deleteShopItem(idx) {
+      allTrips[currentTripIdx].shoppingList.splice(idx, 1);
+      saveData();
+      renderShoppingBoxes();
+    }
+
+    function addPrepItem() {
+      const input = document.getElementById('prepItemInput');
+      if (!input.value) return;
+
+      allTrips[currentTripIdx].prepList.push({ text: input.value, done: false });
+      input.value = '';
+      saveData();
+      renderPrepList();
+    }
+
+    function renderPrepList() {
+      const container = document.getElementById('prepList');
+      const list = allTrips[currentTripIdx].prepList;
+      container.innerHTML = '';
+
+      list.forEach((item, idx) => {
+        const div = document.createElement('div');
+        div.className = 'item-row';
+        div.innerHTML = `
+          <label style="display:flex; align-items:center; gap:8px; cursor:pointer;">
+            <input type="checkbox" ${item.done ? 'checked' : ''} onchange="togglePrepItem(${idx})">
+            <span style="${item.done ? 'text-decoration:line-through; color:#cbd5e1;' : ''}">${item.text}</span>
+          </label>
+          <button class="icon-btn-del" onclick="deletePrepItem(${idx})">🗑️</button>
+        `;
+        container.appendChild(div);
+      });
+    }
+
+    function togglePrepItem(idx) {
+      allTrips[currentTripIdx].prepList[idx].done = !allTrips[currentTripIdx].prepList[idx].done;
+      saveData();
+      renderPrepList();
+    }
+
+    function deletePrepItem(idx) {
+      allTrips[currentTripIdx].prepList.splice(idx, 1);
+      saveData();
+      renderPrepList();
+    }
+
+    function renderPayerOptions() {
+      const trip = allTrips[currentTripIdx];
+      const select = document.getElementById('expPayerSelect');
+      select.innerHTML = '';
+      trip.payers.forEach(p => {
+        select.innerHTML += `<option value="${p}">${p}</option>`;
+      });
+    }
+
+    function addNewPayer() {
+      const newName = prompt("請輸入新成員名字：");
+      if (newName) {
+        const trip = allTrips[currentTripIdx];
+        if (!trip.payers.includes(newName)) {
+          trip.payers.push(newName);
+          saveData();
+          renderPayerOptions();
+        }
+      }
+    }
+
+    function addExpenseRecord() {
+      const payer = document.getElementById('expPayerSelect').value;
+      const title = document.getElementById('expTitle').value;
+      const amount = parseFloat(document.getElementById('expAmount').value);
+
+      if (!title || !amount) return alert("請填寫品項名稱與金額！");
+
+      allTrips[currentTripIdx].expenses.push({ id: Date.now(), payer, title, amount });
+      document.getElementById('expTitle').value = '';
+      document.getElementById('expAmount').value = '';
+
+      saveData();
+      renderExpenseList();
+    }
+
+    function renderExpenseList() {
+      const trip = allTrips[currentTripIdx];
+      const listContainer = document.getElementById('expenseRecordList');
+      const summaryGrid = document.getElementById('payerSummaryGrid');
+      listContainer.innerHTML = '';
+      summaryGrid.innerHTML = '';
+
+      const totals = {};
+      trip.payers.forEach(p => totals[p] = 0);
+
+      trip.expenses.forEach((exp, idx) => {
+        if (totals[exp.payer] !== undefined) {
+          totals[exp.payer] += exp.amount;
+        } else {
+          totals[exp.payer] = exp.amount;
+        }
+
+        const row = document.createElement('div');
+        row.className = 'item-row';
+        row.innerHTML = `
+          <div>
+            <span style="font-size:10px; background:#e0f2fe; color:var(--primary-navy); padding:2px 6px; border-radius:6px; font-weight:bold; margin-right:4px;">${exp.payer}</span>
+            <span>${exp.title}</span>
+          </div>
+          <div style="display:flex; align-items:center; gap:8px;">
+            <b style="color:var(--primary-navy);">¥${exp.amount}</b>
+            <button class="icon-btn-del" onclick="deleteExpense(${idx})">🗑️</button>
+          </div>
+        `;
+        listContainer.appendChild(row);
+      });
+
+      for (let payer in totals) {
+        const jpy = totals[payer];
+        const twd = Math.round(jpy * 0.21);
+        summaryGrid.innerHTML += `
+          <div class="payer-summary-card">
+            <div class="payer-name">💳 ${payer} 總付</div>
+            <div class="payer-amount">¥${jpy}</div>
+            <div style="font-size:11px; color:var(--text-muted); margin-top:2px;">約 NT$${twd}</div>
+          </div>
+        `;
+      }
+    }
+
+    function deleteExpense(idx) {
+      allTrips[currentTripIdx].expenses.splice(idx, 1);
+      saveData();
+      renderExpenseList();
+    }
+
+    window.onload = function() {
+      init();
+    };
+  </script>
+</body>
+</html>
