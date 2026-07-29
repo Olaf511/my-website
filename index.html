@@ -233,13 +233,7 @@
     .form-group label { display: block; font-size: 11px; color: var(--text-muted); margin-bottom: 4px; font-weight: 700; }
     .form-group input, .form-group select, .form-group textarea { width: 100%; padding: 8px 10px; border: 1px solid var(--border-color); border-radius: 8px; font-size: 13px; }
     .form-group textarea { resize: vertical; min-height: 60px; }
-    
-    /* 🔥 優化記帳輸入表單的 2 欄對齊排版 */
-    .expense-form-grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 8px;
-    }
+    .form-row { display: flex; gap: 8px; }
     
     .modal-footer { display: flex; gap: 10px; margin-top: 14px; }
     .modal-btn { flex: 1; padding: 10px; border-radius: 10px; border: none; font-weight: 800; cursor: pointer; font-size: 13px; text-align: center; }
@@ -386,8 +380,8 @@
       </div>
       <input type="hidden" id="editSpotIndex" value="-1">
 
-      <div class="expense-form-grid">
-        <div class="form-group">
+      <div class="form-row">
+        <div class="form-group" style="flex:1;">
           <label>類別</label>
           <select id="inputCategory">
             <option value="景點">景點</option>
@@ -396,7 +390,7 @@
             <option value="住宿">住宿</option>
           </select>
         </div>
-        <div class="form-group">
+        <div class="form-group" style="flex:1;">
           <label>時間 (24小時制)</label>
           <input type="time" id="inputTime" value="09:00">
         </div>
@@ -516,16 +510,14 @@
         <div id="payerTagsList" style="display:flex; flex-wrap:wrap; gap:6px;"></div>
       </div>
 
-      <!-- 🔥 優化後的 2 欄對齊記帳表單區塊 -->
       <div class="section-card">
         <div class="section-card-title">➕ 記一筆支出</div>
-        
-        <div class="expense-form-grid">
-          <div class="form-group">
+        <div class="form-row">
+          <div class="form-group" style="flex:1;">
             <label>日期</label>
             <input type="date" id="expDate">
           </div>
-          <div class="form-group">
+          <div class="form-group" style="flex:1;">
             <label>類別</label>
             <select id="expCategory">
               <option value="夫夫">夫夫</option>
@@ -539,12 +531,12 @@
           </div>
         </div>
 
-        <div class="expense-form-grid">
-          <div class="form-group">
+        <div class="form-row">
+          <div class="form-group" style="flex:1;">
             <label>付款人</label>
             <select id="expPayerSelect"></select>
           </div>
-          <div class="form-group">
+          <div class="form-group" style="flex:1;">
             <label>幣別</label>
             <select id="expCurrency">
               <option value="JPY">JPY (日幣)</option>
@@ -558,19 +550,19 @@
           <input type="text" id="expTitle" placeholder="如: 拉麵 / 住宿">
         </div>
 
-        <div class="expense-form-grid" style="align-items:center;">
-          <div class="form-group">
+        <div class="form-row" style="align-items:center;">
+          <div class="form-group" style="flex:1;">
             <label>金額</label>
             <input type="number" id="expAmount" placeholder="輸入金額">
           </div>
-          <div class="form-group" style="margin-top:14px;">
+          <div class="form-group" style="flex:1; margin-top:16px;">
             <label class="checkbox-label">
               <input type="checkbox" id="expIsSplit" checked> 分攤
             </label>
           </div>
         </div>
 
-        <button class="modal-btn modal-btn-save" style="width:100%; margin-top:6px;" onclick="addExpenseRecord()">儲存</button>
+        <button class="modal-btn modal-btn-save" style="width:100%;" onclick="addExpenseRecord()">儲存</button>
       </div>
 
       <div class="section-card">
@@ -594,10 +586,9 @@
         <button style="background:none; border:none; font-size:18px; cursor:pointer;" onclick="closeEditExpenseModal()">✕</button>
       </div>
       <input type="hidden" id="editExpIndex">
-      
-      <div class="expense-form-grid">
-        <div class="form-group"><label>日期</label><input type="date" id="editExpDate"></div>
-        <div class="form-group">
+      <div class="form-row">
+        <div class="form-group" style="flex:1;"><label>日期</label><input type="date" id="editExpDate"></div>
+        <div class="form-group" style="flex:1;">
           <label>類別</label>
           <select id="editExpCategory">
             <option value="夫夫">夫夫</option>
@@ -610,10 +601,9 @@
           </select>
         </div>
       </div>
-
-      <div class="expense-form-grid">
-        <div class="form-group"><label>付款人</label><select id="editExpPayerSelect"></select></div>
-        <div class="form-group">
+      <div class="form-row">
+        <div class="form-group" style="flex:1;"><label>付款人</label><select id="editExpPayerSelect"></select></div>
+        <div class="form-group" style="flex:1;">
           <label>幣別</label>
           <select id="editExpCurrency">
             <option value="JPY">JPY</option>
@@ -621,18 +611,15 @@
           </select>
         </div>
       </div>
-
       <div class="form-group"><label>品項</label><input type="text" id="editExpTitle"></div>
-      
-      <div class="expense-form-grid" style="align-items:center;">
-        <div class="form-group"><label>金額</label><input type="number" id="editExpAmount"></div>
-        <div class="form-group" style="margin-top:14px;">
+      <div class="form-row" style="align-items:center;">
+        <div class="form-group" style="flex:1;"><label>金額</label><input type="number" id="editExpAmount"></div>
+        <div class="form-group" style="flex:1; margin-top:16px;">
           <label class="checkbox-label">
             <input type="checkbox" id="editExpIsSplit"> 分攤
           </label>
         </div>
       </div>
-
       <div class="modal-footer">
         <button class="modal-btn modal-btn-cancel" onclick="closeEditExpenseModal()">取消</button>
         <button class="modal-btn modal-btn-save" onclick="saveEditedExpense()">儲存</button>
@@ -649,15 +636,13 @@
     <div class="container">
       <div class="section-card">
         <div class="section-card-title">🎒 行前檢查清單</div>
-        <div class="expense-form-grid" style="margin-bottom:10px;">
-          <select id="prepCategorySelect" style="width:100%; font-weight:bold;">
+        <div class="form-row" style="margin-bottom:10px;">
+          <select id="prepCategorySelect" style="width:110px; font-weight:bold;">
             <option value="隨身包包">隨身包包</option>
             <option value="托運行李">托運行李</option>
           </select>
-          <div style="display:flex; gap:6px;">
-            <input type="text" id="prepItemInput" placeholder="新增項目" style="flex:1; padding:8px; border:1px solid var(--border-color); border-radius:8px; font-size:12px;">
-            <button class="btn-rounded-light" onclick="addPrepItem()">新增</button>
-          </div>
+          <input type="text" id="prepItemInput" placeholder="新增項目，如: 護照、網卡" style="flex:1; padding:8px; border:1px solid var(--border-color); border-radius:8px; font-size:12px;">
+          <button class="btn-rounded-light" onclick="addPrepItem()">新增</button>
         </div>
         <div id="prepList"></div>
       </div>
