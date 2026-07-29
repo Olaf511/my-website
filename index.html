@@ -348,6 +348,7 @@
             </div>
           </div>
 
+          <!-- 工具箱位置互換：記帳在前，事前準備在後 -->
           <div class="tool-card" onclick="navigateToSubPage('pageToolAccounting')">
             <div class="tool-icon-wrapper" style="background: #805ad5;">🧾</div>
             <div>
@@ -511,61 +512,6 @@
       </div>
 
       <div class="section-card">
-        <div class="section-card-title">➕ 記一筆支出</div>
-        <div class="form-row">
-          <div class="form-group" style="flex:1;">
-            <label>日期</label>
-            <input type="date" id="expDate">
-          </div>
-          <div class="form-group" style="flex:1;">
-            <label>類別</label>
-            <select id="expCategory">
-              <option value="夫夫">夫夫</option>
-              <option value="吃喝">吃喝</option>
-              <option value="玩樂">玩樂</option>
-              <option value="門票">門票</option>
-              <option value="藥妝">藥妝</option>
-              <option value="代購">代購</option>
-              <option value="其他">其他</option>
-            </select>
-          </div>
-        </div>
-
-        <div class="form-row">
-          <div class="form-group" style="flex:1;">
-            <label>付款人</label>
-            <select id="expPayerSelect"></select>
-          </div>
-          <div class="form-group" style="flex:1;">
-            <label>幣別</label>
-            <select id="expCurrency">
-              <option value="JPY">JPY (日幣)</option>
-              <option value="NTD">NTD (台幣)</option>
-            </select>
-          </div>
-        </div>
-
-        <div class="form-group">
-          <label>品項名稱</label>
-          <input type="text" id="expTitle" placeholder="如: 拉麵 / 住宿">
-        </div>
-
-        <div class="form-row" style="align-items:center;">
-          <div class="form-group" style="flex:1;">
-            <label>金額</label>
-            <input type="number" id="expAmount" placeholder="輸入金額">
-          </div>
-          <div class="form-group" style="flex:1; margin-top:16px;">
-            <label class="checkbox-label">
-              <input type="checkbox" id="expIsSplit" checked> 分攤
-            </label>
-          </div>
-        </div>
-
-        <button class="modal-btn modal-btn-save" style="width:100%;" onclick="addExpenseRecord()">儲存</button>
-      </div>
-
-      <div class="section-card">
         <div class="section-card-title">
           <span>🧾 消費明細</span>
           <div>
@@ -574,6 +520,74 @@
           </div>
         </div>
         <div id="expenseRecordList"></div>
+      </div>
+    </div>
+
+    <!-- 右下角懸浮按鈕 (+) 觸發新增記帳 -->
+    <button class="fab-add" onclick="openExpenseModal()">+</button>
+  </div>
+
+  <!-- ===== 新增消費紀錄 Modal ===== -->
+  <div class="modal-overlay" id="expenseModal">
+    <div class="modal-box">
+      <div class="modal-header">
+        <span>➕ 記一筆支出</span>
+        <button style="background:none; border:none; font-size:18px; cursor:pointer;" onclick="closeExpenseModal()">✕</button>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group" style="flex:1;">
+          <label>日期</label>
+          <input type="date" id="expDate">
+        </div>
+        <div class="form-group" style="flex:1;">
+          <label>類別</label>
+          <select id="expCategory">
+            <option value="夫夫">夫夫</option>
+            <option value="吃喝">吃喝</option>
+            <option value="玩樂">玩樂</option>
+            <option value="門票">門票</option>
+            <option value="藥妝">藥妝</option>
+            <option value="代購">代購</option>
+            <option value="其他">其他</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group" style="flex:1;">
+          <label>付款人</label>
+          <select id="expPayerSelect"></select>
+        </div>
+        <div class="form-group" style="flex:1;">
+          <label>幣別</label>
+          <select id="expCurrency">
+            <option value="JPY">JPY (日幣)</option>
+            <option value="NTD">NTD (台幣)</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label>品項名稱</label>
+        <input type="text" id="expTitle" placeholder="如: 拉麵 / 住宿">
+      </div>
+
+      <div class="form-row" style="align-items:center;">
+        <div class="form-group" style="flex:1;">
+          <label>金額</label>
+          <input type="number" id="expAmount" placeholder="輸入金額">
+        </div>
+        <div class="form-group" style="flex:1; margin-top:16px;">
+          <label class="checkbox-label">
+            <input type="checkbox" id="expIsSplit" checked> 分攤
+          </label>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button class="modal-btn modal-btn-cancel" onclick="closeExpenseModal()">取消</button>
+        <button class="modal-btn modal-btn-save" onclick="addExpenseRecord()">儲存</button>
       </div>
     </div>
   </div>
@@ -959,7 +973,8 @@
 
     function initMap() {
       if (!map) {
-        map = L.map('map').setView([34.6937, 135.5023], 12);
+        // 設定 scrollWheelZoom: false，防止地圖攔截頁面上下滾動
+        map = L.map('map', { scrollWheelZoom: false }).setView([34.6937, 135.5023], 12);
         L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png').addTo(map);
       }
       loadMapMarkers();
@@ -1190,6 +1205,17 @@
       renderExpenseList();
     }
 
+    function openExpenseModal() {
+      document.getElementById('expDate').value = new Date().toISOString().split('T')[0];
+      document.getElementById('expTitle').value = '';
+      document.getElementById('expAmount').value = '';
+      document.getElementById('expenseModal').classList.add('active');
+    }
+
+    function closeExpenseModal() {
+      document.getElementById('expenseModal').classList.remove('active');
+    }
+
     function renderPayerTags() {
       const trip = allTrips[currentTripIdx];
       const container = document.getElementById('payerTagsList');
@@ -1245,8 +1271,7 @@
 
       allTrips[currentTripIdx].expenses.push({ id: Date.now(), date, category, payer, currency, title, amount, isSplit });
       saveData();
-      document.getElementById('expTitle').value = '';
-      document.getElementById('expAmount').value = '';
+      closeExpenseModal();
       renderExpenseList();
     }
 
