@@ -79,7 +79,19 @@
     }
     .main-nav-btn.active { background: #fff; color: var(--primary-navy); box-shadow: 0 2px 4px rgba(0,0,0,0.06); }
 
-    #map { width: 100%; height: 180px; border-radius: 16px; margin-bottom: 12px; border: 1px solid var(--border-color); }
+    /* 修正地圖容器與內部控制項圖層，防止往上滑動時加減按鈕飄在最上層 */
+    #map { 
+      width: 100%; 
+      height: 180px; 
+      border-radius: 16px; 
+      margin-bottom: 12px; 
+      border: 1px solid var(--border-color); 
+      position: relative;
+      z-index: 1;
+    }
+    .leaflet-control-container {
+      z-index: 2 !important;
+    }
 
     .custom-map-badge {
       background: var(--accent-orange); color: white; border-radius: 50%; border: 2px solid white;
@@ -252,6 +264,55 @@
     }
     #lightboxModal.active { display: flex; }
     #lightboxModal img { max-width: 90vw; max-height: 85vh; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.5); }
+
+    /* ===== 側邊抽屜選單 (漢堡選單) ===== */
+    .drawer-overlay {
+      position: fixed; inset: 0; background: rgba(0,0,0,0.45); z-index: 2400;
+      display: none; opacity: 0; transition: opacity 0.2s ease;
+    }
+    .drawer-overlay.active { display: block; opacity: 1; }
+
+    .side-drawer {
+      position: fixed; top: 0; left: -280px; width: 260px; height: 100%;
+      background: #fff; z-index: 2500; box-shadow: 6px 0 24px rgba(0,0,0,0.18);
+      display: flex; flex-direction: column; transition: left 0.25s cubic-bezier(.4,0,.2,1);
+    }
+    .side-drawer.active { left: 0; }
+
+    .drawer-header {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 18px 16px 14px; border-bottom: 1px solid var(--border-color);
+    }
+    .drawer-header-title { font-size: 13px; font-weight: 900; color: var(--primary-navy); letter-spacing: 1px; }
+    .drawer-close { background: none; border: none; font-size: 18px; color: var(--text-muted); cursor: pointer; padding: 4px; }
+
+    .drawer-menu { flex: 1; overflow-y: auto; padding: 8px; }
+    .drawer-item {
+      display: flex; align-items: center; gap: 14px; width: 100%; padding: 14px 12px;
+      border: none; background: none; text-align: left; font-size: 14px; font-weight: 800;
+      color: var(--text-main); border-radius: 12px; cursor: pointer; margin-bottom: 2px;
+    }
+    .drawer-item .drawer-item-icon { font-size: 18px; width: 22px; text-align: center; }
+    .drawer-item:active { background: var(--soft-blue); }
+    .drawer-item.current-page { background: var(--soft-blue); color: var(--primary-navy); }
+
+    .drawer-divider { height: 1px; background: var(--border-color); margin: 8px 6px; }
+
+    .drawer-footer { padding: 14px 16px 18px; border-top: 1px solid var(--border-color); }
+    .drawer-footer button { width: 100%; justify-content: center; padding: 10px; }
+
+    .menu-btn {
+      position: absolute; left: 10px; top: 8px; background: none; border: none;
+      font-size: 20px; color: var(--primary-navy); cursor: pointer; padding: 6px 10px; line-height: 1;
+    }
+
+    /* 左下角回首頁懸浮按鈕 */
+    .fab-home {
+      position: fixed; left: 20px; bottom: 20px; width: 52px; height: 52px; border-radius: 26px;
+      background: #ffffff; color: var(--primary-navy); border: 1px solid var(--border-color);
+      box-shadow: 0 6px 18px rgba(0,0,0,0.14); font-size: 22px; cursor: pointer; z-index: 999;
+      display: none; align-items: center; justify-content: center;
+    }
   </style>
 </head>
 <body class="is-read-mode">
@@ -275,18 +336,13 @@
   <!-- ===== 2. 詳細行程總覽 ===== -->
   <div id="pageDetail" class="app-page">
     <div class="app-header">
-      <button class="back-btn btn-rounded-light" onclick="goToHome()">‹ 首頁</button>
+      <button class="menu-btn" onclick="openDrawer()">☰</button>
       <h1 id="headerTripTitle" onclick="editTripTitle()">大阪京都之旅</h1>
       <div style="font-size: 11px; opacity: 0.8; margin-top:2px; cursor:pointer;" id="headerTripDates" onclick="editTripDates()">2026/10/16 - 2026/10/24 <span class="pencil-icon">✏️</span></div>
       <button class="mode-toggle-btn btn-rounded-light" id="detailModeToggleBtn" onclick="toggleEditMode()">🔒 閱讀模式</button>
     </div>
 
     <div class="container">
-      <div class="main-nav">
-        <button class="main-nav-btn active" id="navTripBtn" onclick="switchMainView('trip')">🗺️ 行程總覽</button>
-        <button class="main-nav-btn" id="navToolsBtn" onclick="switchMainView('tools')">🧰 工具箱</button>
-      </div>
-
       <div id="map"></div>
 
       <div id="tripViewSection">
@@ -307,69 +363,34 @@
 
         <div id="spotList"></div>
       </div>
-
-      <!-- ===== 3. 工具箱主頁 ===== -->
-      <div id="toolsViewSection" style="display:none;">
-        <div class="toolkit-title-block">
-          <div class="toolkit-main-title">工具箱</div>
-          <div class="toolkit-sub-title">TRIP TOOLKIT</div>
-        </div>
-
-        <div class="exchange-top-box">
-          <div class="exchange-top-title">
-            <span>🧮 匯率換算 (台銀即期: <span id="currentRateDisplay">--</span>)</span>
-          </div>
-          <div style="display:flex; align-items:center; gap:8px;">
-            <div class="exchange-input-container">
-              <input type="number" id="topJpyInput" placeholder="日幣 JPY" oninput="calcTopExchange()">
-              <button class="input-clear-btn" onclick="clearJpyInput()">✕</button>
-            </div>
-            <span style="font-weight:bold; color:var(--text-muted);">➔</span>
-            <div style="flex:1; font-weight:900; font-size:16px; color:var(--primary-navy);">
-              NT$ <span id="topTwdResult">0</span>
-            </div>
-          </div>
-        </div>
-
-        <div class="tools-grid">
-          <div class="tool-card" onclick="navigateToSubPage('pageToolFlight')">
-            <div class="tool-icon-wrapper" style="background: #2b6cb0;">✈️</div>
-            <div>
-              <h3>航班 / 天氣</h3>
-              <p style="font-size:11px; color:var(--text-muted);">航班資訊 • 每日天氣</p>
-            </div>
-          </div>
-
-          <div class="tool-card" onclick="navigateToSubPage('pageToolShopping')">
-            <div class="tool-icon-wrapper" style="background: #319795;">🛍️</div>
-            <div>
-              <h3>必買清單</h3>
-              <p style="font-size:11px; color:var(--text-muted);">分區採購項目</p>
-            </div>
-          </div>
-
-          <!-- 工具箱位置互換：記帳在前，事前準備在後 -->
-          <div class="tool-card" onclick="navigateToSubPage('pageToolAccounting')">
-            <div class="tool-icon-wrapper" style="background: #805ad5;">🧾</div>
-            <div>
-              <h3>記帳</h3>
-              <p style="font-size:11px; color:var(--text-muted);">成員結算與明細</p>
-            </div>
-          </div>
-
-          <div class="tool-card" onclick="navigateToSubPage('pageToolPrep')">
-            <div class="tool-icon-wrapper" style="background: #dd6b20;">🎒</div>
-            <div>
-              <h3>事前準備</h3>
-              <p style="font-size:11px; color:var(--text-muted);">隨身包包 • 托運行李</p>
-            </div>
-          </div>
-        </div>
-      </div>
-
     </div>
 
     <button class="fab-add read-mode-hide" id="spotFabAddBtn" onclick="openSpotModal(-1)">+</button>
+  </div>
+
+  <!-- ===== 3. 匯率換算 (獨立頁面，可由選單直接進入) ===== -->
+  <div id="pageToolExchange" class="app-page">
+    <div class="app-header">
+      <button class="menu-btn" onclick="openDrawer()">☰</button>
+      <h1>匯率換算</h1>
+    </div>
+    <div class="container">
+      <div class="exchange-top-box">
+        <div class="exchange-top-title">
+          <span>🧮 匯率換算 (台銀即期: <span id="currentRateDisplay">--</span>)</span>
+        </div>
+        <div style="display:flex; align-items:center; gap:8px;">
+          <div class="exchange-input-container">
+            <input type="number" id="topJpyInput" placeholder="日幣 JPY" oninput="calcTopExchange()">
+            <button class="input-clear-btn" onclick="clearJpyInput()">✕</button>
+          </div>
+          <span style="font-weight:bold; color:var(--text-muted);">➔</span>
+          <div style="flex:1; font-weight:900; font-size:16px; color:var(--primary-navy);">
+            NT$ <span id="topTwdResult">0</span>
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
 
   <!-- ===== 景點編輯 Modal ===== -->
@@ -430,7 +451,7 @@
   <!-- ===== 4. 航班 / 天氣 ===== -->
   <div id="pageToolFlight" class="app-page">
     <div class="app-header">
-      <button class="back-btn btn-rounded-light" onclick="backToToolkit()">‹ 工具箱</button>
+      <button class="menu-btn" onclick="openDrawer()">☰</button>
       <h1>航班 / 天氣</h1>
     </div>
     <div class="container">
@@ -452,7 +473,7 @@
   <!-- ===== 5. 必買清單 ===== -->
   <div id="pageToolShopping" class="app-page">
     <div class="app-header">
-      <button class="back-btn btn-rounded-light" onclick="backToToolkit()">‹ 工具箱</button>
+      <button class="menu-btn" onclick="openDrawer()">☰</button>
       <h1>必買清單</h1>
     </div>
     <div class="container">
@@ -486,7 +507,7 @@
   <!-- ===== 6. 記帳頁面 ===== -->
   <div id="pageToolAccounting" class="app-page">
     <div class="app-header">
-      <button class="back-btn btn-rounded-light" onclick="backToToolkit()">‹ 工具箱</button>
+      <button class="menu-btn" onclick="openDrawer()">☰</button>
       <h1>旅遊記帳</h1>
     </div>
     <div class="container">
@@ -644,7 +665,7 @@
   <!-- ===== 7. 事前準備 ===== -->
   <div id="pageToolPrep" class="app-page">
     <div class="app-header">
-      <button class="back-btn btn-rounded-light" onclick="backToToolkit()">‹ 工具箱</button>
+      <button class="menu-btn" onclick="openDrawer()">☰</button>
       <h1>事前準備</h1>
     </div>
     <div class="container">
@@ -667,6 +688,42 @@
   <div id="lightboxModal" onclick="closeLightbox()">
     <img id="lightboxImg" src="" alt="放大圖片">
   </div>
+
+  <!-- ===== 側邊抽屜選單 ===== -->
+  <div class="drawer-overlay" id="drawerOverlay" onclick="closeDrawer()"></div>
+  <div class="side-drawer" id="sideDrawer">
+    <div class="drawer-header">
+      <span class="drawer-header-title">選單 MENU</span>
+      <button class="drawer-close" onclick="closeDrawer()">✕</button>
+    </div>
+    <div class="drawer-menu">
+      <button class="drawer-item" data-page="pageDetail" onclick="goToTripOverview()">
+        <span class="drawer-item-icon">🗺️</span><span>行程總覽</span>
+      </button>
+      <button class="drawer-item" data-page="pageToolExchange" onclick="goToSubPage('pageToolExchange')">
+        <span class="drawer-item-icon">🧮</span><span>匯率換算</span>
+      </button>
+      <div class="drawer-divider"></div>
+      <button class="drawer-item" data-page="pageToolFlight" onclick="goToSubPage('pageToolFlight')">
+        <span class="drawer-item-icon">✈️</span><span>航班 / 天氣</span>
+      </button>
+      <button class="drawer-item" data-page="pageToolShopping" onclick="goToSubPage('pageToolShopping')">
+        <span class="drawer-item-icon">🛍️</span><span>必買清單</span>
+      </button>
+      <button class="drawer-item" data-page="pageToolPrep" onclick="goToSubPage('pageToolPrep')">
+        <span class="drawer-item-icon">🎒</span><span>事前準備</span>
+      </button>
+      <button class="drawer-item" data-page="pageToolAccounting" onclick="goToSubPage('pageToolAccounting')">
+        <span class="drawer-item-icon">🧾</span><span>記帳</span>
+      </button>
+    </div>
+    <div class="drawer-footer">
+      <button class="btn-rounded-light" style="width:100%; justify-content:center;" onclick="goToHome(); closeDrawer();">🏠 回首頁</button>
+    </div>
+  </div>
+
+  <!-- ===== 左下角：回首頁懸浮按鈕 (行程總覽與所有工具頁皆顯示) ===== -->
+  <button class="fab-home" id="globalHomeBtn" onclick="goToHome()" title="回首頁">🏠</button>
 
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
@@ -717,6 +774,8 @@
     let map = null, markers = [];
     let currentJpyRate = 0.21;
     let expenseGroupMode = 'date';
+    let currentPageId = 'pageHome';
+    const LAST_VIEW_KEY = 'TRIP_APP_LAST_VIEW';
 
     function saveData() {
       try {
@@ -755,9 +814,49 @@
 
     function init() {
       loadData();
-      renderTripList();
       fetchJpyRate();
       setupDropzones();
+      restoreLastView();
+    }
+
+    /* ===== 頁面狀態記憶 (重整後停留在上次頁面，但工具箱子頁一律回到行程總覽) ===== */
+    function saveLastView(pageId) {
+      currentPageId = pageId;
+      toggleHomeFabVisibility();
+      updateDrawerHighlight();
+      try {
+        localStorage.setItem(LAST_VIEW_KEY, JSON.stringify({
+          page: pageId, tripIdx: currentTripIdx, dayIdx: currentDayIdx
+        }));
+      } catch (e) {}
+    }
+
+    function toggleHomeFabVisibility() {
+      const btn = document.getElementById('globalHomeBtn');
+      if (!btn) return;
+      btn.style.display = (currentPageId === 'pageHome') ? 'none' : 'flex';
+    }
+
+    function updateDrawerHighlight() {
+      document.querySelectorAll('.drawer-item').forEach(item => {
+        item.classList.toggle('current-page', item.dataset.page === currentPageId);
+      });
+    }
+
+    function restoreLastView() {
+      let state = null;
+      try {
+        const raw = localStorage.getItem(LAST_VIEW_KEY);
+        if (raw) state = JSON.parse(raw);
+      } catch (e) {}
+
+      // 只要上次停留在「行程總覽」或任何工具子頁面，重整後一律回到行程總覽，
+      // 絕不停留在工具箱相關子頁面；若上次在首頁或找不到有效紀錄，才回首頁。
+      if (state && state.page && state.page !== 'pageHome' && allTrips[state.tripIdx]) {
+        openTripDetail(state.tripIdx, state.dayIdx || 0);
+      } else {
+        goToHome();
+      }
     }
 
     /* 圖片放大 Lightbox */
@@ -898,23 +997,32 @@
       }
     }
 
-    function openTripDetail(index) {
+    function openTripDetail(index, dayIdx = 0) {
       currentTripIdx = index;
-      currentDayIdx = 0;
+      currentDayIdx = dayIdx;
 
       updateTripHeaderInfo();
       document.querySelectorAll('.app-page').forEach(p => p.classList.remove('active'));
       document.getElementById('pageDetail').classList.add('active');
 
-      switchMainView('trip');
+      saveLastView('pageDetail');
 
       setTimeout(() => { initMap(); renderTabs(); renderDayView(); }, 100);
+    }
+
+    function goToTripOverview() {
+      closeDrawer();
+      if (!allTrips[currentTripIdx]) { goToHome(); return; }
+      document.querySelectorAll('.app-page').forEach(p => p.classList.remove('active'));
+      document.getElementById('pageDetail').classList.add('active');
+      saveLastView('pageDetail');
     }
 
     function goToHome() {
       document.querySelectorAll('.app-page').forEach(p => p.classList.remove('active'));
       document.getElementById('pageHome').classList.add('active');
       renderTripList();
+      saveLastView('pageHome');
     }
 
     function updateTripHeaderInfo() {
@@ -973,7 +1081,6 @@
 
     function initMap() {
       if (!map) {
-        // 設定 scrollWheelZoom: false，防止地圖攔截頁面上下滾動
         map = L.map('map', { scrollWheelZoom: false }).setView([34.6937, 135.5023], 12);
         L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png').addTo(map);
       }
@@ -1079,6 +1186,7 @@
       currentDayIdx = index;
       renderTabs();
       renderDayView();
+      saveLastView('pageDetail');
     }
 
     function openSpotModal(spotIdx = -1) {
@@ -1163,28 +1271,27 @@
       }
     }
 
-    function switchMainView(view) {
-      document.getElementById('navTripBtn').classList.toggle('active', view === 'trip');
-      document.getElementById('navToolsBtn').classList.toggle('active', view === 'tools');
-      document.getElementById('tripViewSection').style.display = (view === 'trip') ? 'block' : 'none';
-      document.getElementById('spotFabAddBtn').style.display = (view === 'trip') ? 'flex' : 'none';
-      document.getElementById('toolsViewSection').style.display = (view === 'tools') ? 'block' : 'none';
-      document.getElementById('map').style.display = (view === 'trip') ? 'block' : 'none';
+    /* ===== 側邊抽屜選單開關 ===== */
+    function openDrawer() {
+      document.getElementById('sideDrawer').classList.add('active');
+      document.getElementById('drawerOverlay').classList.add('active');
+    }
+    function closeDrawer() {
+      document.getElementById('sideDrawer').classList.remove('active');
+      document.getElementById('drawerOverlay').classList.remove('active');
     }
 
-    function navigateToSubPage(pageId) {
+    /* 從選單直接跳到任一工具子頁面 */
+    function goToSubPage(pageId) {
       document.querySelectorAll('.app-page').forEach(p => p.classList.remove('active'));
       document.getElementById(pageId).classList.add('active');
+      if (pageId === 'pageToolExchange') { calcTopExchange(); }
       if (pageId === 'pageToolFlight') { renderFlightInfo(); fetchWeather(); }
       if (pageId === 'pageToolShopping') { renderShoppingAreaSelectOptions(); renderShoppingBoxes(); }
       if (pageId === 'pageToolAccounting') { initAccountingPage(); }
       if (pageId === 'pageToolPrep') { renderPrepList(); }
-    }
-
-    function backToToolkit() {
-      document.querySelectorAll('.app-page').forEach(p => p.classList.remove('active'));
-      document.getElementById('pageDetail').classList.add('active');
-      switchMainView('tools');
+      closeDrawer();
+      saveLastView(pageId);
     }
 
     function calcTopExchange() {
