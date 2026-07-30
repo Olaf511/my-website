@@ -3,7 +3,10 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <title>TRIP TOOLKIT PRO - 柔藍版</title>
+  <title>旅遊行程</title>
+  <meta name="description" content="夫之旅" />
+  <meta property="og:title" content="旅遊行程" />
+  <meta property="og:description" content="夫之旅" />
 
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 
@@ -41,7 +44,7 @@
       color: var(--primary-navy); padding: 12px 16px; text-align: center;
       border-bottom: 1px solid var(--border-color); box-shadow: 0 2px 6px rgba(0,0,0,0.04);
     }
-    .app-header h1 { font-size: 16px; font-weight: 800; }
+    .app-header h1 { font-size: 16px; font-weight: 800; display: flex; align-items: center; justify-content: center; gap: 6px; }
 
     .btn-rounded-light {
       background: var(--soft-blue); border: 1px solid #bee3f8; color: var(--primary-navy);
@@ -256,6 +259,7 @@
       display: flex; align-items: center; justify-content: center; font-size: 13px !important;
       color: var(--text-muted); cursor: pointer; padding: 0 !important;
     }
+    .modal-title-with-icon { display: inline-flex; align-items: center; gap: 6px; }
 
     .form-group { margin-bottom: 14px; position: relative; }
     .form-group label { display: block; font-size: 12px; color: var(--text-muted); margin-bottom: 6px; font-weight: 800; }
@@ -270,18 +274,44 @@
     .form-row { display: flex; gap: 10px; }
     .form-row .form-group { flex: 1; min-width: 0; }
 
+    /* 雙欄等寬表單列：手機窄螢幕時自動改為單欄堆疊，避免原生日期/時間欄位撐爆版面 */
+    .form-row-eq { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .form-row-eq .form-group { min-width: 0; }
+    @media (max-width: 480px) {
+      .form-row-eq { grid-template-columns: 1fr; }
+    }
+
     .modal-footer { display: flex; gap: 10px; margin-top: 18px; }
     .modal-btn { flex: 1; padding: 13px; border-radius: 14px; border: none; font-weight: 800; cursor: pointer; font-size: 14px; text-align: center; }
     .modal-btn-save { background: var(--primary-navy); color: #fff; box-shadow: 0 6px 16px rgba(43,108,176,0.28); }
     .modal-btn-cancel { background: #fff; color: var(--text-muted); border: 1.5px solid #e2e8f0; }
 
     .split-check-box {
-      display: flex; align-items: center; justify-content: center; gap: 6px;
+      display: flex; align-items: center; justify-content: center; gap: 6px; width: 100%;
       padding: 12px 8px; border: 1.5px solid #e2e8f0; border-radius: 12px; background: #f8fafc;
       font-size: 13px; font-weight: 700; color: var(--text-main); cursor: pointer; white-space: nowrap;
       box-sizing: border-box; height: 44px; transition: all .15s;
     }
     .split-check-box input[type="checkbox"] { width: 17px; height: 17px; cursor: pointer; margin: 0; flex-shrink: 0; }
+
+    /* 天氣預報：固定欄寬 grid，避免手機版換行、也避免個位數/十位數導致對不齊 */
+    .weather-row {
+      display: grid; grid-template-columns: 50px 56px 56px 80px 46px;
+      align-items: center; gap: 4px; padding: 10px 0; border-bottom: 1px dashed #edf2f7;
+      font-size: 12px; font-weight: 700; color: var(--text-main);
+    }
+    .weather-row > span {
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+      font-variant-numeric: tabular-nums;
+    }
+    .weather-date { color: var(--text-muted); font-weight: 600; font-size: 11px; }
+    .weather-icon { text-align: left; }
+    .weather-temp { text-align: right; }
+    .weather-pop { color: #3182ce; text-align: right; }
+    .weather-not-yet { color: var(--text-muted); font-weight: 600; font-size: 11px; text-align: right; white-space: nowrap; }
+    @media (max-width: 380px) {
+      .weather-row { grid-template-columns: 44px 50px 50px 72px 42px; font-size: 11px; }
+    }
 
     .read-mode-hide { display: block; }
     .is-read-mode .read-mode-hide { display: none !important; }
@@ -343,7 +373,7 @@
     .page-icon-badge {
       display: inline-flex; align-items: center; justify-content: center;
       width: 22px; height: 22px; border-radius: 8px; color: #fff; font-size: 12px;
-      margin-right: 5px; vertical-align: -5px;
+      flex-shrink: 0;
     }
 
     /* 空清單友善提示 */
@@ -478,8 +508,8 @@
       </div>
       <input type="hidden" id="editSpotIndex" value="-1">
 
-      <div class="form-row">
-        <div class="form-group" style="flex:1;">
+      <div class="form-row form-row-eq">
+        <div class="form-group">
           <label>類別</label>
           <select id="inputCategory">
             <option value="景點">景點</option>
@@ -488,24 +518,24 @@
             <option value="住宿">住宿</option>
           </select>
         </div>
-        <div class="form-group" style="flex:1;">
-          <label>時間 (24小時制)</label>
-          <input type="time" id="inputTime" value="09:00">
+        <div class="form-group">
+          <label>時間</label>
+          <input type="text" id="inputTime" value="09:00" inputmode="numeric" pattern="[0-9]*" maxlength="5" oninput="formatTimeInput(this)">
         </div>
       </div>
 
       <div class="form-group">
         <label>名稱</label>
-        <input type="text" id="inputTitle" placeholder="如: 平安神宮">
+        <input type="text" id="inputTitle" placeholder="">
       </div>
 
       <div class="form-group">
         <label>地址 / 關鍵字</label>
-        <input type="text" id="inputAddress" placeholder="輸入關鍵字或地址">
+        <input type="text" id="inputAddress" placeholder="">
       </div>
 
       <div class="form-group">
-        <label>景點圖片 (系統會嘗試從維基百科自動抓取，也可貼網址、選檔案、拖曳或手動覆蓋)</label>
+        <label>加入圖片</label>
         <div style="display:flex; gap:6px; margin-bottom:4px;">
           <input type="text" id="inputImgUrl" placeholder="圖片網址 http..." style="flex:1;">
           <button type="button" class="btn-rounded-light" id="autoFetchImgBtn" onclick="autoFetchSpotImage()" style="white-space:nowrap;">🔍 自動抓圖</button>
@@ -560,17 +590,23 @@
         <label>✈️ 航班號碼</label>
         <input type="text" id="flightEditCode" placeholder="如: CI156">
       </div>
-      <div class="form-group">
-        <label>🗺️ 航線 (格式: 出發地 ➔ 目的地)</label>
-        <input type="text" id="flightEditRoute" placeholder="如: TPE ➔ KIX">
-      </div>
-      <div class="form-row">
+      <div class="form-row form-row-eq">
         <div class="form-group">
-          <label>🛫 出發時間</label>
+          <label>🛫 出發地</label>
+          <input type="text" id="flightEditFrom" placeholder="如: TPE">
+        </div>
+        <div class="form-group">
+          <label>🛬 目的地</label>
+          <input type="text" id="flightEditTo" placeholder="如: KIX">
+        </div>
+      </div>
+      <div class="form-row form-row-eq">
+        <div class="form-group">
+          <label>🕐 出發時間</label>
           <input type="text" inputmode="numeric" pattern="[0-9]*" maxlength="5" id="flightEditDepTime" placeholder="0850" oninput="formatTimeInput(this)">
         </div>
         <div class="form-group">
-          <label>🛬 抵達時間</label>
+          <label>🕐 抵達時間</label>
           <input type="text" inputmode="numeric" pattern="[0-9]*" maxlength="5" id="flightEditArrTime" placeholder="1230" oninput="formatTimeInput(this)">
         </div>
       </div>
@@ -599,7 +635,7 @@
   <div class="modal-overlay" id="shopItemModal">
     <div class="modal-box">
       <div class="modal-header">
-        <span><span class="page-icon-badge" style="background:#319795;">➕</span>新增採購項目</span>
+        <span class="modal-title-with-icon"><span class="page-icon-badge" style="background:#319795;">➕</span>新增採購項目</span>
         <button onclick="closeShopItemModal()">✕</button>
       </div>
       <div class="form-group">
@@ -612,7 +648,7 @@
       </div>
       <div class="form-group">
         <label>🛍️ 商品名稱</label>
-        <input type="text" id="shopItemInput" placeholder="如: EVE、合利他命">
+        <input type="text" id="shopItemInput" placeholder="">
       </div>
       <div class="form-group">
         <label>📷 照片 (選填：若不需要可不選，或自行手動上傳)</label>
@@ -685,11 +721,11 @@
   <div class="modal-overlay" id="expenseModal">
     <div class="modal-box">
       <div class="modal-header">
-        <span><span class="page-icon-badge" style="background:#805ad5;">💰</span>記一筆支出</span>
+        <span class="modal-title-with-icon"><span class="page-icon-badge" style="background:#805ad5;">💰</span>記一筆支出</span>
         <button onclick="closeExpenseModal()">✕</button>
       </div>
 
-      <div class="form-row" style="display:grid; grid-template-columns: 1fr 1fr;">
+      <div class="form-row form-row-eq">
         <div class="form-group">
           <label>📅 日期</label>
           <input type="date" id="expDate">
@@ -703,12 +739,14 @@
             <option value="門票">門票</option>
             <option value="藥妝">藥妝</option>
             <option value="代購">代購</option>
+            <option value="機票">機票</option>
+            <option value="住宿">住宿</option>
             <option value="其他">其他</option>
           </select>
         </div>
       </div>
 
-      <div class="form-row" style="display:grid; grid-template-columns: 1fr 1fr;">
+      <div class="form-row form-row-eq">
         <div class="form-group">
           <label>👤 付款人</label>
           <select id="expPayerSelect"></select>
@@ -724,13 +762,13 @@
 
       <div class="form-group">
         <label>📝 品項名稱</label>
-        <input type="text" id="expTitle" placeholder="如: 拉麵 / 住宿">
+        <input type="text" id="expTitle" placeholder="">
       </div>
 
       <div class="form-row" style="display:grid; grid-template-columns: 1fr 96px;">
         <div class="form-group" style="margin-bottom:0;">
           <label>💰 金額</label>
-          <input type="text" inputmode="decimal" pattern="[0-9]*" id="expAmount" placeholder="輸入金額">
+          <input type="text" inputmode="decimal" pattern="[0-9]*" id="expAmount" placeholder="">
         </div>
         <div class="form-group" style="margin-bottom:0;">
           <label>&nbsp;</label>
@@ -755,7 +793,7 @@
         <button onclick="closeEditExpenseModal()">✕</button>
       </div>
       <input type="hidden" id="editExpIndex">
-      <div class="form-row" style="display:grid; grid-template-columns: 1fr 1fr;">
+      <div class="form-row form-row-eq">
         <div class="form-group"><label>📅 日期</label><input type="date" id="editExpDate"></div>
         <div class="form-group">
           <label>🏷️ 類別</label>
@@ -766,11 +804,13 @@
             <option value="門票">門票</option>
             <option value="藥妝">藥妝</option>
             <option value="代購">代購</option>
+            <option value="機票">機票</option>
+            <option value="住宿">住宿</option>
             <option value="其他">其他</option>
           </select>
         </div>
       </div>
-      <div class="form-row" style="display:grid; grid-template-columns: 1fr 1fr;">
+      <div class="form-row form-row-eq">
         <div class="form-group"><label>👤 付款人</label><select id="editExpPayerSelect"></select></div>
         <div class="form-group">
           <label>💴 幣別</label>
@@ -809,15 +849,35 @@
     <div class="container">
       <div class="section-card">
         <div class="section-card-title">🎒 行前檢查清單</div>
-        <div class="form-row" style="margin-bottom:10px;">
-          <select id="prepCategorySelect" style="width:110px; font-weight:bold;">
-            <option value="隨身包包">隨身包包</option>
-            <option value="托運行李">托運行李</option>
-          </select>
-          <input type="text" id="prepItemInput" placeholder="新增項目，如: 護照、網卡" style="flex:1; padding:8px; border:1px solid var(--border-color); border-radius:8px; font-size:12px;">
-          <button class="btn-rounded-light" onclick="addPrepItem()">新增</button>
-        </div>
         <div id="prepList"></div>
+      </div>
+    </div>
+
+    <!-- 右下角懸浮按鈕 (+) 觸發新增打包項目 -->
+    <button class="fab-add" onclick="openPrepItemModal()">+</button>
+  </div>
+
+  <!-- ===== 新增打包項目 Modal ===== -->
+  <div class="modal-overlay" id="prepItemModal">
+    <div class="modal-box">
+      <div class="modal-header">
+        <span class="modal-title-with-icon"><span class="page-icon-badge" style="background:#dd6b20;">➕</span>新增打包項目</span>
+        <button onclick="closePrepItemModal()">✕</button>
+      </div>
+      <div class="form-group">
+        <label>📦 分類</label>
+        <select id="prepCategorySelect">
+          <option value="隨身包包">隨身包包</option>
+          <option value="托運行李">托運行李</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>📝 項目名稱</label>
+        <input type="text" id="prepItemInput" placeholder="">
+      </div>
+      <div class="modal-footer">
+        <button class="modal-btn modal-btn-cancel" onclick="closePrepItemModal()">取消</button>
+        <button class="modal-btn modal-btn-save" onclick="addPrepItem()">儲存</button>
       </div>
     </div>
   </div>
@@ -895,8 +955,6 @@
       title: "大阪京都之旅",
       startDate: "2026/10/16",
       endDate: "2026/10/24",
-      flightOut: { route: "TPE ➔ KIX", time: "08:50 - 12:30", code: "CI156" },
-      flightIn: { route: "KIX ➔ TPE", time: "14:00 - 16:00", code: "CI157" },
       payers: ["夫", "楊"],
       expenses: [], 
       shoppingList: [{ area: "心齋橋藥妝", text: "EVE", img: "", done: false }], 
@@ -1135,8 +1193,7 @@
         title: title,
         startDate: dates ? dates.split('-')[0].trim() : "2026/10/16",
         endDate: dates ? dates.split('-')[1]?.trim() || "2026/10/24" : "2026/10/24",
-        flightOut: { route: "TPE ➔ KIX", time: "08:50 - 12:30", code: "航班" },
-        flightIn: { route: "KIX ➔ TPE", time: "14:00 - 16:00", code: "航班" },
+        flightOut: {}, flightIn: {},
         payers: ["夫", "楊"],
         expenses: [], shoppingList: [], prepList: [], days: []
       };
@@ -1638,7 +1695,8 @@
       const data = Object.values(totals);
       const colorMap = {
         '吃喝': '#dd6b20', '玩樂': '#805ad5', '夫夫': '#2b6cb0',
-        '門票': '#319795', '藥妝': '#d69e2e', '代購': '#e53e3e', '其他': '#a0aec0'
+        '門票': '#319795', '藥妝': '#d69e2e', '代購': '#e53e3e',
+        '機票': '#3182ce', '住宿': '#38a169', '其他': '#a0aec0'
       };
       const bgColors = labels.map(l => colorMap[l] || '#cbd5e0');
 
@@ -1946,9 +2004,14 @@
     }
 
     function renderTicketCard(direction, info, label) {
-      const parts = (info.route || '').split('➔').map(s => s.trim());
-      const from = parts[0] || '---';
-      const to = parts[1] || (parts[0] ? '' : '---');
+      // 相容舊資料：舊版本是 route 字串 "TPE ➔ KIX"，拆開變成 fromAirport/toAirport
+      let from = info.fromAirport, to = info.toAirport;
+      if (!from && !to && info.route) {
+        const parts = info.route.split('➔').map(s => s.trim());
+        from = parts[0]; to = parts[1];
+      }
+      from = from || '---';
+      to = to || '---';
       const icon = direction === 'out' ? '🛫' : '🛬';
 
       // 相容舊資料：舊版本只有單一 time 字串 (如 "08:50 - 12:30")，拆開顯示
@@ -1982,8 +2045,8 @@
 
     function renderFlightInfo() {
       const trip = allTrips[currentTripIdx];
-      const flightOut = trip.flightOut || { route: "TPE ➔ KIX", depTime: "08:50", arrTime: "12:30", code: "CI156" };
-      const flightIn = trip.flightIn || { route: "KIX ➔ TPE", depTime: "14:00", arrTime: "16:00", code: "CI157" };
+      const flightOut = trip.flightOut || {};
+      const flightIn = trip.flightIn || {};
 
       document.getElementById('flightDisplay').innerHTML =
         renderTicketCard('out', flightOut, '去程 OUTBOUND') +
@@ -1994,6 +2057,12 @@
       const trip = allTrips[currentTripIdx];
       const info = (direction === 'out' ? trip.flightOut : trip.flightIn) || {};
 
+      let from = info.fromAirport || '', to = info.toAirport || '';
+      if (!from && !to && info.route) {
+        const parts = info.route.split('➔').map(s => s.trim());
+        from = parts[0] || ''; to = parts[1] || '';
+      }
+
       let depTime = info.depTime || '', arrTime = info.arrTime || '';
       if (!depTime && !arrTime && info.time) {
         const t = info.time.split('-').map(s => s.trim());
@@ -2003,7 +2072,8 @@
       document.getElementById('flightEditDirection').value = direction;
       document.getElementById('flightEditTitle').innerText = direction === 'out' ? '✏️ 編輯去程資訊' : '✏️ 編輯回程資訊';
       document.getElementById('flightEditCode').value = info.code || '';
-      document.getElementById('flightEditRoute').value = info.route || (direction === 'out' ? 'TPE ➔ KIX' : 'KIX ➔ TPE');
+      document.getElementById('flightEditFrom').value = from;
+      document.getElementById('flightEditTo').value = to;
       document.getElementById('flightEditDepTime').value = depTime;
       document.getElementById('flightEditArrTime').value = arrTime;
       document.getElementById('flightEditModal').classList.add('active');
@@ -2016,11 +2086,12 @@
     function saveFlightEdit() {
       const direction = document.getElementById('flightEditDirection').value;
       const code = document.getElementById('flightEditCode').value;
-      const route = document.getElementById('flightEditRoute').value;
+      const fromAirport = document.getElementById('flightEditFrom').value;
+      const toAirport = document.getElementById('flightEditTo').value;
       const depTime = document.getElementById('flightEditDepTime').value;
       const arrTime = document.getElementById('flightEditArrTime').value;
       const trip = allTrips[currentTripIdx];
-      const obj = { code, route, depTime, arrTime };
+      const obj = { code, fromAirport, toAirport, depTime, arrTime };
       if (direction === 'out') trip.flightOut = obj; else trip.flightIn = obj;
       saveData();
       renderFlightInfo();
@@ -2030,36 +2101,60 @@
     async function fetchWeather() {
       const container = document.getElementById('weatherDisplay');
       container.innerHTML = "天氣加載中...";
+      const trip = allTrips[currentTripIdx];
       try {
-        const res = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=34.6937&longitude=135.5023&daily=temperature_2m_max,temperature_2m_min,precipitation_probability_max,weathercode&timezone=Asia%2FTokyo`);
+        // 抓最多 16 天的每日預報，並用實際日期 (YYYY-MM-DD) 比對，而不是用天數餘數硬套
+        const res = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=34.6937&longitude=135.5023&daily=temperature_2m_max,temperature_2m_min,precipitation_probability_max,weathercode&timezone=Asia%2FTokyo&forecast_days=16`);
         const data = await res.json();
         container.innerHTML = '';
-        allTrips[currentTripIdx].days.forEach((day, i) => {
-          const maxTemp = data.daily ? Math.round(data.daily.temperature_2m_max[i % 7]) : 22;
-          const minTemp = data.daily ? Math.round(data.daily.temperature_2m_min[i % 7]) : 15;
-          const pop = data.daily ? data.daily.precipitation_probability_max[i % 7] : 10;
-          const code = data.daily ? data.daily.weathercode[i % 7] : 0;
 
-          let weatherIcon = "☀️ 晴朗";
-          if (code >= 1 && code <= 3) weatherIcon = "⛅ 多雲";
-          if (code >= 51 && code <= 67) weatherIcon = "🌧️ 陣雨";
-          if (code >= 80) weatherIcon = "🌩️ 雷雨";
+        const timeList = (data.daily && data.daily.time) ? data.daily.time : [];
+
+        trip.days.forEach((day) => {
+          const idx = timeList.indexOf(day.rawDate);
+
+          if (idx === -1) {
+            // 超出目前可預測的範圍 (天氣預報通常只能準確預測約 10~16 天內)
+            container.innerHTML += `
+              <div class="weather-row">
+                <span class="weather-day">DAY ${day.dayNum}</span>
+                <span class="weather-date">${day.dateStr}</span>
+                <span class="weather-not-yet" style="grid-column: span 3;">尚未到預測範圍，出發前 2 週內再查看</span>
+              </div>
+            `;
+            return;
+          }
+
+          const maxTemp = Math.round(data.daily.temperature_2m_max[idx]);
+          const minTemp = Math.round(data.daily.temperature_2m_min[idx]);
+          const pop = data.daily.precipitation_probability_max[idx];
+          const code = data.daily.weathercode[idx];
+
+          let weatherIcon = "☀️晴朗";
+          if (code >= 1 && code <= 3) weatherIcon = "⛅多雲";
+          if (code >= 51 && code <= 67) weatherIcon = "🌧️陣雨";
+          if (code >= 80) weatherIcon = "🌩️雷雨";
 
           container.innerHTML += `
-            <div style="display:flex; justify-content:space-between; align-items:center; padding:10px 0; border-bottom:1px dashed #edf2f7; font-size:13px;">
-              <div style="font-weight:bold; display:flex; align-items:center; gap:8px;">
-                <span style="min-width:60px;">DAY ${day.dayNum}</span>
-                <span style="font-size:12px; color:var(--text-muted);">${day.dateStr}</span>
-              </div>
-              <div style="display:flex; align-items:center; gap:12px; font-weight:bold;">
-                <span style="min-width:70px; text-align:right;">${weatherIcon}</span>
-                <span style="min-width:75px; text-align:right;">${minTemp}°C - ${maxTemp}°C</span>
-                <span style="color:#3182ce; min-width:55px; text-align:right;">🌧️ ${pop}%</span>
-              </div>
+            <div class="weather-row">
+              <span class="weather-day">DAY ${day.dayNum}</span>
+              <span class="weather-date">${day.dateStr}</span>
+              <span class="weather-icon">${weatherIcon}</span>
+              <span class="weather-temp">${minTemp}°C-${maxTemp}°C</span>
+              <span class="weather-pop">🌧️${pop}%</span>
             </div>
           `;
         });
       } catch(e) { container.innerHTML = "無法獲取天氣預報。"; }
+    }
+
+    function openPrepItemModal() {
+      document.getElementById('prepItemInput').value = '';
+      document.getElementById('prepItemModal').classList.add('active');
+    }
+
+    function closePrepItemModal() {
+      document.getElementById('prepItemModal').classList.remove('active');
     }
 
     function addPrepItem() {
@@ -2068,6 +2163,7 @@
       if (!input.value) return;
       allTrips[currentTripIdx].prepList.push({ category: cat, text: input.value, done: false });
       input.value = ''; saveData(); renderPrepList();
+      closePrepItemModal();
     }
 
     function renderPrepList() {
