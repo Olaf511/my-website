@@ -520,7 +520,7 @@
         </div>
         <div class="form-group">
           <label>時間</label>
-          <input type="text" id="inputTime" value="09:00" inputmode="numeric" pattern="[0-9]*" maxlength="5" oninput="formatTimeInput(this)">
+          <input type="time" id="inputTime" value="09:00">
         </div>
       </div>
 
@@ -603,11 +603,11 @@
       <div class="form-row form-row-eq">
         <div class="form-group">
           <label>🕐 出發時間</label>
-          <input type="text" inputmode="numeric" pattern="[0-9]*" maxlength="5" id="flightEditDepTime" placeholder="0850" oninput="formatTimeInput(this)">
+          <input type="time" id="flightEditDepTime">
         </div>
         <div class="form-group">
           <label>🕐 抵達時間</label>
-          <input type="text" inputmode="numeric" pattern="[0-9]*" maxlength="5" id="flightEditArrTime" placeholder="1230" oninput="formatTimeInput(this)">
+          <input type="time" id="flightEditArrTime">
         </div>
       </div>
       <div class="modal-footer">
@@ -848,7 +848,10 @@
     </div>
     <div class="container">
       <div class="section-card">
-        <div class="section-card-title">🎒 行前檢查清單</div>
+        <div class="section-card-title">
+          <span>🎒 行前檢查清單</span>
+          <button class="btn-rounded-light" onclick="resetPrepChecks()">🔄 一鍵取消勾選</button>
+        </div>
         <div id="prepList"></div>
       </div>
     </div>
@@ -950,6 +953,15 @@
       } catch(e){}
     }
 
+    function getDefaultPrepList() {
+      const carryItems = ["護照", "面紙/濕巾", "飲料提袋", "行充", "日幣/好用的錢包", "交通卡", "悠遊卡", "綁頭髮的", "網卡/卡針"];
+      const checkedItems = ["充電線", "內衣褲/襪子", "衣物", "睡衣", "擦頭髮的", "洗臉巾", "面膜", "夫髮箍", "牙刷/牙膏", "洗面乳/潤絲", "眼鏡/隱眼盒", "保養液/食鹽水", "夾鏈袋", "雨衣/傘", "鯊魚袋", "裝髒衣袋", "沐浴球", "衛生棉"];
+      return [
+        ...carryItems.map(text => ({ category: "隨身包包", text, done: false })),
+        ...checkedItems.map(text => ({ category: "托運行李", text, done: false }))
+      ];
+    }
+
     const DEFAULT_TRIPS = [{
       id: "trip-1",
       title: "大阪京都之旅",
@@ -957,8 +969,9 @@
       endDate: "2026/10/24",
       payers: ["夫", "楊"],
       expenses: [], 
-      shoppingList: [{ area: "心齋橋藥妝", text: "EVE", img: "", done: false }], 
-      prepList: [{ category: "隨身包包", text: "護照確認", done: true }, { category: "托運行李", text: "衣物盥洗包", done: false }],
+      shoppingList: [], 
+      shoppingAreas: ["藥妝店", "機場"],
+      prepList: getDefaultPrepList(),
       days: []
     }];
 
@@ -1195,7 +1208,7 @@
         endDate: dates ? dates.split('-')[1]?.trim() || "2026/10/24" : "2026/10/24",
         flightOut: {}, flightIn: {},
         payers: ["夫", "楊"],
-        expenses: [], shoppingList: [], prepList: [], days: []
+        expenses: [], shoppingList: [], shoppingAreas: ["藥妝店", "機場"], prepList: getDefaultPrepList(), days: []
       };
 
       generateDaysFromDates(newTrip);
@@ -1884,7 +1897,9 @@
       const trip = allTrips[currentTripIdx];
       const select = document.getElementById('shopAreaSelect');
       select.innerHTML = '';
-      const areas = new Set(trip.shoppingList.map(i => i.area || "心齋橋藥妝"));
+      const presetAreas = trip.shoppingAreas || [];
+      const itemAreas = trip.shoppingList.map(i => i.area || "心齋橋藥妝");
+      const areas = new Set([...presetAreas, ...itemAreas]);
       areas.forEach(a => { select.innerHTML += `<option value="${a}">${a}</option>`; });
       select.innerHTML += `<option value="__NEW__">+ 新增其他區域</option>`;
     }
@@ -1912,7 +1927,9 @@
       const selectVal = document.getElementById('shopAreaSelect').value;
       if (selectVal === '__NEW__') return alert("請先選取要刪除的現有區域！");
       if (confirm(`確定要刪除「${selectVal}」區域及其所有採購品項嗎？`)) {
-        allTrips[currentTripIdx].shoppingList = allTrips[currentTripIdx].shoppingList.filter(i => i.area !== selectVal);
+        const trip = allTrips[currentTripIdx];
+        trip.shoppingList = trip.shoppingList.filter(i => i.area !== selectVal);
+        if (trip.shoppingAreas) trip.shoppingAreas = trip.shoppingAreas.filter(a => a !== selectVal);
         saveData(); renderShoppingAreaSelectOptions(); renderShoppingBoxes();
       }
     }
@@ -1921,13 +1938,19 @@
       const selectVal = document.getElementById('shopAreaSelect').value;
       const customArea = document.getElementById('shopAreaCustomInput').value;
       const area = selectVal === '__NEW__' ? (customArea || "新區域") : selectVal;
-      
+
+      const trip = allTrips[currentTripIdx];
+      if (selectVal === '__NEW__') {
+        if (!trip.shoppingAreas) trip.shoppingAreas = [];
+        if (!trip.shoppingAreas.includes(area)) trip.shoppingAreas.push(area);
+      }
+
       const text = document.getElementById('shopItemInput').value;
       const img = document.getElementById('shopImgBase64').value;
 
       if (!text) return alert("請輸入商品名稱！");
 
-      allTrips[currentTripIdx].shoppingList.push({ area, text, img, done: false });
+      trip.shoppingList.push({ area, text, img, done: false });
       saveData();
 
       document.getElementById('shopItemInput').value = '';
@@ -2155,6 +2178,15 @@
 
     function closePrepItemModal() {
       document.getElementById('prepItemModal').classList.remove('active');
+    }
+
+    function resetPrepChecks() {
+      const list = allTrips[currentTripIdx].prepList;
+      if (list.every(i => !i.done)) return;
+      if (!confirm("確定要把所有打包項目都取消勾選嗎？")) return;
+      list.forEach(i => i.done = false);
+      saveData();
+      renderPrepList();
     }
 
     function addPrepItem() {
