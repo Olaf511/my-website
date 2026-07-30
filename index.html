@@ -55,9 +55,15 @@
 
     /* 首頁卡片 */
     .trip-card {
-      background: var(--card-bg); border-radius: 16px; padding: 16px; margin-bottom: 12px;
+      background: var(--card-bg); border-radius: 16px; padding: 14px; margin-bottom: 12px;
       box-shadow: 0 2px 8px rgba(0,0,0,0.03); border: 1px solid var(--border-color);
-      display: flex; justify-content: space-between; align-items: center;
+      display: flex; justify-content: space-between; align-items: center; gap: 12px;
+    }
+    .trip-card-thumb {
+      width: 56px; height: 56px; border-radius: 14px; flex-shrink: 0;
+      background-size: cover; background-position: center;
+      background: linear-gradient(135deg, var(--soft-blue), #dbeafe);
+      display: flex; align-items: center; justify-content: center; font-size: 24px;
     }
     .trip-card-main { cursor: pointer; flex: 1; }
     .trip-card-title { font-size: 17px; font-weight: 800; color: var(--primary-navy); }
@@ -115,7 +121,7 @@
     }
     .day-banner-badge {
       display: flex; align-items: baseline; gap: 2px;
-      background: var(--soft-blue); color: var(--primary-navy); padding: 4px 10px; border-radius: 8px;
+      background: linear-gradient(135deg, var(--soft-blue), #dbeafe); color: var(--primary-navy); padding: 4px 10px; border-radius: 8px;
     }
     .day-banner-badge .big-num { font-size: 22px; font-weight: 900; }
     .day-banner-badge .total-num { font-size: 11px; opacity: 0.7; }
@@ -220,37 +226,62 @@
 
     /* 記帳 3 個獨立框框樣式 (優化手機縮放) */
     .summary-boxes-container {
-      display: grid; grid-template-columns: 1fr 1fr 1.1fr; gap: 6px; margin-top: 8px;
+      display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-top: 8px;
     }
     .summary-box {
-      background: #ffffff; border: 1px solid #bee3f8; border-radius: 12px; padding: 8px 6px; text-align: center;
+      background: #ffffff; border: 1px solid #bee3f8; border-radius: 12px; padding: 10px 4px; text-align: center;
       box-shadow: 0 2px 4px rgba(43, 108, 176, 0.04);
     }
     .summary-box-title { font-size: 11px; font-weight: 800; color: var(--text-muted); }
-    .summary-box-val { font-size: 13px; font-weight: 900; color: var(--primary-navy); margin-top: 3px; word-break: break-all; }
-    .summary-box-sub { font-size: 10px; margin-top: 2px; font-weight: 700; }
+    .summary-box-val { font-size: 14px; font-weight: 900; color: var(--primary-navy); margin-top: 4px; white-space: nowrap; }
+    .summary-box-sub { font-size: 10px; margin-top: 3px; font-weight: 700; }
 
     /* Modal 彈窗 */
     .modal-overlay {
-      position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.6);
+      position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(15,23,42,0.55);
       z-index: 2000; display: none; align-items: center; justify-content: center; padding: 16px;
     }
     .modal-overlay.active { display: flex; }
     .modal-box {
-      background: #fff; width: 100%; max-width: 500px; border-radius: 20px; padding: 20px; max-height: 90vh; overflow-y: auto;
+      background: #fff; width: 100%; max-width: 500px; border-radius: 24px; padding: 22px 20px; max-height: 90vh; overflow-y: auto;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.28);
     }
-    .modal-header { font-size: 16px; font-weight: 800; color: var(--primary-navy); margin-bottom: 12px; display: flex; justify-content: space-between; }
+    .modal-header {
+      font-size: 17px; font-weight: 900; color: var(--primary-navy); margin-bottom: 16px;
+      display: flex; justify-content: space-between; align-items: center; padding-bottom: 14px;
+      border-bottom: 1px solid var(--border-color);
+    }
+    .modal-header button {
+      width: 28px; height: 28px; border-radius: 50%; background: #f1f5f9 !important; border: none;
+      display: flex; align-items: center; justify-content: center; font-size: 13px !important;
+      color: var(--text-muted); cursor: pointer; padding: 0 !important;
+    }
 
-    .form-group { margin-bottom: 10px; position: relative; }
-    .form-group label { display: block; font-size: 11px; color: var(--text-muted); margin-bottom: 4px; font-weight: 700; }
-    .form-group input, .form-group select, .form-group textarea { width: 100%; padding: 8px 10px; border: 1px solid var(--border-color); border-radius: 8px; font-size: 13px; }
+    .form-group { margin-bottom: 14px; position: relative; }
+    .form-group label { display: block; font-size: 12px; color: var(--text-muted); margin-bottom: 6px; font-weight: 800; }
+    .form-group input, .form-group select, .form-group textarea {
+      width: 100%; padding: 12px 14px; border: 1.5px solid #e2e8f0; border-radius: 12px; font-size: 14px;
+      background: #f8fafc; color: var(--text-main); box-sizing: border-box; transition: border-color .15s, background .15s;
+    }
+    .form-group input:focus, .form-group select:focus, .form-group textarea:focus {
+      outline: none; border-color: var(--primary-navy); background: #fff;
+    }
     .form-group textarea { resize: vertical; min-height: 60px; }
-    .form-row { display: flex; gap: 8px; }
-    
-    .modal-footer { display: flex; gap: 10px; margin-top: 14px; }
-    .modal-btn { flex: 1; padding: 10px; border-radius: 10px; border: none; font-weight: 800; cursor: pointer; font-size: 13px; text-align: center; }
-    .modal-btn-save { background: var(--primary-navy); color: #fff; }
-    .modal-btn-cancel { background: #e2e8f0; color: var(--text-muted); }
+    .form-row { display: flex; gap: 10px; }
+    .form-row .form-group { flex: 1; min-width: 0; }
+
+    .modal-footer { display: flex; gap: 10px; margin-top: 18px; }
+    .modal-btn { flex: 1; padding: 13px; border-radius: 14px; border: none; font-weight: 800; cursor: pointer; font-size: 14px; text-align: center; }
+    .modal-btn-save { background: var(--primary-navy); color: #fff; box-shadow: 0 6px 16px rgba(43,108,176,0.28); }
+    .modal-btn-cancel { background: #fff; color: var(--text-muted); border: 1.5px solid #e2e8f0; }
+
+    .split-check-box {
+      display: flex; align-items: center; justify-content: center; gap: 6px;
+      padding: 12px 8px; border: 1.5px solid #e2e8f0; border-radius: 12px; background: #f8fafc;
+      font-size: 13px; font-weight: 700; color: var(--text-main); cursor: pointer; white-space: nowrap;
+      box-sizing: border-box; height: 44px; transition: all .15s;
+    }
+    .split-check-box input[type="checkbox"] { width: 17px; height: 17px; cursor: pointer; margin: 0; flex-shrink: 0; }
 
     .read-mode-hide { display: block; }
     .is-read-mode .read-mode-hide { display: none !important; }
@@ -292,7 +323,10 @@
       border: none; background: none; text-align: left; font-size: 14px; font-weight: 800;
       color: var(--text-main); border-radius: 12px; cursor: pointer; margin-bottom: 2px;
     }
-    .drawer-item .drawer-item-icon { font-size: 18px; width: 22px; text-align: center; }
+    .drawer-item .drawer-item-icon {
+      font-size: 14px; width: 28px; height: 28px; border-radius: 9px; flex-shrink: 0;
+      display: flex; align-items: center; justify-content: center; color: #fff;
+    }
     .drawer-item:active { background: var(--soft-blue); }
     .drawer-item.current-page { background: var(--soft-blue); color: var(--primary-navy); }
 
@@ -306,13 +340,55 @@
       font-size: 20px; color: var(--primary-navy); cursor: pointer; padding: 6px 10px; line-height: 1;
     }
 
-    /* 左下角回首頁懸浮按鈕 */
-    .fab-home {
-      position: fixed; left: 20px; bottom: 20px; width: 52px; height: 52px; border-radius: 26px;
-      background: #ffffff; color: var(--primary-navy); border: 1px solid var(--border-color);
-      box-shadow: 0 6px 18px rgba(0,0,0,0.14); font-size: 22px; cursor: pointer; z-index: 999;
-      display: none; align-items: center; justify-content: center;
+    .page-icon-badge {
+      display: inline-flex; align-items: center; justify-content: center;
+      width: 22px; height: 22px; border-radius: 8px; color: #fff; font-size: 12px;
+      margin-right: 5px; vertical-align: -5px;
     }
+
+    /* 空清單友善提示 */
+    .empty-state { text-align: center; padding: 36px 12px; color: var(--text-muted); }
+    .empty-state .empty-icon { font-size: 34px; display: block; margin-bottom: 10px; }
+    .empty-state .empty-text { font-size: 13px; font-weight: 700; }
+
+    /* ===== 機票造型卡片 ===== */
+    .ticket-card {
+      position: relative; background: linear-gradient(135deg, #ffffff 0%, #f7fafc 100%);
+      border-radius: 16px; padding: 16px 16px 44px; margin-bottom: 14px;
+      border: 1px solid var(--border-color); box-shadow: 0 4px 14px rgba(0,0,0,0.06);
+      border-left: 6px solid var(--primary-navy); overflow: hidden;
+    }
+    .ticket-card.out { border-left-color: #2b6cb0; }
+    .ticket-card.in { border-left-color: #ed8936; }
+    .ticket-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+    .ticket-label {
+      font-size: 11px; font-weight: 900; letter-spacing: 1px; padding: 3px 10px;
+      border-radius: 20px; color: #fff;
+    }
+    .ticket-card.out .ticket-label { background: #2b6cb0; }
+    .ticket-card.in .ticket-label { background: #ed8936; }
+    .ticket-code { font-size: 12px; font-weight: 800; color: var(--text-muted); }
+    .ticket-route-row { display: flex; align-items: center; gap: 8px; margin: 8px 0 4px; }
+    .ticket-endpoint { display: flex; flex-direction: column; align-items: center; gap: 3px; flex: 1; min-width: 0; }
+    .ticket-airport { font-size: 24px; font-weight: 900; color: var(--text-main); letter-spacing: 1px; }
+    .ticket-endpoint-time { font-size: 13px; font-weight: 800; color: var(--primary-navy); }
+    .ticket-plane-divider {
+      position: relative; display: flex; align-items: center; justify-content: center; height: 20px; width: 36px; flex-shrink: 0;
+    }
+    .ticket-plane-divider::before {
+      content: ''; position: absolute; left: 0; right: 0; top: 50%;
+      border-top: 2px dashed #cbd5e0;
+    }
+    .ticket-plane-divider span { position: relative; background: #f7fafc; z-index: 1; padding: 0 4px; font-size: 16px; }
+    .ticket-edit-btn { position: absolute; right: 12px; bottom: 12px; }
+
+    .drag-handle {
+      cursor: grab; text-align: center; font-size: 16px; color: var(--text-muted);
+      user-select: none; padding: 2px 0;
+    }
+    .drag-handle:active { cursor: grabbing; }
+    .card.sortable-ghost { opacity: 0.4; }
+    .card.sortable-chosen { box-shadow: 0 6px 16px rgba(0,0,0,0.12); }
   </style>
 </head>
 <body class="is-read-mode">
@@ -372,7 +448,7 @@
   <div id="pageToolExchange" class="app-page">
     <div class="app-header">
       <button class="menu-btn" onclick="openDrawer()">☰</button>
-      <h1>匯率換算</h1>
+      <h1><span class="page-icon-badge" style="background:#ed8936;">🧮</span>匯率換算</h1>
     </div>
     <div class="container">
       <div class="exchange-top-box">
@@ -429,8 +505,11 @@
       </div>
 
       <div class="form-group">
-        <label>景點圖片 (可貼網址、選檔案或拖曳圖片至下方)</label>
-        <input type="text" id="inputImgUrl" placeholder="圖片網址 http..." style="margin-bottom:4px;">
+        <label>景點圖片 (系統會嘗試從維基百科自動抓取，也可貼網址、選檔案、拖曳或手動覆蓋)</label>
+        <div style="display:flex; gap:6px; margin-bottom:4px;">
+          <input type="text" id="inputImgUrl" placeholder="圖片網址 http..." style="flex:1;">
+          <button type="button" class="btn-rounded-light" id="autoFetchImgBtn" onclick="autoFetchSpotImage()" style="white-space:nowrap;">🔍 自動抓圖</button>
+        </div>
         <input type="file" id="spotFileInput" accept="image/*" onchange="handleFileSelect(event, 'spotImgPreview', 'inputImgUrl')">
         <div class="dropzone" id="spotDropzone">拉動圖片到這裡直接上傳</div>
         <img id="spotImgPreview" src="" style="width:100%; height:120px; object-fit:cover; border-radius:8px; margin-top:6px; display:none;">
@@ -452,13 +531,12 @@
   <div id="pageToolFlight" class="app-page">
     <div class="app-header">
       <button class="menu-btn" onclick="openDrawer()">☰</button>
-      <h1>航班 / 天氣</h1>
+      <h1><span class="page-icon-badge" style="background:#2b6cb0;">✈️</span>航班天氣</h1>
     </div>
     <div class="container">
       <div class="section-card">
         <div class="section-card-title">
           <span>✈️ 航班資訊</span>
-          <button class="btn-rounded-light" onclick="editFlightInfo()">✏️ 編輯航班</button>
         </div>
         <div id="flightDisplay"></div>
       </div>
@@ -470,37 +548,82 @@
     </div>
   </div>
 
+  <!-- ===== 機票單項編輯 Modal ===== -->
+  <div class="modal-overlay" id="flightEditModal">
+    <div class="modal-box">
+      <div class="modal-header">
+        <span id="flightEditTitle">✏️ 編輯去程資訊</span>
+        <button onclick="closeFlightEditModal()">✕</button>
+      </div>
+      <input type="hidden" id="flightEditDirection" value="out">
+      <div class="form-group">
+        <label>✈️ 航班號碼</label>
+        <input type="text" id="flightEditCode" placeholder="如: CI156">
+      </div>
+      <div class="form-group">
+        <label>🗺️ 航線 (格式: 出發地 ➔ 目的地)</label>
+        <input type="text" id="flightEditRoute" placeholder="如: TPE ➔ KIX">
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>🛫 出發時間</label>
+          <input type="text" inputmode="numeric" pattern="[0-9]*" maxlength="5" id="flightEditDepTime" placeholder="0850" oninput="formatTimeInput(this)">
+        </div>
+        <div class="form-group">
+          <label>🛬 抵達時間</label>
+          <input type="text" inputmode="numeric" pattern="[0-9]*" maxlength="5" id="flightEditArrTime" placeholder="1230" oninput="formatTimeInput(this)">
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="modal-btn modal-btn-cancel" onclick="closeFlightEditModal()">取消</button>
+        <button class="modal-btn modal-btn-save" onclick="saveFlightEdit()">儲存</button>
+      </div>
+    </div>
+  </div>
+
   <!-- ===== 5. 必買清單 ===== -->
   <div id="pageToolShopping" class="app-page">
     <div class="app-header">
       <button class="menu-btn" onclick="openDrawer()">☰</button>
-      <h1>必買清單</h1>
+      <h1><span class="page-icon-badge" style="background:#319795;">🛍️</span>必買清單</h1>
     </div>
     <div class="container">
-      <div class="section-card">
-        <div class="section-card-title">➕ 新增採購項目</div>
-        <div class="form-group">
-          <label>地點區域</label>
-          <div style="display:flex; gap:6px;">
-            <select id="shopAreaSelect" style="flex:1;" onchange="checkNewAreaOption(this)"></select>
-            <button class="btn-rounded-light" style="color:#2d3748; border-color:#cbd5e1;" onclick="deleteCurrentShopArea()">✕ 刪除區域</button>
-          </div>
-          <input type="text" id="shopAreaCustomInput" placeholder="輸入新區域名稱" style="display:none; margin-top:6px;">
-        </div>
-        <div class="form-group">
-          <label>商品名稱</label>
-          <input type="text" id="shopItemInput" placeholder="如: EVE、合利他命">
-        </div>
-        <div class="form-group">
-          <label>照片 (選填：若不需要可不選，或自行手動上傳)</label>
-          <input type="file" id="shopFileInput" accept="image/*" onchange="handleFileSelect(event, 'shopImgPreview', 'shopImgBase64')">
-          <input type="hidden" id="shopImgBase64">
-          <img id="shopImgPreview" src="" style="width:60px; height:60px; object-fit:cover; border-radius:6px; margin-top:4px; display:none;">
-        </div>
-        <button class="modal-btn modal-btn-save" style="width:100%; margin-top:6px;" onclick="addShoppingItem()">儲存</button>
-      </div>
-
       <div id="shoppingAreaBoxes"></div>
+    </div>
+
+    <!-- 右下角懸浮按鈕 (+) 觸發新增採購項目 -->
+    <button class="fab-add" onclick="openShopItemModal()">+</button>
+  </div>
+
+  <!-- ===== 新增採購項目 Modal ===== -->
+  <div class="modal-overlay" id="shopItemModal">
+    <div class="modal-box">
+      <div class="modal-header">
+        <span><span class="page-icon-badge" style="background:#319795;">➕</span>新增採購項目</span>
+        <button onclick="closeShopItemModal()">✕</button>
+      </div>
+      <div class="form-group">
+        <label>📍 地點區域</label>
+        <div style="display:flex; gap:6px;">
+          <select id="shopAreaSelect" style="flex:1;" onchange="checkNewAreaOption(this)"></select>
+          <button class="btn-rounded-light" style="color:#2d3748; border-color:#cbd5e1; white-space:nowrap;" onclick="deleteCurrentShopArea()">✕ 刪除區域</button>
+        </div>
+        <input type="text" id="shopAreaCustomInput" placeholder="輸入新區域名稱" style="display:none; margin-top:6px;">
+      </div>
+      <div class="form-group">
+        <label>🛍️ 商品名稱</label>
+        <input type="text" id="shopItemInput" placeholder="如: EVE、合利他命">
+      </div>
+      <div class="form-group">
+        <label>📷 照片 (選填：若不需要可不選，或自行手動上傳)</label>
+        <input type="file" id="shopFileInput" accept="image/*" onchange="handleFileSelect(event, 'shopImgPreview', 'shopImgBase64')">
+        <input type="hidden" id="shopImgBase64">
+        <img id="shopImgPreview" src="" style="width:60px; height:60px; object-fit:cover; border-radius:6px; margin-top:4px; display:none;">
+      </div>
+      <div class="modal-footer">
+        <button class="modal-btn modal-btn-cancel" onclick="closeShopItemModal()">取消</button>
+        <button class="modal-btn modal-btn-save" onclick="addShoppingItem()">儲存</button>
+      </div>
     </div>
   </div>
 
@@ -508,7 +631,7 @@
   <div id="pageToolAccounting" class="app-page">
     <div class="app-header">
       <button class="menu-btn" onclick="openDrawer()">☰</button>
-      <h1>旅遊記帳</h1>
+      <h1><span class="page-icon-badge" style="background:#805ad5;">🧾</span>消費記帳</h1>
     </div>
     <div class="container">
       
@@ -542,6 +665,16 @@
         </div>
         <div id="expenseRecordList"></div>
       </div>
+
+      <!-- 各類別花費佔比圖表 (移到最下面) -->
+      <div class="section-card">
+        <div class="section-card-title">🥧 各類別花費佔比</div>
+        <div id="categoryChartEmpty" class="empty-state" style="display:none; padding:20px 0;">
+          <span class="empty-icon">🥧</span>
+          <div class="empty-text">尚無消費紀錄，新增後會自動顯示圖表</div>
+        </div>
+        <canvas id="categoryPieChart" height="200"></canvas>
+      </div>
     </div>
 
     <!-- 右下角懸浮按鈕 (+) 觸發新增記帳 -->
@@ -552,21 +685,21 @@
   <div class="modal-overlay" id="expenseModal">
     <div class="modal-box">
       <div class="modal-header">
-        <span>➕ 記一筆支出</span>
-        <button style="background:none; border:none; font-size:18px; cursor:pointer;" onclick="closeExpenseModal()">✕</button>
+        <span><span class="page-icon-badge" style="background:#805ad5;">💰</span>記一筆支出</span>
+        <button onclick="closeExpenseModal()">✕</button>
       </div>
 
-      <div class="form-row">
-        <div class="form-group" style="flex:1;">
-          <label>日期</label>
+      <div class="form-row" style="display:grid; grid-template-columns: 1fr 1fr;">
+        <div class="form-group">
+          <label>📅 日期</label>
           <input type="date" id="expDate">
         </div>
-        <div class="form-group" style="flex:1;">
-          <label>類別</label>
+        <div class="form-group">
+          <label>🏷️ 類別</label>
           <select id="expCategory">
-            <option value="夫夫">夫夫</option>
             <option value="吃喝">吃喝</option>
             <option value="玩樂">玩樂</option>
+            <option value="夫夫">夫夫</option>
             <option value="門票">門票</option>
             <option value="藥妝">藥妝</option>
             <option value="代購">代購</option>
@@ -575,13 +708,13 @@
         </div>
       </div>
 
-      <div class="form-row">
-        <div class="form-group" style="flex:1;">
-          <label>付款人</label>
+      <div class="form-row" style="display:grid; grid-template-columns: 1fr 1fr;">
+        <div class="form-group">
+          <label>👤 付款人</label>
           <select id="expPayerSelect"></select>
         </div>
-        <div class="form-group" style="flex:1;">
-          <label>幣別</label>
+        <div class="form-group">
+          <label>💴 幣別</label>
           <select id="expCurrency">
             <option value="JPY">JPY (日幣)</option>
             <option value="NTD">NTD (台幣)</option>
@@ -590,18 +723,19 @@
       </div>
 
       <div class="form-group">
-        <label>品項名稱</label>
+        <label>📝 品項名稱</label>
         <input type="text" id="expTitle" placeholder="如: 拉麵 / 住宿">
       </div>
 
-      <div class="form-row" style="align-items:center;">
-        <div class="form-group" style="flex:1;">
-          <label>金額</label>
-          <input type="number" id="expAmount" placeholder="輸入金額">
+      <div class="form-row" style="display:grid; grid-template-columns: 1fr 96px;">
+        <div class="form-group" style="margin-bottom:0;">
+          <label>💰 金額</label>
+          <input type="text" inputmode="decimal" pattern="[0-9]*" id="expAmount" placeholder="輸入金額">
         </div>
-        <div class="form-group" style="flex:1; margin-top:16px;">
-          <label class="checkbox-label">
-            <input type="checkbox" id="expIsSplit" checked> 分攤
+        <div class="form-group" style="margin-bottom:0;">
+          <label>&nbsp;</label>
+          <label class="split-check-box" for="expIsSplit">
+            <input type="checkbox" id="expIsSplit"> 分攤
           </label>
         </div>
       </div>
@@ -617,18 +751,18 @@
   <div class="modal-overlay" id="editExpenseModal">
     <div class="modal-box">
       <div class="modal-header">
-        <span>✏️ 編輯消費紀錄</span>
-        <button style="background:none; border:none; font-size:18px; cursor:pointer;" onclick="closeEditExpenseModal()">✕</button>
+        <span><span class="page-icon-badge" style="background:#805ad5;">✏️</span>編輯消費紀錄</span>
+        <button onclick="closeEditExpenseModal()">✕</button>
       </div>
       <input type="hidden" id="editExpIndex">
-      <div class="form-row">
-        <div class="form-group" style="flex:1;"><label>日期</label><input type="date" id="editExpDate"></div>
-        <div class="form-group" style="flex:1;">
-          <label>類別</label>
+      <div class="form-row" style="display:grid; grid-template-columns: 1fr 1fr;">
+        <div class="form-group"><label>📅 日期</label><input type="date" id="editExpDate"></div>
+        <div class="form-group">
+          <label>🏷️ 類別</label>
           <select id="editExpCategory">
-            <option value="夫夫">夫夫</option>
             <option value="吃喝">吃喝</option>
             <option value="玩樂">玩樂</option>
+            <option value="夫夫">夫夫</option>
             <option value="門票">門票</option>
             <option value="藥妝">藥妝</option>
             <option value="代購">代購</option>
@@ -636,21 +770,25 @@
           </select>
         </div>
       </div>
-      <div class="form-row">
-        <div class="form-group" style="flex:1;"><label>付款人</label><select id="editExpPayerSelect"></select></div>
-        <div class="form-group" style="flex:1;">
-          <label>幣別</label>
+      <div class="form-row" style="display:grid; grid-template-columns: 1fr 1fr;">
+        <div class="form-group"><label>👤 付款人</label><select id="editExpPayerSelect"></select></div>
+        <div class="form-group">
+          <label>💴 幣別</label>
           <select id="editExpCurrency">
             <option value="JPY">JPY</option>
             <option value="NTD">NTD</option>
           </select>
         </div>
       </div>
-      <div class="form-group"><label>品項</label><input type="text" id="editExpTitle"></div>
-      <div class="form-row" style="align-items:center;">
-        <div class="form-group" style="flex:1;"><label>金額</label><input type="number" id="editExpAmount"></div>
-        <div class="form-group" style="flex:1; margin-top:16px;">
-          <label class="checkbox-label">
+      <div class="form-group"><label>📝 品項</label><input type="text" id="editExpTitle"></div>
+      <div class="form-row" style="display:grid; grid-template-columns: 1fr 96px;">
+        <div class="form-group" style="margin-bottom:0;">
+          <label>💰 金額</label>
+          <input type="text" inputmode="decimal" pattern="[0-9]*" id="editExpAmount">
+        </div>
+        <div class="form-group" style="margin-bottom:0;">
+          <label>&nbsp;</label>
+          <label class="split-check-box" for="editExpIsSplit">
             <input type="checkbox" id="editExpIsSplit"> 分攤
           </label>
         </div>
@@ -666,7 +804,7 @@
   <div id="pageToolPrep" class="app-page">
     <div class="app-header">
       <button class="menu-btn" onclick="openDrawer()">☰</button>
-      <h1>事前準備</h1>
+      <h1><span class="page-icon-badge" style="background:#dd6b20;">🎒</span>事前準備</h1>
     </div>
     <div class="container">
       <div class="section-card">
@@ -698,23 +836,23 @@
     </div>
     <div class="drawer-menu">
       <button class="drawer-item" data-page="pageDetail" onclick="goToTripOverview()">
-        <span class="drawer-item-icon">🗺️</span><span>行程總覽</span>
+        <span class="drawer-item-icon" style="background:var(--primary-navy);">🗺️</span><span>行程總覽</span>
       </button>
       <button class="drawer-item" data-page="pageToolExchange" onclick="goToSubPage('pageToolExchange')">
-        <span class="drawer-item-icon">🧮</span><span>匯率換算</span>
+        <span class="drawer-item-icon" style="background:#ed8936;">🧮</span><span>匯率換算</span>
       </button>
       <div class="drawer-divider"></div>
       <button class="drawer-item" data-page="pageToolFlight" onclick="goToSubPage('pageToolFlight')">
-        <span class="drawer-item-icon">✈️</span><span>航班 / 天氣</span>
-      </button>
-      <button class="drawer-item" data-page="pageToolShopping" onclick="goToSubPage('pageToolShopping')">
-        <span class="drawer-item-icon">🛍️</span><span>必買清單</span>
-      </button>
-      <button class="drawer-item" data-page="pageToolPrep" onclick="goToSubPage('pageToolPrep')">
-        <span class="drawer-item-icon">🎒</span><span>事前準備</span>
+        <span class="drawer-item-icon" style="background:#2b6cb0;">✈️</span><span>航班天氣</span>
       </button>
       <button class="drawer-item" data-page="pageToolAccounting" onclick="goToSubPage('pageToolAccounting')">
-        <span class="drawer-item-icon">🧾</span><span>記帳</span>
+        <span class="drawer-item-icon" style="background:#805ad5;">🧾</span><span>消費記帳</span>
+      </button>
+      <button class="drawer-item" data-page="pageToolShopping" onclick="goToSubPage('pageToolShopping')">
+        <span class="drawer-item-icon" style="background:#319795;">🛍️</span><span>必買清單</span>
+      </button>
+      <button class="drawer-item" data-page="pageToolPrep" onclick="goToSubPage('pageToolPrep')">
+        <span class="drawer-item-icon" style="background:#dd6b20;">🎒</span><span>事前準備</span>
       </button>
     </div>
     <div class="drawer-footer">
@@ -722,10 +860,9 @@
     </div>
   </div>
 
-  <!-- ===== 左下角：回首頁懸浮按鈕 (行程總覽與所有工具頁皆顯示) ===== -->
-  <button class="fab-home" id="globalHomeBtn" onclick="goToHome()" title="回首頁">🏠</button>
-
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.2/Sortable.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
 
   <script>
     /* 🔥 數字格式化（自動加千分位逗號） */
@@ -949,13 +1086,35 @@
       trip.days = daysArr;
     }
 
+    function getTripCoverImage(trip) {
+      for (const day of (trip.days || [])) {
+        for (const spot of (day.spots || [])) {
+          if (spot.img) return spot.img;
+        }
+      }
+      return null;
+    }
+
     function renderTripList() {
       const container = document.getElementById('tripListContainer');
       container.innerHTML = '';
+
+      if (allTrips.length === 0) {
+        container.innerHTML = `
+          <div class="empty-state">
+            <span class="empty-icon">🧳</span>
+            <div class="empty-text">還沒有行程，點右下角「+」新增第一趟旅行吧！</div>
+          </div>
+        `;
+        return;
+      }
+
       allTrips.forEach((trip, index) => {
+        const cover = getTripCoverImage(trip);
         const card = document.createElement('div');
         card.className = 'trip-card';
         card.innerHTML = `
+          <div class="trip-card-thumb" style="${cover ? `background-image:url('${cover}');` : ''}">${cover ? '' : '🧳'}</div>
           <div class="trip-card-main" onclick="openTripDetail(${index})">
             <div class="trip-card-title">${trip.title}</div>
             <div class="trip-card-date">🗓️ ${trip.startDate} - ${trip.endDate} • ${trip.days.length} 天</div>
@@ -1145,41 +1304,76 @@
       const listContainer = document.getElementById('spotList');
       listContainer.innerHTML = '';
 
-      currentDay.spots.forEach((spot, idx) => {
-        const card = document.createElement('div');
-        card.className = 'card';
-        const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(spot.address || spot.title)}&hl=zh-TW`;
-
-        let tagClass = "tag-spot";
-        if (spot.category === "餐廳") tagClass = "tag-food";
-        if (spot.category === "逛街") tagClass = "tag-shop";
-        if (spot.category === "住宿") tagClass = "tag-hotel";
-
-        const defaultImg = "https://images.unsplash.com/photo-1503899036084-c55cdd92da26?w=200&q=80";
-        const displayImg = spot.img || defaultImg;
-
-        card.innerHTML = `
-          <div class="card-img-wrapper" onclick="openLightbox('${displayImg}')" title="點擊放大圖片">
-            <span class="card-order-tag">${idx + 1}</span>
-            <img src="${displayImg}" class="card-img" onerror="this.src='${defaultImg}'">
-          </div>
-          <div class="card-main">
-            <div class="card-header-row">
-              <span class="card-time">${spot.time || '09:00'}</span>
-              <span class="tag-badge ${tagClass}">${spot.category || '景點'}</span>
-            </div>
-            <div class="card-title-link" onclick="focusMapMarker(${idx})">${spot.title}</div>
-            ${spot.note ? `<div class="card-note">${spot.note}</div>` : ''}
-          </div>
-          <a href="${mapsUrl}" target="_blank" class="card-action-btn" title="Google Map 導航">↗</a>
-          <div style="display:flex; flex-direction:column; gap:4px; margin-left:4px;" class="read-mode-hide">
-            <button class="icon-btn-del" onclick="openSpotModal(${idx})">✏️</button>
-            <button class="icon-btn-del" onclick="deleteSpot(${idx})">✕</button>
+      if (currentDay.spots.length === 0) {
+        listContainer.innerHTML = `
+          <div class="empty-state">
+            <span class="empty-icon">📍</span>
+            <div class="empty-text">這天還沒有安排景點，點右下角「+」開始新增吧！</div>
           </div>
         `;
-        listContainer.appendChild(card);
-      });
+      } else {
+        currentDay.spots.forEach((spot, idx) => {
+          const card = document.createElement('div');
+          card.className = 'card';
+          const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(spot.address || spot.title)}&hl=zh-TW`;
+
+          let tagClass = "tag-spot";
+          if (spot.category === "餐廳") tagClass = "tag-food";
+          if (spot.category === "逛街") tagClass = "tag-shop";
+          if (spot.category === "住宿") tagClass = "tag-hotel";
+
+          const defaultImg = "https://images.unsplash.com/photo-1503899036084-c55cdd92da26?w=200&q=80";
+          const displayImg = spot.img || defaultImg;
+
+          card.innerHTML = `
+            <div class="card-img-wrapper" onclick="openLightbox('${displayImg}')" title="點擊放大圖片">
+              <span class="card-order-tag">${idx + 1}</span>
+              <img src="${displayImg}" class="card-img" onerror="this.src='${defaultImg}'">
+            </div>
+            <div class="card-main">
+              <div class="card-header-row">
+                <span class="card-time">${spot.time || '09:00'}</span>
+                <span class="tag-badge ${tagClass}">${spot.category || '景點'}</span>
+              </div>
+              <div class="card-title-link" onclick="focusMapMarker(${idx})">${spot.title}</div>
+              ${spot.note ? `<div class="card-note">${spot.note}</div>` : ''}
+            </div>
+            <a href="${mapsUrl}" target="_blank" class="card-action-btn" title="Google Map 導航">↗</a>
+            <div style="display:flex; flex-direction:column; gap:4px; margin-left:4px;" class="read-mode-hide">
+              <span class="drag-handle" title="拖曳排序">⠿</span>
+              <button class="icon-btn-del" onclick="openSpotModal(${idx})">✏️</button>
+              <button class="icon-btn-del" onclick="deleteSpot(${idx})">✕</button>
+            </div>
+          `;
+          listContainer.appendChild(card);
+        });
+      }
+
       loadMapMarkers();
+      initSpotSortable();
+    }
+
+    let spotSortableInstance = null;
+    function initSpotSortable() {
+      const listEl = document.getElementById('spotList');
+      if (spotSortableInstance) { spotSortableInstance.destroy(); spotSortableInstance = null; }
+      if (!listEl || !isEditMode || typeof Sortable === 'undefined') return;
+      const trip = allTrips[currentTripIdx];
+      const currentDay = trip?.days[currentDayIdx];
+      if (!currentDay || currentDay.spots.length === 0) return;
+
+      spotSortableInstance = new Sortable(listEl, {
+        animation: 150,
+        handle: '.drag-handle',
+        onEnd: function (evt) {
+          if (evt.oldIndex === evt.newIndex) return;
+          const day = allTrips[currentTripIdx].days[currentDayIdx];
+          const moved = day.spots.splice(evt.oldIndex, 1)[0];
+          day.spots.splice(evt.newIndex, 0, moved);
+          saveData();
+          renderDayView();
+        }
+      });
     }
 
     function switchDay(index) {
@@ -1233,6 +1427,43 @@
       return "https://images.unsplash.com/photo-1493976040374-85c8e12f0c0e?w=400&q=80";
     }
 
+    /* 🔥 免金鑰版：從維基百科自動抓取景點縮圖 (若你之後申請了 Google Places API 金鑰，
+       可以把這個函式換成呼叫 Google Place Photo，取得更精準的店家招牌照片) */
+    async function fetchWikiImage(query) {
+      if (!query) return null;
+      try {
+        const res = await fetch(`https://zh.wikipedia.org/w/api.php?action=query&titles=${encodeURIComponent(query)}&prop=pageimages&format=json&pithumbsize=400&origin=*`);
+        const data = await res.json();
+        const pages = data.query && data.query.pages;
+        if (!pages) return null;
+        const page = Object.values(pages)[0];
+        if (page && page.thumbnail && page.thumbnail.source) return page.thumbnail.source;
+      } catch (e) {}
+      return null;
+    }
+
+    async function autoFetchSpotImage() {
+      const title = document.getElementById('inputTitle').value;
+      if (!title) return alert("請先輸入名稱，才能自動抓圖喔！");
+      const btn = document.getElementById('autoFetchImgBtn');
+      const originalText = btn.innerText;
+      btn.innerText = '🔍 搜尋中...';
+      btn.disabled = true;
+
+      const wikiImg = await fetchWikiImage(title);
+      const finalImg = wikiImg || getAutoImage(title, document.getElementById('inputCategory').value);
+
+      document.getElementById('inputImgUrl').value = finalImg;
+      const img = document.getElementById('spotImgPreview');
+      img.src = finalImg;
+      img.style.display = 'block';
+
+      btn.innerText = originalText;
+      btn.disabled = false;
+
+      if (!wikiImg) alert("維基百科找不到這個地方的照片，先用預設情境圖代替，你可以手動貼網址或上傳照片喔！");
+    }
+
     async function saveSpot() {
       const editIdx = parseInt(document.getElementById('editSpotIndex').value);
       const category = document.getElementById('inputCategory').value;
@@ -1243,7 +1474,10 @@
       const note = document.getElementById('inputNote').value;
 
       if (!title) return alert("請輸入名稱！");
-      if (!img) img = getAutoImage(title, category);
+      if (!img) {
+        const wikiImg = await fetchWikiImage(title);
+        img = wikiImg || getAutoImage(title, category);
+      }
 
       let lat = 34.6937, lng = 135.5023;
       if (address || title) {
@@ -1391,6 +1625,47 @@
       renderExpenseList();
     }
 
+    let categoryChartInstance = null;
+    function renderCategoryChart(trip) {
+      const totals = {};
+      trip.expenses.forEach(exp => {
+        const amtTWD = exp.currency === 'JPY' ? Math.round(exp.amount * currentJpyRate) : exp.amount;
+        const cat = exp.category || '其他';
+        totals[cat] = (totals[cat] || 0) + amtTWD;
+      });
+
+      const labels = Object.keys(totals);
+      const data = Object.values(totals);
+      const colorMap = {
+        '吃喝': '#dd6b20', '玩樂': '#805ad5', '夫夫': '#2b6cb0',
+        '門票': '#319795', '藥妝': '#d69e2e', '代購': '#e53e3e', '其他': '#a0aec0'
+      };
+      const bgColors = labels.map(l => colorMap[l] || '#cbd5e0');
+
+      const canvas = document.getElementById('categoryPieChart');
+      const emptyBox = document.getElementById('categoryChartEmpty');
+      if (!canvas) return;
+
+      if (categoryChartInstance) { categoryChartInstance.destroy(); categoryChartInstance = null; }
+
+      if (labels.length === 0 || typeof Chart === 'undefined') {
+        canvas.style.display = 'none';
+        if (emptyBox) emptyBox.style.display = 'block';
+        return;
+      }
+      canvas.style.display = 'block';
+      if (emptyBox) emptyBox.style.display = 'none';
+
+      categoryChartInstance = new Chart(canvas, {
+        type: 'doughnut',
+        data: { labels, datasets: [{ data, backgroundColor: bgColors, borderWidth: 2, borderColor: '#fff' }] },
+        options: {
+          cutout: '55%',
+          plugins: { legend: { position: 'bottom', labels: { font: { size: 11 }, boxWidth: 12, padding: 12 } } }
+        }
+      });
+    }
+
     function renderExpenseList() {
       const trip = allTrips[currentTripIdx];
       const container = document.getElementById('expenseRecordList');
@@ -1447,10 +1722,12 @@
         </div>
         <div class="summary-box" style="background:var(--soft-blue); border-color:#bee3f8;">
           <div class="summary-box-title" style="color:var(--primary-navy);">總計</div>
-          <div class="summary-box-val" style="font-size:14px; color:var(--primary-navy);">NT$ ${formatNum(grandTotalTWD)}</div>
+          <div class="summary-box-val" style="color:var(--primary-navy);">NT$ ${formatNum(grandTotalTWD)}</div>
           <div class="summary-box-sub" style="color:var(--text-muted); font-size:9px;">累積總支出</div>
         </div>
       `;
+
+      renderCategoryChart(trip);
 
       for (let gKey in groups) {
         const gBox = document.createElement('div');
@@ -1554,6 +1831,21 @@
       select.innerHTML += `<option value="__NEW__">+ 新增其他區域</option>`;
     }
 
+    function openShopItemModal() {
+      renderShoppingAreaSelectOptions();
+      document.getElementById('shopItemInput').value = '';
+      document.getElementById('shopImgBase64').value = '';
+      document.getElementById('shopImgPreview').style.display = 'none';
+      document.getElementById('shopImgPreview').src = '';
+      document.getElementById('shopAreaCustomInput').style.display = 'none';
+      document.getElementById('shopAreaCustomInput').value = '';
+      document.getElementById('shopItemModal').classList.add('active');
+    }
+
+    function closeShopItemModal() {
+      document.getElementById('shopItemModal').classList.remove('active');
+    }
+
     function checkNewAreaOption(select) {
       document.getElementById('shopAreaCustomInput').style.display = (select.value === '__NEW__') ? 'block' : 'none';
     }
@@ -1587,6 +1879,7 @@
       document.getElementById('shopImgPreview').src = '';
       
       renderShoppingAreaSelectOptions(); renderShoppingBoxes();
+      closeShopItemModal();
     }
 
     function renderShoppingBoxes() {
@@ -1646,41 +1939,92 @@
       saveData(); renderShoppingBoxes();
     }
 
-    function renderFlightInfo() {
-      const trip = allTrips[currentTripIdx];
-      const flightOut = trip.flightOut || { route: "TPE ➔ KIX", time: "08:50 - 12:30", code: "CI156" };
-      const flightIn = trip.flightIn || { route: "KIX ➔ TPE", time: "14:00 - 16:00", code: "CI157" };
+    /* 輸入 0850 自動格式化成 08:50，供機票時間欄位使用 */
+    function formatTimeInput(el) {
+      const digits = el.value.replace(/\D/g, '').slice(0, 4);
+      el.value = digits.length >= 3 ? digits.slice(0, 2) + ':' + digits.slice(2) : digits;
+    }
 
-      document.getElementById('flightDisplay').innerHTML = `
-        <div style="background:#f7fafc; border:1px solid var(--border-color); border-radius:12px; padding:10px; margin-bottom:8px;">
-          <div style="font-size:11px; font-weight:800; color:var(--primary-navy);">去程 (${flightOut.code})</div>
-          <div style="display:flex; justify-content:space-between; font-weight:800; font-size:14px; margin-top:2px;">
-            <span>${flightOut.route}</span><span>✈️ ${flightOut.time}</span>
+    function renderTicketCard(direction, info, label) {
+      const parts = (info.route || '').split('➔').map(s => s.trim());
+      const from = parts[0] || '---';
+      const to = parts[1] || (parts[0] ? '' : '---');
+      const icon = direction === 'out' ? '🛫' : '🛬';
+
+      // 相容舊資料：舊版本只有單一 time 字串 (如 "08:50 - 12:30")，拆開顯示
+      let depTime = info.depTime, arrTime = info.arrTime;
+      if (!depTime && !arrTime && info.time) {
+        const t = info.time.split('-').map(s => s.trim());
+        depTime = t[0]; arrTime = t[1];
+      }
+
+      return `
+        <div class="ticket-card ${direction}">
+          <div class="ticket-top">
+            <span class="ticket-label">${label}</span>
+            <span class="ticket-code">✈️ ${info.code || '未設定'}</span>
           </div>
-        </div>
-        <div style="background:#f7fafc; border:1px solid var(--border-color); border-radius:12px; padding:10px;">
-          <div style="font-size:11px; font-weight:800; color:#dd6b20;">回程 (${flightIn.code})</div>
-          <div style="display:flex; justify-content:space-between; font-weight:800; font-size:14px; margin-top:2px;">
-            <span>${flightIn.route}</span><span>✈️ ${flightIn.time}</span>
+          <div class="ticket-route-row">
+            <div class="ticket-endpoint">
+              <span class="ticket-airport">${from}</span>
+              <span class="ticket-endpoint-time">${depTime || '--:--'}</span>
+            </div>
+            <span class="ticket-plane-divider"><span>${icon}</span></span>
+            <div class="ticket-endpoint">
+              <span class="ticket-airport">${to}</span>
+              <span class="ticket-endpoint-time">${arrTime || '--:--'}</span>
+            </div>
           </div>
+          <button class="card-action-btn ticket-edit-btn" onclick="openFlightEditModal('${direction}')">✏️</button>
         </div>
       `;
     }
 
-    function editFlightInfo() {
+    function renderFlightInfo() {
       const trip = allTrips[currentTripIdx];
-      const outCode = prompt("去程班機號碼：", trip.flightOut?.code || "CI156");
-      const outRoute = prompt("去程航線：", trip.flightOut?.route || "TPE ➔ KIX");
-      const outTime = prompt("去程時間：", trip.flightOut?.time || "08:50 - 12:30");
+      const flightOut = trip.flightOut || { route: "TPE ➔ KIX", depTime: "08:50", arrTime: "12:30", code: "CI156" };
+      const flightIn = trip.flightIn || { route: "KIX ➔ TPE", depTime: "14:00", arrTime: "16:00", code: "CI157" };
 
-      const inCode = prompt("回程班機號碼：", trip.flightIn?.code || "CI157");
-      const inRoute = prompt("回程航線：", trip.flightIn?.route || "KIX ➔ TPE");
-      const inTime = prompt("回程時間：", trip.flightIn?.time || "14:00 - 16:00");
+      document.getElementById('flightDisplay').innerHTML =
+        renderTicketCard('out', flightOut, '去程 OUTBOUND') +
+        renderTicketCard('in', flightIn, '回程 INBOUND');
+    }
 
-      trip.flightOut = { route: outRoute, time: outTime, code: outCode };
-      trip.flightIn = { route: inRoute, time: inTime, code: inCode };
+    function openFlightEditModal(direction) {
+      const trip = allTrips[currentTripIdx];
+      const info = (direction === 'out' ? trip.flightOut : trip.flightIn) || {};
 
-      saveData(); renderFlightInfo();
+      let depTime = info.depTime || '', arrTime = info.arrTime || '';
+      if (!depTime && !arrTime && info.time) {
+        const t = info.time.split('-').map(s => s.trim());
+        depTime = t[0] || ''; arrTime = t[1] || '';
+      }
+
+      document.getElementById('flightEditDirection').value = direction;
+      document.getElementById('flightEditTitle').innerText = direction === 'out' ? '✏️ 編輯去程資訊' : '✏️ 編輯回程資訊';
+      document.getElementById('flightEditCode').value = info.code || '';
+      document.getElementById('flightEditRoute').value = info.route || (direction === 'out' ? 'TPE ➔ KIX' : 'KIX ➔ TPE');
+      document.getElementById('flightEditDepTime').value = depTime;
+      document.getElementById('flightEditArrTime').value = arrTime;
+      document.getElementById('flightEditModal').classList.add('active');
+    }
+
+    function closeFlightEditModal() {
+      document.getElementById('flightEditModal').classList.remove('active');
+    }
+
+    function saveFlightEdit() {
+      const direction = document.getElementById('flightEditDirection').value;
+      const code = document.getElementById('flightEditCode').value;
+      const route = document.getElementById('flightEditRoute').value;
+      const depTime = document.getElementById('flightEditDepTime').value;
+      const arrTime = document.getElementById('flightEditArrTime').value;
+      const trip = allTrips[currentTripIdx];
+      const obj = { code, route, depTime, arrTime };
+      if (direction === 'out') trip.flightOut = obj; else trip.flightIn = obj;
+      saveData();
+      renderFlightInfo();
+      closeFlightEditModal();
     }
 
     async function fetchWeather() {
