@@ -1038,12 +1038,28 @@
       } catch (e) {}
     }
 
+    // Firebase Realtime Database 存空陣列(如 expenses: [])時，讀回來這個欄位會整個消失(變成 undefined)。
+    // 這個函式確保每次資料進到 App 裡時，該有的欄位都補回空陣列/空物件，避免 .push() 對 undefined 報錯導致按鈕沒反應。
+    function normalizeTripData(trip) {
+      if (!trip.expenses) trip.expenses = [];
+      if (!trip.shoppingList) trip.shoppingList = [];
+      if (!trip.shoppingAreas) trip.shoppingAreas = ["藥妝店", "機場"];
+      if (!trip.prepList) trip.prepList = [];
+      if (!trip.payers) trip.payers = [];
+      if (!trip.flightOut) trip.flightOut = {};
+      if (!trip.flightIn) trip.flightIn = {};
+      if (!trip.days) trip.days = [];
+      trip.days.forEach(day => { if (!day.spots) day.spots = []; });
+      return trip;
+    }
+
     function subscribeTripLive(code, idx) {
       if (!db) return;
       db.ref('trips/' + code).on('value', (snapshot) => {
         const val = snapshot.val();
         if (val) {
           val.inviteCode = code;
+          normalizeTripData(val);
           generateDaysFromDates(val);
           allTrips[idx] = val;
           localStorage.setItem('TRIP_DATA_' + code, JSON.stringify(val));
@@ -1067,9 +1083,9 @@
       localStorage.setItem(NICKNAME_KEY, nickname);
 
       const refs = oldTrips.map(trip => {
+        normalizeTripData(trip);
         const code = trip.inviteCode || generateInviteCode();
         trip.inviteCode = code;
-        if (!trip.payers) trip.payers = [];
         if (!trip.payers.includes(nickname)) trip.payers.unshift(nickname);
         localStorage.setItem('TRIP_DATA_' + code, JSON.stringify(trip));
         if (db) db.ref('trips/' + code).set(trip);
@@ -1117,7 +1133,7 @@
       allTrips = myTripRefs.map(ref => {
         const cached = localStorage.getItem('TRIP_DATA_' + ref.code);
         if (cached) {
-          try { return JSON.parse(cached); } catch (e) {}
+          try { return normalizeTripData(JSON.parse(cached)); } catch (e) {}
         }
         return {
           id: 'trip-' + ref.code, title: '新行程', startDate: '2026/01/01', endDate: '2026/01/03',
@@ -1144,7 +1160,7 @@
         const val = snapshot.val();
         if (!val) { alert("找不到這個邀請碼對應的行程，請確認邀請碼是否正確。"); return; }
 
-        if (!val.payers) val.payers = [];
+        normalizeTripData(val);
         if (!val.payers.includes(nickname)) {
           val.payers.push(nickname);
           db.ref('trips/' + cleanCode + '/payers').set(val.payers);
@@ -1181,10 +1197,16 @@
     }
 
     function refreshCurrentUI() {
+      if (!allTrips[currentTripIdx]) return;
       if (document.getElementById('pageHome').classList.contains('active')) renderTripList();
       if (document.getElementById('pageDetail').classList.contains('active')) {
         updateTripHeaderInfo(); renderTabs(); renderDayView();
       }
+      if (document.getElementById('pageToolExchange').classList.contains('active')) calcTopExchange();
+      if (document.getElementById('pageToolFlight').classList.contains('active')) renderFlightInfo();
+      if (document.getElementById('pageToolShopping').classList.contains('active')) { renderShoppingAreaSelectOptions(); renderShoppingBoxes(); }
+      if (document.getElementById('pageToolAccounting').classList.contains('active')) { renderPayerTags(); renderPayerSelectOptions(); renderExpenseList(); }
+      if (document.getElementById('pageToolPrep').classList.contains('active')) renderPrepList();
     }
 
     function init() {
@@ -1315,7 +1337,7 @@
           dateStr: `${mm}/${dd} ${w}`,
           rawDate: `${cur.getFullYear()}-${mm}-${dd}`,
           area: existingDay ? existingDay.area : "市區景點",
-          spots: existingDay ? existingDay.spots : []
+          spots: (existingDay && existingDay.spots) ? existingDay.spots : []
         });
 
         cur.setDate(cur.getDate() + 1);
@@ -2453,7 +2475,7 @@
             if (!Array.isArray(imported)) throw new Error("format");
 
             const nickname = getMyNickname();
-            allTrips = imported;
+            allTrips = imported.map(normalizeTripData);
             myTripRefs = allTrips.map(trip => {
               const code = trip.inviteCode || generateInviteCode();
               trip.inviteCode = code;
