@@ -13,6 +13,7 @@
   <!-- Firebase SDK (用於跨裝置同步) -->
   <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-database-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-auth-compat.js"></script>
 
   <style>
     :root {
@@ -370,6 +371,33 @@
     .drawer-header-title { font-size: 13px; font-weight: 900; color: var(--primary-navy); letter-spacing: 1px; }
     .drawer-close { background: none; border: none; font-size: 18px; color: var(--text-muted); cursor: pointer; padding: 4px; }
 
+    /* 個人資料：頭像 + 暱稱 */
+    .drawer-profile-block { display: flex; align-items: center; gap: 10px; }
+    .profile-avatar-wrap { position: relative; width: 44px; height: 44px; cursor: pointer; flex-shrink: 0; }
+    .profile-avatar, .profile-avatar-placeholder {
+      width: 44px; height: 44px; border-radius: 50%; object-fit: cover;
+      background: var(--soft-blue); color: var(--primary-navy);
+      display: flex; align-items: center; justify-content: center; font-size: 20px;
+      border: 2px solid #fff; box-shadow: 0 2px 6px rgba(0,0,0,0.12);
+    }
+    .avatar-edit-pencil {
+      position: absolute; right: -3px; bottom: -3px; width: 18px; height: 18px; border-radius: 50%;
+      background: #fff; border: 1px solid var(--border-color); font-size: 9px;
+      display: flex; align-items: center; justify-content: center; box-shadow: 0 1px 3px rgba(0,0,0,0.18);
+    }
+    .profile-nickname-row { display: flex; align-items: center; gap: 4px; font-size: 14px; font-weight: 900; color: var(--primary-navy); }
+    .nickname-edit-pencil { background: none; border: none; font-size: 11px; cursor: pointer; color: var(--text-muted); padding: 2px; }
+
+    /* 登入 / 註冊畫面 */
+    #authGate {
+      display: none; position: fixed; inset: 0; z-index: 5000; background: var(--bg-cream);
+      flex-direction: column; align-items: center; justify-content: center; padding: 24px;
+    }
+    .auth-box { width: 100%; max-width: 340px; }
+    .auth-logo { text-align: center; margin-bottom: 24px; }
+    .auth-switch-line { text-align: center; margin-top: 16px; font-size: 13px; color: var(--text-muted); }
+    .auth-switch-line a { color: var(--primary-navy); font-weight: 700; text-decoration: none; }
+
     .drawer-menu { flex: 1; overflow-y: auto; padding: 8px; }
     .drawer-item {
       display: flex; align-items: center; gap: 14px; width: 100%; padding: 14px 12px;
@@ -455,8 +483,6 @@
     <div class="container">
       <div style="display:flex; justify-content:flex-end; gap:8px; margin-bottom:10px;">
         <button class="btn-rounded-light" onclick="joinTripByCode()">🔑 加入行程</button>
-        <button class="btn-rounded-light" onclick="exportDataJSON()">📤 備份</button>
-        <button class="btn-rounded-light" onclick="importDataJSON()">📥 匯入</button>
       </div>
       <div id="tripListContainer"></div>
     </div>
@@ -918,7 +944,17 @@
   <div class="drawer-overlay" id="drawerOverlay" onclick="closeDrawer()"></div>
   <div class="side-drawer" id="sideDrawer">
     <div class="drawer-header">
-      <span class="drawer-header-title">選單 MENU</span>
+      <div class="drawer-profile-block">
+        <div class="profile-avatar-wrap" onclick="openAvatarEditModal()">
+          <img id="drawerAvatarImg" class="profile-avatar" src="" style="display:none;">
+          <span id="drawerAvatarPlaceholder" class="profile-avatar-placeholder">🙂</span>
+          <span class="avatar-edit-pencil">✏️</span>
+        </div>
+        <div class="profile-nickname-row">
+          <span id="drawerNicknameText">我</span>
+          <button class="nickname-edit-pencil" onclick="openNicknameEditModal()">✏️</button>
+        </div>
+      </div>
       <button class="drawer-close" onclick="closeDrawer()">✕</button>
     </div>
     <div class="drawer-menu">
@@ -944,7 +980,64 @@
     </div>
     <div class="drawer-footer">
       <button class="btn-rounded-light" style="width:100%; justify-content:center; margin-bottom:6px;" onclick="copyInviteCode(); closeDrawer();">🔑 複製邀請碼</button>
-      <button class="btn-rounded-light" style="width:100%; justify-content:center;" onclick="goToHome(); closeDrawer();">🏠 回首頁</button>
+      <button class="btn-rounded-light" style="width:100%; justify-content:center; margin-bottom:6px;" onclick="goToHome(); closeDrawer();">🏠 回首頁</button>
+      <button class="btn-rounded-light" style="width:100%; justify-content:center; background:#fff5f5; border-color:#feb2b2; color:#c53030;" onclick="doLogout()">🚪 登出</button>
+    </div>
+  </div>
+
+  <!-- ===== 頭像編輯 Modal ===== -->
+  <div class="modal-overlay" id="avatarEditModal">
+    <div class="modal-box">
+      <div class="modal-header"><span>更換頭像</span><button onclick="closeAvatarEditModal()">✕</button></div>
+      <div style="text-align:center;">
+        <img id="avatarPreviewImg" src="" style="width:100px; height:100px; border-radius:50%; object-fit:cover; display:none; margin-bottom:10px;">
+        <input type="file" id="avatarFileInput" accept="image/*" onchange="handleFileSelect(event, 'avatarPreviewImg', 'avatarBase64Input')">
+        <input type="hidden" id="avatarBase64Input">
+      </div>
+      <div class="modal-footer">
+        <button class="modal-btn modal-btn-cancel" onclick="closeAvatarEditModal()">取消</button>
+        <button class="modal-btn modal-btn-save" onclick="saveAvatarEdit()">儲存</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== 登入 / 註冊畫面 ===== -->
+  <div id="authGate">
+    <div class="auth-box">
+      <div class="auth-logo">
+        <div style="font-size:40px;">🧳</div>
+        <div style="font-size:20px; font-weight:900; color:var(--primary-navy); margin-top:8px;">旅遊行程</div>
+      </div>
+
+      <div id="authStepLogin">
+        <div class="form-group"><label>Email</label><input type="email" id="authLoginEmail" placeholder="you@example.com"></div>
+        <div class="form-group"><label>密碼</label><input type="password" id="authLoginPassword" placeholder="密碼"></div>
+        <button class="modal-btn modal-btn-save" style="width:100%; margin-top:8px;" onclick="doLogin()">登入</button>
+        <div class="auth-switch-line">還沒有帳號？<a href="#" onclick="showAuthStep('registerStep1'); return false;">註冊</a></div>
+      </div>
+
+      <div id="authStepRegister1" style="display:none;">
+        <div class="form-group"><label>Email</label><input type="email" id="authRegEmail" placeholder="you@example.com"></div>
+        <div class="form-group"><label>密碼</label><input type="password" id="authRegPassword" placeholder="至少 6 個字元"></div>
+        <div class="form-group"><label>確認密碼</label><input type="password" id="authRegPassword2" placeholder="再輸入一次密碼"></div>
+        <button class="modal-btn modal-btn-save" style="width:100%; margin-top:8px;" onclick="goToRegisterStep2()">下一步</button>
+        <div class="auth-switch-line">已經有帳號？<a href="#" onclick="showAuthStep('login'); return false;">登入</a></div>
+      </div>
+
+      <div id="authStepRegister2" style="display:none;">
+        <div style="text-align:center; margin-bottom:16px;">
+          <div class="profile-avatar-wrap" style="margin:0 auto; width:80px; height:80px;" onclick="document.getElementById('authAvatarFileInput').click();">
+            <img id="authAvatarPreview" class="profile-avatar" style="width:80px; height:80px; display:none;" src="">
+            <span id="authAvatarPlaceholder" class="profile-avatar-placeholder" style="width:80px; height:80px; font-size:32px;">🙂</span>
+            <span class="avatar-edit-pencil">✏️</span>
+          </div>
+          <input type="file" id="authAvatarFileInput" accept="image/*" style="display:none;" onchange="handleFileSelect(event, 'authAvatarPreview', 'authAvatarBase64')">
+          <input type="hidden" id="authAvatarBase64">
+        </div>
+        <div class="form-group"><label>暱稱</label><input type="text" id="authRegNickname" placeholder="會顯示在記帳付款人裡"></div>
+        <button class="modal-btn modal-btn-save" style="width:100%; margin-top:8px;" onclick="finishRegister()">完成註冊</button>
+        <div class="auth-switch-line"><a href="#" onclick="showAuthStep('registerStep1'); return false;">‹ 上一步</a></div>
+      </div>
     </div>
   </div>
 
@@ -971,10 +1064,13 @@
     };
 
     let db = null;
+    let auth = null;
+    let currentUser = null; // { uid, nickname, avatar }
     if (firebaseConfig.databaseURL) {
       try {
         firebase.initializeApp(firebaseConfig);
         db = firebase.database();
+        auth = firebase.auth();
       } catch(e){}
     }
 
@@ -1018,15 +1114,6 @@
       return code;
     }
 
-    function getMyNickname() {
-      let nickname = localStorage.getItem(NICKNAME_KEY);
-      if (!nickname) {
-        nickname = prompt("請輸入你的暱稱（會顯示在記帳的付款人裡）：", "我") || "我";
-        localStorage.setItem(NICKNAME_KEY, nickname);
-      }
-      return nickname;
-    }
-
     function saveData(tripIdx) {
       if (tripIdx === undefined) tripIdx = currentTripIdx;
       const trip = allTrips[tripIdx];
@@ -1068,8 +1155,8 @@
       });
     }
 
-    // 舊版本（單一裝置、無邀請碼機制）資料自動搬遷，不會遺失原本已經存好的行程
-    function migrateOldDataIfNeeded() {
+    // 舊版本（單一裝置、無帳號機制）資料自動搬遷，不會遺失原本已經存好的行程
+    function migrateOldDataIfNeeded(nicknameOverride) {
       if (localStorage.getItem(MY_TRIPS_KEY)) return;
       const oldStr = localStorage.getItem('TRIP_APP_PERSISTENT_DATA');
       if (!oldStr || oldStr === "[]") return;
@@ -1079,8 +1166,7 @@
       if (!Array.isArray(oldTrips) || oldTrips.length === 0) return;
 
       const suggested = (oldTrips[0].payers && oldTrips[0].payers[0]) || "我";
-      const nickname = prompt("這個版本加入了跨裝置同步功能！\n請先輸入你的暱稱（之後會顯示在記帳付款人裡）：", suggested) || suggested;
-      localStorage.setItem(NICKNAME_KEY, nickname);
+      const nickname = nicknameOverride || suggested;
 
       const refs = oldTrips.map(trip => {
         normalizeTripData(trip);
@@ -1095,8 +1181,19 @@
       localStorage.setItem(MY_TRIPS_KEY, JSON.stringify(refs));
     }
 
-    function createFirstTripForNewUser() {
-      const nickname = getMyNickname();
+    // 登入/註冊成功後呼叫：把這台裝置本來就有的舊行程「認領」到這個帳號名下
+    function claimLocalTripsForUser(uid) {
+      migrateOldDataIfNeeded(currentUser.nickname);
+      const refsStr = localStorage.getItem(MY_TRIPS_KEY);
+      if (!refsStr) return;
+      let refs;
+      try { refs = JSON.parse(refsStr); } catch (e) { return; }
+      if (!Array.isArray(refs)) return;
+      refs.forEach(ref => { db.ref('users/' + uid + '/myTrips/' + ref.code).set(true); });
+    }
+
+    function createFirstTripForUser(uid) {
+      const nickname = currentUser.nickname || '我';
       const code = generateInviteCode();
       const newTrip = {
         id: "trip-" + Date.now(),
@@ -1112,49 +1209,54 @@
 
       myTripRefs = [{ code, nickname }];
       allTrips = [newTrip];
-      localStorage.setItem(MY_TRIPS_KEY, JSON.stringify(myTripRefs));
       localStorage.setItem('TRIP_DATA_' + code, JSON.stringify(newTrip));
-      if (db) db.ref('trips/' + code).set(newTrip);
+      db.ref('users/' + uid + '/myTrips/' + code).set(true);
+      db.ref('trips/' + code).set(newTrip);
       subscribeTripLive(code, 0);
-      refreshCurrentUI();
+      restoreLastView();
     }
 
-    function loadData() {
-      migrateOldDataIfNeeded();
+    // 登入後的資料載入入口：這個帳號名下有哪些行程，完全由雲端 users/{uid}/myTrips 決定，
+    // 不再依賴「這台裝置本來就知道哪些行程」，這樣邀請碼分享才會精準只帶入該行程，不會混進你其他行程。
+    function loadDataForUser(uid) {
+      claimLocalTripsForUser(uid);
 
-      const refsStr = localStorage.getItem(MY_TRIPS_KEY);
-      myTripRefs = refsStr ? JSON.parse(refsStr) : [];
+      db.ref('users/' + uid + '/myTrips').once('value').then(snapshot => {
+        const tripsMap = snapshot.val() || {};
+        const codes = Object.keys(tripsMap);
 
-      if (myTripRefs.length === 0) {
-        createFirstTripForNewUser();
-        return;
-      }
-
-      allTrips = myTripRefs.map(ref => {
-        const cached = localStorage.getItem('TRIP_DATA_' + ref.code);
-        if (cached) {
-          try { return normalizeTripData(JSON.parse(cached)); } catch (e) {}
+        if (codes.length === 0) {
+          createFirstTripForUser(uid);
+          return;
         }
-        return {
-          id: 'trip-' + ref.code, title: '新行程', startDate: '2026/01/01', endDate: '2026/01/03',
-          inviteCode: ref.code, flightOut: {}, flightIn: {}, payers: [ref.nickname],
-          expenses: [], shoppingList: [], shoppingAreas: ["藥妝店", "機場"], prepList: getDefaultPrepList(), days: []
-        };
-      });
-      allTrips.forEach(trip => generateDaysFromDates(trip));
 
-      myTripRefs.forEach((ref, idx) => subscribeTripLive(ref.code, idx));
+        myTripRefs = codes.map(code => ({ code, nickname: currentUser.nickname || '我' }));
+        allTrips = myTripRefs.map(ref => {
+          const cached = localStorage.getItem('TRIP_DATA_' + ref.code);
+          if (cached) {
+            try { return normalizeTripData(JSON.parse(cached)); } catch (e) {}
+          }
+          return normalizeTripData({
+            id: 'trip-' + ref.code, title: '新行程', startDate: '2026/01/01', endDate: '2026/01/03',
+            inviteCode: ref.code, payers: [ref.nickname]
+          });
+        });
+        allTrips.forEach(trip => generateDaysFromDates(trip));
+
+        myTripRefs.forEach((ref, idx) => subscribeTripLive(ref.code, idx));
+        restoreLastView();
+      });
     }
 
     function joinTripByCode() {
-      if (!db) { alert("尚未啟用雲端同步功能，還無法加入他人分享的行程。"); return; }
+      if (!db || !currentUser) { alert("請先登入才能加入行程。"); return; }
       const code = prompt("請輸入邀請碼：");
       if (!code) return;
       const cleanCode = code.trim().toUpperCase();
 
       if (myTripRefs.some(r => r.code === cleanCode)) { alert("這個行程你已經加入過了！"); return; }
 
-      const nickname = getMyNickname();
+      const nickname = currentUser.nickname || '我';
 
       db.ref('trips/' + cleanCode).once('value').then(snapshot => {
         const val = snapshot.val();
@@ -1168,8 +1270,9 @@
         val.inviteCode = cleanCode;
         generateDaysFromDates(val);
 
+        db.ref('users/' + currentUser.uid + '/myTrips/' + cleanCode).set(true);
+
         myTripRefs.push({ code: cleanCode, nickname });
-        localStorage.setItem(MY_TRIPS_KEY, JSON.stringify(myTripRefs));
         localStorage.setItem('TRIP_DATA_' + cleanCode, JSON.stringify(val));
         allTrips.push(val);
 
@@ -1196,6 +1299,116 @@
       }
     }
 
+    /* ===== 帳號系統：登入 / 註冊 / 頭像 / 暱稱 ===== */
+    function showAuthGate() {
+      const gate = document.getElementById('authGate');
+      if (gate) gate.style.display = 'flex';
+      showAuthStep('login');
+    }
+    function hideAuthGate() {
+      const gate = document.getElementById('authGate');
+      if (gate) gate.style.display = 'none';
+    }
+    function showAuthStep(step) {
+      document.getElementById('authStepLogin').style.display = step === 'login' ? 'block' : 'none';
+      document.getElementById('authStepRegister1').style.display = step === 'registerStep1' ? 'block' : 'none';
+      document.getElementById('authStepRegister2').style.display = step === 'registerStep2' ? 'block' : 'none';
+    }
+
+    function authErrorMessage(err) {
+      const map = {
+        'auth/email-already-in-use': '這個 Email 已經被註冊過了',
+        'auth/invalid-email': 'Email 格式不正確',
+        'auth/weak-password': '密碼強度不足（至少需要 6 個字元）',
+        'auth/wrong-password': '密碼錯誤',
+        'auth/user-not-found': '找不到這個帳號',
+        'auth/invalid-credential': '帳號或密碼錯誤',
+        'auth/too-many-requests': '嘗試次數過多，請稍後再試'
+      };
+      return (err && map[err.code]) || (err && err.message) || '發生錯誤，請再試一次';
+    }
+
+    function doLogin() {
+      if (!auth) { alert("尚未啟用雲端同步功能，無法登入。"); return; }
+      const email = document.getElementById('authLoginEmail').value.trim();
+      const pw = document.getElementById('authLoginPassword').value;
+      if (!email || !pw) return alert("請輸入帳號密碼！");
+      auth.signInWithEmailAndPassword(email, pw).catch(err => alert("登入失敗：" + authErrorMessage(err)));
+    }
+
+    let pendingRegisterEmail = '', pendingRegisterPassword = '';
+
+    function goToRegisterStep2() {
+      const email = document.getElementById('authRegEmail').value.trim();
+      const pw = document.getElementById('authRegPassword').value;
+      const pw2 = document.getElementById('authRegPassword2').value;
+      if (!email || !pw) return alert("請輸入帳號密碼！");
+      if (pw.length < 6) return alert("密碼至少需要 6 個字元！");
+      if (pw !== pw2) return alert("兩次密碼輸入不一致！");
+      pendingRegisterEmail = email;
+      pendingRegisterPassword = pw;
+      document.getElementById('authRegNickname').value = '';
+      document.getElementById('authAvatarPreview').style.display = 'none';
+      document.getElementById('authAvatarPlaceholder').style.display = 'flex';
+      document.getElementById('authAvatarBase64').value = '';
+      showAuthStep('registerStep2');
+    }
+
+    function finishRegister() {
+      if (!auth) { alert("尚未啟用雲端同步功能，無法註冊。"); return; }
+      const nickname = document.getElementById('authRegNickname').value.trim();
+      if (!nickname) return alert("請輸入暱稱！");
+      const avatar = document.getElementById('authAvatarBase64').value;
+
+      auth.createUserWithEmailAndPassword(pendingRegisterEmail, pendingRegisterPassword)
+        .then(cred => {
+          return db.ref('users/' + cred.user.uid).set({ nickname, avatar: avatar || '', email: pendingRegisterEmail });
+        })
+        .catch(err => alert("註冊失敗：" + authErrorMessage(err)));
+    }
+
+    function doLogout() {
+      if (!auth) return;
+      if (confirm("確定要登出嗎？")) auth.signOut();
+    }
+
+    function updateDrawerProfileUI() {
+      if (!currentUser) return;
+      const nameEl = document.getElementById('drawerNicknameText');
+      const imgEl = document.getElementById('drawerAvatarImg');
+      const placeholderEl = document.getElementById('drawerAvatarPlaceholder');
+      if (nameEl) nameEl.innerText = currentUser.nickname || '我';
+      if (imgEl && placeholderEl) {
+        if (currentUser.avatar) {
+          imgEl.src = currentUser.avatar; imgEl.style.display = 'block'; placeholderEl.style.display = 'none';
+        } else {
+          imgEl.style.display = 'none'; placeholderEl.style.display = 'flex';
+        }
+      }
+    }
+
+    function openAvatarEditModal() {
+      if (!currentUser) return;
+      document.getElementById('avatarPreviewImg').src = currentUser.avatar || '';
+      document.getElementById('avatarPreviewImg').style.display = currentUser.avatar ? 'block' : 'none';
+      document.getElementById('avatarBase64Input').value = currentUser.avatar || '';
+      document.getElementById('avatarEditModal').classList.add('active');
+    }
+    function closeAvatarEditModal() { document.getElementById('avatarEditModal').classList.remove('active'); }
+    function saveAvatarEdit() {
+      const base64 = document.getElementById('avatarBase64Input').value;
+      if (!base64) return alert("請先選擇一張照片！");
+      db.ref('users/' + currentUser.uid + '/avatar').set(base64);
+      closeAvatarEditModal();
+    }
+
+    function openNicknameEditModal() {
+      if (!currentUser) return;
+      const newName = prompt("輸入新的暱稱：", currentUser.nickname || '');
+      if (!newName || !newName.trim()) return;
+      db.ref('users/' + currentUser.uid + '/nickname').set(newName.trim());
+    }
+
     function refreshCurrentUI() {
       if (!allTrips[currentTripIdx]) return;
       if (document.getElementById('pageHome').classList.contains('active')) renderTripList();
@@ -1209,11 +1422,70 @@
       if (document.getElementById('pageToolPrep').classList.contains('active')) renderPrepList();
     }
 
+    // Firebase 尚未設定時的備援：純本機、不需要登入
+    function loadDataLocalOnly() {
+      migrateOldDataIfNeeded();
+      const refsStr = localStorage.getItem(MY_TRIPS_KEY);
+      myTripRefs = refsStr ? JSON.parse(refsStr) : [];
+
+      if (myTripRefs.length === 0) {
+        const nickname = getMyNickname();
+        const code = generateInviteCode();
+        const newTrip = normalizeTripData({
+          id: "trip-" + Date.now(), title: "我的旅遊行程", startDate: "2026/01/01", endDate: "2026/01/03",
+          inviteCode: code, payers: [nickname], shoppingAreas: ["藥妝店", "機場"], prepList: getDefaultPrepList()
+        });
+        generateDaysFromDates(newTrip);
+        myTripRefs = [{ code, nickname }];
+        allTrips = [newTrip];
+        localStorage.setItem(MY_TRIPS_KEY, JSON.stringify(myTripRefs));
+        localStorage.setItem('TRIP_DATA_' + code, JSON.stringify(newTrip));
+        return;
+      }
+
+      allTrips = myTripRefs.map(ref => {
+        const cached = localStorage.getItem('TRIP_DATA_' + ref.code);
+        if (cached) { try { return normalizeTripData(JSON.parse(cached)); } catch (e) {} }
+        return normalizeTripData({ id: 'trip-' + ref.code, title: '新行程', startDate: '2026/01/01', endDate: '2026/01/03', inviteCode: ref.code, payers: [ref.nickname] });
+      });
+      allTrips.forEach(trip => generateDaysFromDates(trip));
+    }
+
+    function getMyNickname() {
+      let nickname = localStorage.getItem(NICKNAME_KEY);
+      if (!nickname) {
+        nickname = prompt("請輸入你的暱稱（會顯示在記帳的付款人裡）：", "我") || "我";
+        localStorage.setItem(NICKNAME_KEY, nickname);
+      }
+      return nickname;
+    }
+
     function init() {
-      loadData();
       fetchJpyRate();
       setupDropzones();
-      restoreLastView();
+
+      if (auth) {
+        auth.onAuthStateChanged(user => {
+          if (user) {
+            currentUser = { uid: user.uid, nickname: '我', avatar: '' };
+            db.ref('users/' + user.uid).on('value', snapshot => {
+              const profile = snapshot.val() || {};
+              currentUser.nickname = profile.nickname || '我';
+              currentUser.avatar = profile.avatar || '';
+              updateDrawerProfileUI();
+            });
+            hideAuthGate();
+            loadDataForUser(user.uid);
+          } else {
+            currentUser = null;
+            allTrips = []; myTripRefs = [];
+            showAuthGate();
+          }
+        });
+      } else {
+        loadDataLocalOnly();
+        restoreLastView();
+      }
     }
 
     /* ===== 頁面狀態記憶 (重整後停留在上次頁面，但工具箱子頁一律回到行程總覽) ===== */
@@ -1389,7 +1661,7 @@
       const title = prompt("請輸入行程名稱：", "大阪京都之旅");
       if (!title) return;
       const dates = prompt("請輸入日期區間 (YYYY/MM/DD - YYYY/MM/DD)：", "2026/10/16 - 2026/10/24");
-      const nickname = getMyNickname();
+      const nickname = currentUser ? (currentUser.nickname || '我') : getMyNickname();
       const code = generateInviteCode();
 
       const newTrip = {
@@ -1406,7 +1678,8 @@
       generateDaysFromDates(newTrip);
       allTrips.push(newTrip);
       myTripRefs.push({ code, nickname });
-      localStorage.setItem(MY_TRIPS_KEY, JSON.stringify(myTripRefs));
+      if (!currentUser) localStorage.setItem(MY_TRIPS_KEY, JSON.stringify(myTripRefs));
+      if (currentUser && db) db.ref('users/' + currentUser.uid + '/myTrips/' + code).set(true);
 
       const newIdx = allTrips.length - 1;
       saveData(newIdx);
@@ -1420,14 +1693,15 @@
       const trip = allTrips[index];
       const ref = myTripRefs[index];
       const msg = db
-        ? `確定要把「${trip.title}」從這台裝置移除嗎？\n（雲端資料不會被刪除，其他已加入的人還是看得到；之後想再看，用邀請碼「${ref ? ref.code : ''}」重新加入就好）`
+        ? `確定要把「${trip.title}」從你的帳號移除嗎？\n（雲端資料不會被刪除，其他已加入的人還是看得到；之後想再看，用邀請碼「${ref ? ref.code : ''}」重新加入就好）`
         : `確定刪除「${trip.title}」？`;
       if (confirm(msg)) {
         if (db && ref) db.ref('trips/' + ref.code).off();
+        if (currentUser && ref && db) db.ref('users/' + currentUser.uid + '/myTrips/' + ref.code).remove();
         if (ref) localStorage.removeItem('TRIP_DATA_' + ref.code);
         allTrips.splice(index, 1);
         myTripRefs.splice(index, 1);
-        localStorage.setItem(MY_TRIPS_KEY, JSON.stringify(myTripRefs));
+        if (!currentUser) localStorage.setItem(MY_TRIPS_KEY, JSON.stringify(myTripRefs));
         renderTripList();
       }
     }
@@ -2453,47 +2727,6 @@
     function deletePrepItem(idx) {
       allTrips[currentTripIdx].prepList.splice(idx, 1);
       saveData(); renderPrepList();
-    }
-
-    function exportDataJSON() {
-      const jsonStr = JSON.stringify(allTrips, null, 2);
-      const blob = new Blob([jsonStr], { type: "application/json" });
-      const a = document.createElement('a');
-      a.href = URL.createObjectURL(blob);
-      a.download = `trip_backup_${new Date().toISOString().split('T')[0]}.json`;
-      a.click();
-    }
-
-    function importDataJSON() {
-      const input = document.createElement('input');
-      input.type = 'file'; input.accept = 'application/json';
-      input.onchange = e => {
-        const reader = new FileReader();
-        reader.onload = event => {
-          try {
-            const imported = JSON.parse(event.target.result);
-            if (!Array.isArray(imported)) throw new Error("format");
-
-            const nickname = getMyNickname();
-            allTrips = imported.map(normalizeTripData);
-            myTripRefs = allTrips.map(trip => {
-              const code = trip.inviteCode || generateInviteCode();
-              trip.inviteCode = code;
-              return { code, nickname };
-            });
-            localStorage.setItem(MY_TRIPS_KEY, JSON.stringify(myTripRefs));
-            allTrips.forEach((trip, idx) => {
-              generateDaysFromDates(trip);
-              saveData(idx);
-              subscribeTripLive(myTripRefs[idx].code, idx);
-            });
-
-            renderTripList(); alert("成功匯入！");
-          } catch (err) { alert("檔案格式錯誤！"); }
-        };
-        reader.readAsText(e.target.files[0]);
-      };
-      input.click();
     }
 
     window.onload = function() { init(); };
