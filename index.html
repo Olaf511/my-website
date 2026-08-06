@@ -38,7 +38,6 @@
       font-family: "Zen Maru Gothic", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
       background-color: var(--bg-cream);
       color: var(--text-main);
-      padding-bottom: 60px;
       line-height: 1.55;
       -webkit-font-smoothing: antialiased;
       -moz-osx-font-smoothing: grayscale;
@@ -73,7 +72,7 @@
     .ios-toggle input:checked + .ios-toggle-track { background: var(--primary-navy); }
     .ios-toggle input:checked + .ios-toggle-track .ios-toggle-thumb { transform: translateX(18px); }
 
-    .container { max-width: 600px; margin: 0 auto; padding: 12px; }
+    .container { max-width: 600px; margin: 0 auto; padding: 12px 12px 60px; }
 
     /* 首頁卡片 */
     .trip-card {
@@ -495,6 +494,25 @@
       display: flex; position: fixed; inset: 0; z-index: 5000; background: var(--bg-cream);
       flex-direction: column; align-items: center; justify-content: center; padding: 24px;
     }
+
+    /* 載入中 Splash：蓋在 authGate 上面，確認登入狀態前先顯示這個，避免閃過登入表單 */
+    #appLoadingSplash {
+      display: flex; position: fixed; inset: 0; z-index: 5200;
+      align-items: flex-end; justify-content: center; padding-bottom: 14vh;
+      transition: opacity 0.3s ease; opacity: 1;
+    }
+    #appLoadingSplash.hidden { opacity: 0; pointer-events: none; }
+    .loading-spinner-wrap { display: flex; flex-direction: column; align-items: center; gap: 10px; }
+    .loading-spinner {
+      width: 26px; height: 26px; border-radius: 50%;
+      border: 3px solid rgba(43,108,176,0.22); border-top-color: var(--primary-navy);
+      animation: loading-spin 0.8s linear infinite;
+    }
+    @keyframes loading-spin { to { transform: rotate(360deg); } }
+    .loading-spinner-text {
+      font-size: 13px; font-weight: 800; color: var(--primary-navy);
+      background: rgba(255,255,255,0.75); padding: 6px 14px; border-radius: 20px;
+    }
     .auth-card {
       width: 100%; max-width: 360px; background: rgba(255,255,255,0.92);
       border-radius: 28px; padding: 32px 26px; box-shadow: 0 20px 50px rgba(45,90,168,0.18);
@@ -542,8 +560,9 @@
     .member-name { font-size: 14px; font-weight: 800; color: var(--text-main); }
     .member-role { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
 
-    .drawer-footer { padding: 14px 16px 18px; border-top: 1px solid var(--border-color); }
-    .drawer-footer button { width: 100%; justify-content: center; padding: 10px; }
+    .drawer-footer { padding: 8px 8px 14px; border-top: 1px solid var(--border-color); }
+    .drawer-item-logout { color: #c53030; }
+    .drawer-item-logout:active { background: #fff5f5; }
 
     .menu-btn {
       position: absolute; left: 10px; top: 8px; background: none; border: none;
@@ -617,7 +636,7 @@
       <div class="mode-toggle-wrap">
         <span id="homeModeIcon">🔒</span>
         <label class="ios-toggle">
-          <input type="checkbox" id="homeModeToggleCheckbox" onchange="toggleEditMode(!this.checked)">
+          <input type="checkbox" id="homeModeToggleCheckbox" checked onchange="toggleEditMode(!this.checked)">
           <span class="ios-toggle-track"><span class="ios-toggle-thumb"></span></span>
         </label>
       </div>
@@ -640,7 +659,7 @@
       <div class="mode-toggle-wrap">
         <span id="detailModeIcon">🔒</span>
         <label class="ios-toggle">
-          <input type="checkbox" id="detailModeToggleCheckbox" onchange="toggleEditMode(!this.checked)">
+          <input type="checkbox" id="detailModeToggleCheckbox" checked onchange="toggleEditMode(!this.checked)">
           <span class="ios-toggle-track"><span class="ios-toggle-thumb"></span></span>
         </label>
       </div>
@@ -1138,19 +1157,18 @@
   <div class="side-drawer" id="sideDrawer">
     <div class="drawer-header">
       <div class="drawer-profile-block">
-        <div class="profile-avatar-wrap" onclick="closeDrawer(); openAvatarEditModal();">
+        <div class="profile-avatar-wrap" style="cursor:default;">
           <img id="drawerAvatarImg" class="profile-avatar" src="" style="display:none;">
           <span id="drawerAvatarPlaceholder" class="profile-avatar-placeholder">🙂</span>
-          <span class="avatar-edit-pencil">✎</span>
         </div>
         <div class="profile-nickname-row">
           <span id="drawerNicknameText">我</span>
-          <button class="nickname-edit-pencil" onclick="closeDrawer(); openNicknameEditModal();">✎</button>
+          <button class="nickname-edit-pencil" onclick="closeDrawer(); openAvatarEditModal();">✎</button>
         </div>
       </div>
       <button class="drawer-close" onclick="closeDrawer()">✕</button>
     </div>
-    <div class="drawer-menu">
+    <div class="drawer-menu drawer-trip-only">
       <button class="drawer-item" data-page="pageDetail" onclick="goToTripOverview()">
         <span class="drawer-item-icon" style="background:var(--primary-navy);">🗺️</span><span>行程總覽</span>
       </button>
@@ -1175,23 +1193,32 @@
       </button>
     </div>
     <div class="drawer-footer">
-      <button id="drawerCopyInviteBtn" class="btn-rounded-light" style="width:100%; justify-content:center; margin-bottom:6px;" onclick="copyInviteCode(); closeDrawer();">🔑 複製邀請碼</button>
-      <button class="btn-rounded-light" style="width:100%; justify-content:center; margin-bottom:10px;" onclick="goToHome(); closeDrawer();">🏠 回首頁</button>
-      <div style="text-align:center;">
-        <a href="#" class="logout-link" onclick="doLogout(); return false;">🚪 登出</a>
-      </div>
+      <button id="drawerCopyInviteBtn" class="drawer-item drawer-trip-only" onclick="copyInviteCode(); closeDrawer();">
+        <span class="drawer-item-icon" style="background:#3182ce;">🔑</span><span>複製邀請碼</span>
+      </button>
+      <button class="drawer-item drawer-trip-only" onclick="goToHome(); closeDrawer();">
+        <span class="drawer-item-icon" style="background:#38a169;">🏠</span><span>回首頁</span>
+      </button>
+      <button class="drawer-item drawer-item-logout" onclick="doLogout()">
+        <span class="drawer-item-icon" style="background:#e53e3e;">🚪</span><span>登出</span>
+      </button>
     </div>
   </div>
 
   <!-- ===== 頭像編輯 Modal ===== -->
   <div class="modal-overlay" id="avatarEditModal">
     <div class="modal-box">
-      <div class="modal-header"><span>更換頭像</span><button onclick="closeAvatarEditModal()">✕</button></div>
-      <div style="text-align:center;">
-        <img id="avatarPreviewImg" src="" style="width:100px; height:100px; border-radius:50%; object-fit:cover; display:none; margin-bottom:10px;">
-        <input type="file" id="avatarFileInput" accept="image/*" onchange="handleFileSelect(event, 'avatarPreviewImg', 'avatarBase64Input', 'circle')">
+      <div class="modal-header"><span>編輯個人資料</span><button onclick="closeAvatarEditModal()">✕</button></div>
+      <div style="text-align:center; margin-bottom:16px;">
+        <div class="profile-avatar-wrap" style="margin:0 auto; width:80px; height:80px;" onclick="document.getElementById('avatarFileInput').click();">
+          <img id="avatarPreviewImg" class="profile-avatar" style="width:80px; height:80px; display:none;" src="">
+          <span id="avatarPreviewPlaceholder" class="profile-avatar-placeholder" style="width:80px; height:80px; font-size:32px;">🙂</span>
+          <span class="avatar-edit-pencil">✎</span>
+        </div>
+        <input type="file" id="avatarFileInput" accept="image/*" style="display:none;" onchange="handleFileSelect(event, 'avatarPreviewImg', 'avatarBase64Input', 'circle', 'avatarPreviewPlaceholder')">
         <input type="hidden" id="avatarBase64Input">
       </div>
+      <div class="form-group"><label>暱稱</label><input type="text" id="profileNicknameInput" placeholder="輸入你的暱稱" autocomplete="off"></div>
       <div class="modal-footer">
         <button class="modal-btn modal-btn-cancel" onclick="closeAvatarEditModal()">取消</button>
         <button class="modal-btn modal-btn-save" onclick="saveAvatarEdit()">儲存</button>
@@ -1206,10 +1233,7 @@
       <div style="text-align:center;">
         <img id="tripCoverPreview" src="" style="width:100%; height:140px; object-fit:cover; border-radius:12px; display:none; margin-bottom:10px;">
         <input type="hidden" id="tripCoverBase64">
-        <div style="display:flex; gap:8px;">
-          <button class="btn-rounded-light" style="flex:1; justify-content:center;" onclick="document.getElementById('tripCoverFileInput').click();">📷 上傳照片</button>
-          <button class="btn-rounded-light" id="tripCoverAutoFetchBtn" style="flex:1; justify-content:center;" onclick="autoFetchTripCoverImage()">🔍 自動抓圖</button>
-        </div>
+        <button class="btn-rounded-light" style="width:100%; justify-content:center;" onclick="document.getElementById('tripCoverFileInput').click();">📷 上傳照片</button>
         <input type="file" id="tripCoverFileInput" accept="image/*" style="display:none;" onchange="handleFileSelect(event, 'tripCoverPreview', 'tripCoverBase64', 'square')">
         <button class="btn-rounded-light" style="width:100%; justify-content:center; margin-top:8px; color:#c53030; border-color:#feb2b2; background:#fff5f5;" onclick="removeTripCoverImage()">🗑️ 移除封面圖</button>
       </div>
@@ -1217,6 +1241,14 @@
         <button class="modal-btn modal-btn-cancel" onclick="closeTripCoverModal()">取消</button>
         <button class="modal-btn modal-btn-save" onclick="saveTripCover()">儲存</button>
       </div>
+    </div>
+  </div>
+
+  <!-- ===== 載入中 Splash（確認登入狀態前先顯示這個，不要讓登入表單先閃一下） ===== -->
+  <div id="appLoadingSplash" class="home-bg">
+    <div class="loading-spinner-wrap">
+      <div class="loading-spinner"></div>
+      <div class="loading-spinner-text">旅程準備中 ✈️</div>
     </div>
   </div>
 
@@ -1729,54 +1761,48 @@
 
     function openAvatarEditModal() {
       if (!currentUser) return;
-      document.getElementById('avatarPreviewImg').src = currentUser.avatar || '';
-      document.getElementById('avatarPreviewImg').style.display = currentUser.avatar ? 'block' : 'none';
+      const img = document.getElementById('avatarPreviewImg');
+      const ph = document.getElementById('avatarPreviewPlaceholder');
+      if (currentUser.avatar) { img.src = currentUser.avatar; img.style.display = 'block'; ph.style.display = 'none'; }
+      else { img.src = ''; img.style.display = 'none'; ph.style.display = 'flex'; }
       document.getElementById('avatarBase64Input').value = currentUser.avatar || '';
+      document.getElementById('profileNicknameInput').value = currentUser.nickname || '';
       document.getElementById('avatarEditModal').classList.add('active');
     }
     function closeAvatarEditModal() { document.getElementById('avatarEditModal').classList.remove('active'); }
+
+    // 同時儲存暱稱與大頭照，並把所有已加入行程裡跟這個帳號有關的成員資料、付款人名稱、消費紀錄一併同步
     function saveAvatarEdit() {
-      const base64 = document.getElementById('avatarBase64Input').value;
-      if (!base64) return alert("請先選擇一張照片！");
-      db.ref('users/' + currentUser.uid + '/avatar').set(base64);
-
-      allTrips.forEach((trip, idx) => {
-        if (trip.members && trip.members[currentUser.uid]) {
-          trip.members[currentUser.uid].avatar = base64;
-          saveData(idx);
-        }
-      });
-
-      closeAvatarEditModal();
-    }
-
-    function openNicknameEditModal() {
-      if (!currentUser) return;
+      const base64 = document.getElementById('avatarBase64Input').value || '';
       const oldName = currentUser.nickname || '';
-      const newName = prompt("輸入新的暱稱：", oldName);
-      if (!newName || !newName.trim() || newName.trim() === oldName) return;
-      const trimmedNew = newName.trim();
+      const newName = (document.getElementById('profileNicknameInput').value || '').trim();
+      if (!newName) return alert("暱稱不能是空白喔！");
 
-      db.ref('users/' + currentUser.uid + '/nickname').set(trimmedNew);
+      const avatarChanged = base64 !== (currentUser.avatar || '');
+      const nameChanged = newName !== oldName;
+      if (!avatarChanged && !nameChanged) { closeAvatarEditModal(); return; }
 
-      // 把所有已加入行程裡，跟這個帳號有關的成員資料、付款人名稱、消費紀錄，一併同步改名
+      if (avatarChanged) db.ref('users/' + currentUser.uid + '/avatar').set(base64);
+      if (nameChanged) db.ref('users/' + currentUser.uid + '/nickname').set(newName);
+
       allTrips.forEach((trip, idx) => {
         let changed = false;
         if (trip.members && trip.members[currentUser.uid]) {
-          trip.members[currentUser.uid].nickname = trimmedNew;
-          syncPayersFromMembers(trip);
-          changed = true;
-        } else if (trip.payers && trip.payers.includes(oldName)) {
-          trip.payers = trip.payers.map(p => p === oldName ? trimmedNew : p);
+          if (avatarChanged) { trip.members[currentUser.uid].avatar = base64; changed = true; }
+          if (nameChanged) { trip.members[currentUser.uid].nickname = newName; syncPayersFromMembers(trip); changed = true; }
+        } else if (nameChanged && trip.payers && trip.payers.includes(oldName)) {
+          trip.payers = trip.payers.map(p => p === oldName ? newName : p);
           changed = true;
         }
-        if (trip.expenses && trip.expenses.length) {
+        if (nameChanged && trip.expenses && trip.expenses.length) {
           trip.expenses.forEach(exp => {
-            if (exp.payer === oldName) { exp.payer = trimmedNew; changed = true; }
+            if (exp.payer === oldName) { exp.payer = newName; changed = true; }
           });
         }
         if (changed) saveData(idx);
       });
+
+      closeAvatarEditModal();
     }
 
     function refreshCurrentUI() {
@@ -1832,11 +1858,14 @@
     }
 
     function init() {
+      toggleEditMode(false); // 預設鎖住，避免鎖定圖示跟開關視覺不同步
       const homeEl = document.getElementById('pageHome');
       const authEl = document.getElementById('authGate');
+      const splashEl = document.getElementById('appLoadingSplash');
       const bgStyle = `linear-gradient(rgba(253,250,244,0.62), rgba(253,250,244,0.62)), url('${HOME_BG_IMAGE}')`;
       if (homeEl) homeEl.style.backgroundImage = bgStyle;
       if (authEl) authEl.style.backgroundImage = `linear-gradient(rgba(253,250,244,0.3), rgba(253,250,244,0.3)), url('${HOME_BG_IMAGE}')`;
+      if (splashEl) splashEl.style.backgroundImage = bgStyle;
       fetchJpyRate();
       setupDropzones();
       setupCropperDrag();
@@ -1850,6 +1879,7 @@
                 // 新的 Google 帳號還沒設定暱稱大頭照，先停在設定畫面，不要進 App
                 pendingGoogleUid = user.uid;
                 showAuthStep('googleSetup');
+                hideLoadingSplash();
                 return;
               }
               currentUser = { uid: user.uid, nickname: '我', avatar: '' };
@@ -1863,18 +1893,27 @@
               const wasExplicitLogin = justLoggedIn;
               justLoggedIn = false;
               loadDataForUser(user.uid, wasExplicitLogin);
+              hideLoadingSplash();
             });
           } else {
             currentUser = null;
             allTrips = []; myTripRefs = [];
             showAuthGate();
+            hideLoadingSplash();
           }
         });
       } else {
         hideAuthGate();
         loadDataLocalOnly();
         restoreLastView();
+        hideLoadingSplash();
       }
+    }
+
+    // 確認完登入狀態（不管是已登入或需要顯示登入頁）才淡出載入畫面，避免使用者看到登入表單閃一下
+    function hideLoadingSplash() {
+      const splash = document.getElementById('appLoadingSplash');
+      if (splash) splash.classList.add('hidden');
     }
 
     /* ===== 頁面狀態記憶 (重整後停留在上次頁面，但工具箱子頁一律回到行程總覽) ===== */
@@ -2213,26 +2252,6 @@
 
     function closeTripCoverModal() {
       document.getElementById('tripCoverModal').classList.remove('active');
-    }
-
-    async function autoFetchTripCoverImage() {
-      const trip = allTrips[tripCoverEditIdx];
-      if (!trip) return;
-      const btn = document.getElementById('tripCoverAutoFetchBtn');
-      const originalText = btn.innerText;
-      btn.innerText = '🔍 搜尋中...'; btn.disabled = true;
-
-      const wikiImg = await fetchWikiImage(trip.title);
-      btn.innerText = originalText; btn.disabled = false;
-
-      if (!wikiImg) { alert("維基百科找不到跟行程標題相符的照片，可以改用上傳照片喔！"); return; }
-
-      // 抓回來的圖片比例不一定是正方形，先進裁切器統一輸出成正方形，縮圖才不會跑版
-      openCropperModal(wikiImg, 'square', function(croppedDataUrl) {
-        document.getElementById('tripCoverBase64').value = croppedDataUrl;
-        const img = document.getElementById('tripCoverPreview');
-        img.src = croppedDataUrl; img.style.display = 'block';
-      });
     }
 
     function removeTripCoverImage() {
@@ -2876,9 +2895,9 @@
     function openDrawer() {
       document.getElementById('sideDrawer').classList.add('active');
       document.getElementById('drawerOverlay').classList.add('active');
-      // 首頁沒有指定行程，不知道要複製哪個行程的邀請碼，所以在首頁隱藏此按鈕
-      const inviteBtn = document.getElementById('drawerCopyInviteBtn');
-      if (inviteBtn) inviteBtn.style.display = (currentPageId === 'pageHome') ? 'none' : 'flex';
+      // 首頁還沒有指定行程，工具選單、複製邀請碼、回首頁都不適用，統一隱藏，只留個人資料與登出
+      const inHome = (currentPageId === 'pageHome');
+      document.querySelectorAll('.drawer-trip-only').forEach(el => { el.style.display = inHome ? 'none' : ''; });
     }
     function closeDrawer() {
       document.getElementById('sideDrawer').classList.remove('active');
