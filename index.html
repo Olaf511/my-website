@@ -565,7 +565,7 @@
     }
     .empty-state .empty-text { font-size: 13px; font-weight: 700; line-height: 1.6; max-width: 220px; margin: 0 auto; }
 
-    .home-bg { background-size: cover; background-position: top center; background-repeat: no-repeat; }
+    .home-bg { background-size: cover; background-position: top center; background-repeat: no-repeat; min-height: 100vh; }
 
     /* ===== 機票造型卡片 ===== */
     .ticket-card {
@@ -680,12 +680,12 @@
   <div id="pageToolExchange" class="app-page">
     <div class="app-header">
       <button class="menu-btn" onclick="openDrawer()">☰</button>
-      <h1><span class="page-icon-badge" style="background:#ed8936;">💱</span>匯率換算</h1>
+      <h1><span class="page-icon-badge" style="background:#ed8936;">💰</span>匯率換算</h1>
     </div>
     <div class="container">
       <div class="exchange-top-box">
         <div class="exchange-top-title">
-          <span>💱 匯率換算 (台銀即期: <span id="currentRateDisplay">--</span>)</span>
+          <span>💰 匯率換算 (台銀即期: <span id="currentRateDisplay">--</span>)</span>
         </div>
         <div style="display:flex; align-items:center; gap:8px;">
           <div class="exchange-input-container">
@@ -1154,15 +1154,15 @@
       <button class="drawer-item" data-page="pageDetail" onclick="goToTripOverview()">
         <span class="drawer-item-icon" style="background:var(--primary-navy);">🗺️</span><span>行程總覽</span>
       </button>
-      <button class="drawer-item" data-page="pageToolAccounting" onclick="goToSubPage('pageToolAccounting')">
-        <span class="drawer-item-icon" style="background:#805ad5;">🧾</span><span>消費記帳</span>
-      </button>
       <button class="drawer-item" data-page="pageToolExchange" onclick="goToSubPage('pageToolExchange')">
-        <span class="drawer-item-icon" style="background:#ed8936;">💱</span><span>匯率換算</span>
+        <span class="drawer-item-icon" style="background:#ed8936;">💰</span><span>匯率換算</span>
       </button>
       <div class="drawer-divider"></div>
       <button class="drawer-item" data-page="pageToolFlight" onclick="goToSubPage('pageToolFlight')">
         <span class="drawer-item-icon" style="background:#2b6cb0;">✈️</span><span>航班天氣</span>
+      </button>
+      <button class="drawer-item" data-page="pageToolAccounting" onclick="goToSubPage('pageToolAccounting')">
+        <span class="drawer-item-icon" style="background:#805ad5;">🧾</span><span>消費記帳</span>
       </button>
       <button class="drawer-item" data-page="pageToolShopping" onclick="goToSubPage('pageToolShopping')">
         <span class="drawer-item-icon" style="background:#319795;">🛍️</span><span>必買清單</span>
@@ -1175,7 +1175,7 @@
       </button>
     </div>
     <div class="drawer-footer">
-      <button class="btn-rounded-light" style="width:100%; justify-content:center; margin-bottom:6px;" onclick="copyInviteCode(); closeDrawer();">🔑 複製邀請碼</button>
+      <button id="drawerCopyInviteBtn" class="btn-rounded-light" style="width:100%; justify-content:center; margin-bottom:6px;" onclick="copyInviteCode(); closeDrawer();">🔑 複製邀請碼</button>
       <button class="btn-rounded-light" style="width:100%; justify-content:center; margin-bottom:10px;" onclick="goToHome(); closeDrawer();">🏠 回首頁</button>
       <div style="text-align:center;">
         <a href="#" class="logout-link" onclick="doLogout(); return false;">🚪 登出</a>
@@ -1382,8 +1382,16 @@
     }
 
     // 依成員資料重新計算付款人名單：只有「編輯者」才會出現在記帳付款人裡
+    // 排序規則：建立者永遠排第一位，之後依加入行程的先後順序排列
     function syncPayersFromMembers(trip) {
-      trip.payers = Object.values(trip.members || {}).filter(m => m.role === 'editor').map(m => m.nickname);
+      const sortedEntries = Object.entries(trip.members || {}).sort((a, b) => {
+        const aCreator = a[0] === trip.creatorUid;
+        const bCreator = b[0] === trip.creatorUid;
+        if (aCreator && !bCreator) return -1;
+        if (!aCreator && bCreator) return 1;
+        return 0;
+      });
+      trip.payers = sortedEntries.filter(([uid, m]) => m.role === 'editor').map(([uid, m]) => m.nickname);
     }
 
     function subscribeTripLive(code, idx) {
@@ -2810,7 +2818,15 @@
       }
       const isCreator = currentUser && trip.creatorUid === currentUser.uid;
 
-      listEl.innerHTML = Object.entries(trip.members).map(([uid, m]) => {
+      const sortedMemberEntries = Object.entries(trip.members).sort((a, b) => {
+        const aCreator = a[0] === trip.creatorUid;
+        const bCreator = b[0] === trip.creatorUid;
+        if (aCreator && !bCreator) return -1;
+        if (!aCreator && bCreator) return 1;
+        return 0;
+      });
+
+      listEl.innerHTML = sortedMemberEntries.map(([uid, m]) => {
         const isSelf = currentUser && uid === currentUser.uid;
         const avatarHtml = m.avatar
           ? `<img src="${m.avatar}" class="member-avatar">`
@@ -2860,6 +2876,9 @@
     function openDrawer() {
       document.getElementById('sideDrawer').classList.add('active');
       document.getElementById('drawerOverlay').classList.add('active');
+      // 首頁沒有指定行程，不知道要複製哪個行程的邀請碼，所以在首頁隱藏此按鈕
+      const inviteBtn = document.getElementById('drawerCopyInviteBtn');
+      if (inviteBtn) inviteBtn.style.display = (currentPageId === 'pageHome') ? 'none' : 'flex';
     }
     function closeDrawer() {
       document.getElementById('sideDrawer').classList.remove('active');
