@@ -357,6 +357,11 @@
     .form-group input:focus, .form-group select:focus, .form-group textarea:focus {
       outline: none; border-color: var(--primary-navy); background: #fff;
     }
+    /* iOS Safari 對原生日期/時間欄位有已知問題：即使設了 width:100%，其內部轉盤內容仍可能撐出容器寬度。
+       額外用 max-width 強制鎖住，避免右側被 modal 的 overflow-x:hidden 切掉一角。 */
+    .form-group input[type="date"], .form-group input[type="time"] {
+      max-width: 100%; min-width: 0;
+    }
     .form-group textarea { resize: vertical; min-height: 60px; }
     .form-row { display: flex; gap: 10px; }
     .form-row .form-group { flex: 1; min-width: 0; }
