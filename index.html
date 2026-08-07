@@ -789,7 +789,7 @@
     <div class="container">
       <div class="exchange-top-box">
         <div class="exchange-top-title">
-          <span>💰 匯率換算 (台銀即期: <span id="currentRateDisplay">--</span>)</span>
+          <span> 匯率換算 (台銀即期: <span id="currentRateDisplay">--</span>)</span>
         </div>
         <div style="display:flex; align-items:center; gap:8px;">
           <div class="exchange-input-container">
@@ -809,7 +809,7 @@
   <div class="modal-overlay" id="spotModal">
     <div class="modal-box modal-sticky-footer">
       <div class="modal-header">
-        <span id="spotModalTitle">➕ 新增行程景點</span>
+        <span id="spotModalTitle"> 新增行程景點</span>
         <button style="background:none; border:none; font-size:18px; cursor:pointer;" onclick="closeSpotModal()">✕</button>
       </div>
       <div class="modal-scroll-area">
@@ -980,11 +980,11 @@
         <input type="text" id="shopAreaCustomInput" placeholder="輸入新區域名稱" style="display:none; margin-top:6px;">
       </div>
       <div class="form-group">
-        <label>🛍️ 商品名稱</label>
+        <label> 商品名稱</label>
         <input type="text" id="shopItemInput" placeholder="">
       </div>
       <div class="form-group">
-        <label>📷 照片 (選填：若不需要可不選，或自行手動上傳)</label>
+        <label> 照片 (選填：若不需要可不選，或自行手動上傳)</label>
         <input type="file" id="shopFileInput" accept="image/*" onchange="handleFileSelect(event, 'shopImgPreview', 'shopImgBase64', 'square')">
         <input type="hidden" id="shopImgBase64">
         <img id="shopImgPreview" src="" style="width:60px; height:60px; object-fit:cover; border-radius:6px; margin-top:4px; display:none;">
@@ -1006,7 +1006,7 @@
       
       <!-- 總支出與結算區塊 (置頂) -->
       <div class="section-card sticky-summary-card">
-        <div class="section-card-title">📊 總支出與結算 (台幣折算)</div>
+        <div class="section-card-title"> 總支出與結算 (台幣折算)</div>
         <div class="summary-boxes-container" id="summaryBoxesWrapper">
           <!-- 動態由 JavaScript 渲染 夫、楊、總計 三框 -->
         </div>
@@ -1014,7 +1014,7 @@
 
       <div class="section-card">
         <div class="section-card-title">
-          <span>🧾 消費明細</span>
+          <span> 消費明細</span>
           <div>
             <button class="btn-rounded-light" id="btnGroupDate" onclick="setExpenseGroupMode('date')">依日期</button>
             <button class="btn-rounded-light" id="btnGroupCategory" onclick="setExpenseGroupMode('category')">依類別</button>
@@ -1026,10 +1026,10 @@
 
       <!-- 各類別花費佔比圖表 (移到最下面) -->
       <div class="section-card">
-        <div class="section-card-title">🥧 各類別花費佔比</div>
+        <div class="section-card-title"> 各類別花費佔比</div>
         <div id="categoryChartEmpty" class="empty-state" style="display:none; padding:20px 0;">
-          <span class="empty-icon">🥧</span>
-          <div class="empty-text">尚無消費紀錄，新增後會自動顯示圖表</div>
+          <span class="empty-icon"></span>
+          <div class="empty-text">尚無消費紀錄</div>
         </div>
         <canvas id="categoryPieChart" height="200"></canvas>
       </div>
@@ -1049,11 +1049,11 @@
 
       <div class="form-row form-row-eq">
         <div class="form-group">
-          <label>📅 日期</label>
+          <label> 日期</label>
           <input type="date" id="expDate">
         </div>
         <div class="form-group">
-          <label>🏷️ 類別</label>
+          <label> 類別</label>
           <select id="expCategory">
             <option value="吃喝">吃喝</option>
             <option value="玩樂">玩樂</option>
@@ -1070,11 +1070,11 @@
 
       <div class="form-row form-row-eq">
         <div class="form-group">
-          <label>👤 付款人</label>
+          <label> 付款人</label>
           <select id="expPayerSelect"></select>
         </div>
         <div class="form-group">
-          <label>💴 幣別</label>
+          <label> 幣別</label>
           <select id="expCurrency">
             <option value="JPY">JPY (日幣)</option>
             <option value="NTD">NTD (台幣)</option>
@@ -1083,13 +1083,13 @@
       </div>
 
       <div class="form-group">
-        <label>📝 品項名稱</label>
+        <label> 品項名稱</label>
         <input type="text" id="expTitle" placeholder="">
       </div>
 
       <div class="form-row" style="display:grid; grid-template-columns: 1fr 96px;">
         <div class="form-group" style="margin-bottom:0;">
-          <label>💰 金額</label>
+          <label> 金額</label>
           <input type="text" inputmode="decimal" pattern="[0-9]*" id="expAmount" placeholder="">
         </div>
         <div class="form-group" style="margin-bottom:0;">
@@ -1116,9 +1116,9 @@
       </div>
       <input type="hidden" id="editExpIndex">
       <div class="form-row form-row-eq">
-        <div class="form-group"><label>📅 日期</label><input type="date" id="editExpDate"></div>
+        <div class="form-group"><label> 日期</label><input type="date" id="editExpDate"></div>
         <div class="form-group">
-          <label>🏷️ 類別</label>
+          <label> 類別</label>
           <select id="editExpCategory">
             <option value="吃喝">吃喝</option>
             <option value="玩樂">玩樂</option>
@@ -1133,9 +1133,9 @@
         </div>
       </div>
       <div class="form-row form-row-eq">
-        <div class="form-group"><label>👤 付款人</label><select id="editExpPayerSelect"></select></div>
+        <div class="form-group"><label> 付款人</label><select id="editExpPayerSelect"></select></div>
         <div class="form-group">
-          <label>💴 幣別</label>
+          <label> 幣別</label>
           <select id="editExpCurrency">
             <option value="JPY">JPY</option>
             <option value="NTD">NTD</option>
@@ -1145,7 +1145,7 @@
       <div class="form-group"><label>📝 品項</label><input type="text" id="editExpTitle"></div>
       <div class="form-row" style="display:grid; grid-template-columns: 1fr 96px;">
         <div class="form-group" style="margin-bottom:0;">
-          <label>💰 金額</label>
+          <label> 金額</label>
           <input type="text" inputmode="decimal" pattern="[0-9]*" id="editExpAmount">
         </div>
         <div class="form-group" style="margin-bottom:0;">
@@ -1171,8 +1171,8 @@
     <div class="container">
       <div class="section-card">
         <div class="section-card-title">
-          <span>🎒 行前檢查清單</span>
-          <button class="btn-rounded-light" onclick="resetPrepChecks()">🔄 一鍵取消勾選</button>
+          <span> 行前檢查清單</span>
+          <button class="btn-rounded-light" onclick="resetPrepChecks()"> 一鍵取消勾選</button>
         </div>
         <div id="prepList"></div>
       </div>
@@ -1191,8 +1191,8 @@
     <div class="container">
       <div class="section-card">
         <div class="section-card-title">
-          <span>👥 誰加入了這個行程</span>
-          <button class="btn-rounded-light" onclick="copyInviteCode()">🔑 邀請碼</button>
+          <span> 誰加入了這個行程</span>
+          <button class="btn-rounded-light" onclick="copyInviteCode()"> 邀請碼</button>
         </div>
         <div id="membersList"></div>
       </div>
@@ -1207,14 +1207,14 @@
         <button onclick="closePrepItemModal()">✕</button>
       </div>
       <div class="form-group">
-        <label>📦 分類</label>
+        <label> 分類</label>
         <select id="prepCategorySelect">
           <option value="隨身包包">隨身包包</option>
           <option value="托運行李">托運行李</option>
         </select>
       </div>
       <div class="form-group">
-        <label>📝 項目名稱</label>
+        <label> 項目名稱</label>
         <input type="text" id="prepItemInput" placeholder="">
       </div>
       <div class="modal-footer">
@@ -1233,7 +1233,7 @@
   <!-- ===== 加入行程：身份選擇 Modal ===== -->
   <div class="modal-overlay" id="roleChoiceModal">
     <div class="modal-box" style="max-width:320px; text-align:center;">
-      <div style="font-size:32px; margin-bottom:8px;">👋</div>
+      <div style="font-size:32px; margin-bottom:8px;"></div>
       <div style="font-weight:900; font-size:16px; color:var(--primary-navy); margin-bottom:4px;">你想成為此行程的？</div>
       <div style="font-size:12px; color:var(--text-muted); margin-bottom:18px;">之後隨時可以請建立者幫你調整身份</div>
       <button class="btn-rounded-light" style="width:100%; justify-content:center; padding:12px; margin-bottom:10px; font-size:14px;" onclick="chooseRoleAndJoin('viewer')">👀 檢視者（只看不編輯）</button>
@@ -1244,12 +1244,12 @@
 
   <div class="modal-overlay" id="cropperModal">
     <div class="modal-box" style="max-width:340px;">
-      <div class="modal-header"><span>📐 調整照片範圍</span><button onclick="closeCropperModal()">✕</button></div>
+      <div class="modal-header"><span> 調整照片範圍</span><button onclick="closeCropperModal()">✕</button></div>
       <div class="cropper-stage" id="cropperStage">
         <img id="cropperImg" src="" draggable="false">
       </div>
       <div class="cropper-zoom-row">
-        <span style="font-size:14px;">🔍</span>
+        <span style="font-size:14px;"></span>
         <input type="range" id="cropperZoomSlider" min="100" max="300" value="100" oninput="onCropperZoomChange(this.value)">
       </div>
       <div class="modal-footer">
@@ -1268,7 +1268,7 @@
       <div class="drawer-profile-block">
         <div class="profile-avatar-wrap" style="cursor:default;">
           <img id="drawerAvatarImg" class="profile-avatar" src="" style="display:none;">
-          <span id="drawerAvatarPlaceholder" class="profile-avatar-placeholder">🙂</span>
+          <span id="drawerAvatarPlaceholder" class="profile-avatar-placeholder"></span>
         </div>
         <div class="profile-nickname-row">
           <span id="drawerNicknameText">我</span>
@@ -1345,7 +1345,7 @@
   <!-- ===== 行程封面圖編輯 Modal (只有上傳/自動抓圖，沒有網址欄位) ===== -->
   <div class="modal-overlay" id="tripCoverModal">
     <div class="modal-box">
-      <div class="modal-header"><span>🖼️ 更換行程封面</span><button onclick="closeTripCoverModal()">✕</button></div>
+      <div class="modal-header"><span> 更換行程封面</span><button onclick="closeTripCoverModal()">✕</button></div>
       <div style="text-align:center;">
         <img id="tripCoverPreview" src="" style="width:100%; height:140px; object-fit:cover; border-radius:12px; display:none; margin-bottom:10px;">
         <input type="hidden" id="tripCoverBase64">
