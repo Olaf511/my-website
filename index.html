@@ -623,7 +623,7 @@
     }
     .drawer-trip-item-info { flex: 1; min-width: 0; }
     .drawer-trip-item-title { font-size: 13px; font-weight: 800; color: var(--text-main); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .drawer-trip-item-date { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
+    .drawer-trip-item-date { font-size: 10px; color: var(--text-muted); margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
     /* 從抽屜點行程後，回首頁閃爍提示對應的行程卡片 */
     @keyframes trip-card-blink {
@@ -806,9 +806,7 @@
               <option value="景點">景點</option>
               <option value="餐廳">餐廳</option>
               <option value="逛街">逛街</option>
-              <option value="樂園">樂園</option>
               <option value="住宿">住宿</option>
-              <option value="飛機">飛機</option>
             </select>
           </div>
           <div class="form-group">
@@ -863,7 +861,7 @@
       </div>
       <div style="display:flex; flex-direction:column; gap:8px;">
         <button type="button" class="action-sheet-btn" onclick="spotActionSheetEdit()">✎ 編輯景點</button>
-        <button type="button" class="action-sheet-btn" onclick="spotActionSheetDelete()"> 刪除景點</button>
+        <button type="button" class="action-sheet-btn danger" onclick="spotActionSheetDelete()">🗑️ 刪除景點</button>
         <button type="button" class="action-sheet-btn" style="justify-content:center; color:var(--text-muted); background:none; border-color:transparent;" onclick="closeSpotActionSheet()">取消</button>
       </div>
     </div>
@@ -1378,6 +1376,7 @@
         <div class="form-group"><label>確認密碼</label><input type="password" id="authRegPassword2" placeholder="再輸入一次密碼"></div>
         <button class="modal-btn modal-btn-save" style="width:100%; margin-top:8px;" onclick="finishRegister()">完成註冊</button>
         <div class="auth-switch-line">已經有帳號？<a href="#" onclick="showAuthStep('login'); return false;">登入</a></div>
+        <div class="auth-switch-line"><a href="#" onclick="goBackToLogin(); return false;">← 回上一頁</a></div>
       </div>
 
       <div id="authStepGoogleSetup" style="display:none;">
@@ -1393,6 +1392,7 @@
         </div>
         <div class="form-group"><label>暱稱</label><input type="text" id="googleRegNickname" autocomplete="off"></div>
         <button class="modal-btn modal-btn-save" style="width:100%; margin-top:8px;" onclick="finishGoogleSetup()">完成</button>
+        <div class="auth-switch-line"><a href="#" onclick="goBackToLogin(); return false;">← 回上一頁</a></div>
       </div>
     </div>
   </div>
@@ -1816,9 +1816,23 @@
 
     let pendingGoogleUid = '';
 
+    // 註冊畫面 / Google 首次設定畫面 的「回上一頁」：回到登入頁面。
+    // 如果是從 Google 設定畫面（已經用 Google 登入但還沒完成暱稱設定）返回，
+    // 順便登出，避免下次進 App 又被自動帶回設定畫面。
+    function goBackToLogin() {
+      if (pendingGoogleUid && auth) {
+        pendingGoogleUid = '';
+        auth.signOut().then(() => showAuthStep('login'));
+      } else {
+        showAuthStep('login');
+      }
+    }
+
     function doGoogleLogin() {
       if (!auth) { alert("尚未啟用雲端同步功能，無法登入。"); return; }
       const provider = new firebase.auth.GoogleAuthProvider();
+      // 每次登入都跳出 Google 帳號選擇畫面，而不是自動用上次登入過的帳號登入
+      provider.setCustomParameters({ prompt: 'select_account' });
       justLoggedIn = true;
       auth.signInWithPopup(provider).then(result => {
         document.getElementById('googleRegNickname').value = result.user.displayName || '';
