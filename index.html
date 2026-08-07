@@ -397,7 +397,7 @@
     .form-row-eq.keep-2col { grid-template-columns: 1fr 1fr; }
     @media (max-width: 480px) {
       .form-row-eq.keep-2col { grid-template-columns: 1fr 1fr; gap: 8px; }
-      .form-row-eq.keep-2col select, .form-row-eq.keep-2col input { font-size: 13px; padding-left: 8px; padding-right: 8px; }
+      .form-row-eq.keep-2col select, .form-row-eq.keep-2col input, .form-row-eq.keep-2col .fake-picker-display { font-size: 13px; padding-left: 8px; padding-right: 8px; }
     }
 
     .modal-footer { display: flex; gap: 10px; margin-top: 18px; }
@@ -820,11 +820,11 @@
             <input type="text" id="inputTitle" placeholder="">
           </div>
           <div class="form-group">
-            <label style="display:flex; align-items:center; justify-content:space-between;">
+            <label style="display:flex; align-items:center; justify-content:space-between; width:100%; box-sizing:border-box;">
               <span>已預約</span>
-              <input type="checkbox" id="inputReserved" onchange="toggleReservedTime()" style="width:16px; height:16px; margin:0; cursor:pointer;">
+              <input type="checkbox" id="inputReserved" onchange="toggleReservedTime()" style="width:16px; height:16px; margin:0; cursor:pointer; flex-shrink:0;">
             </label>
-            <input type="time" id="inputReservedTime" value="09:00" disabled>
+            <input type="time" id="inputReservedTime" value="09:00" disabled style="width:100%; box-sizing:border-box;">
           </div>
         </div>
 
@@ -2909,15 +2909,7 @@
       input.disabled = !checked;
       const wrap = input.closest('.fake-picker-wrap');
       if (wrap) wrap.classList.toggle('is-disabled', !checked);
-      const info = fakeDateTimeInputs['inputReservedTime'];
-      if (info) {
-        if (checked) {
-          syncFakeDateTimeDisplay('inputReservedTime');
-        } else {
-          info.display.textContent = '打勾後可選時間';
-          info.display.classList.add('is-placeholder');
-        }
-      }
+      syncFakeDateTimeDisplay('inputReservedTime');
     }
 
     function removeSpotImage() {
