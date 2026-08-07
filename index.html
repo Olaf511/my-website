@@ -515,6 +515,16 @@
     .cropper-zoom-row { display: flex; align-items: center; gap: 10px; margin-top: 14px; padding: 0 6px; }
     .cropper-zoom-row input[type="range"] { flex: 1; }
 
+    /* ===== 短暫提示 Toast ===== */
+    .toast-message {
+      position: fixed; left: 50%; bottom: 90px; transform: translateX(-50%) translateY(20px);
+      background: rgba(30,30,30,0.9); color: #fff; padding: 10px 22px; border-radius: 999px;
+      font-size: 14px; font-weight: 700; letter-spacing: 0.5px; z-index: 9999;
+      opacity: 0; pointer-events: none; transition: opacity 0.25s ease, transform 0.25s ease;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.25); white-space: nowrap;
+    }
+    .toast-message.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
     /* ===== 側邊抽屜選單 (漢堡選單) ===== */
     .drawer-overlay {
       position: fixed; inset: 0; background: rgba(0,0,0,0.45); z-index: 2400;
@@ -718,9 +728,6 @@
       </div>
     </div>
     <div class="container">
-      <div style="display:flex; justify-content:flex-end; gap:8px; margin-bottom:10px;">
-        <button class="btn-rounded-light" onclick="joinTripByCode()">🔑 加入行程</button>
-      </div>
       <div id="tripListContainer"></div>
     </div>
     <button class="fab-add" onclick="createNewTrip()">+</button>
@@ -1251,6 +1258,8 @@
   </div>
 
   <!-- ===== 側邊抽屜選單 ===== -->
+  <div class="toast-message" id="toastMessage"></div>
+
   <div class="drawer-overlay" id="drawerOverlay" onclick="closeDrawer()"></div>
   <div class="side-drawer" id="sideDrawer">
     <div class="drawer-header">
@@ -1300,6 +1309,9 @@
       </button>
       <button class="drawer-item drawer-trip-only" onclick="goToHome(); closeDrawer();">
         <span class="drawer-item-icon" style="background:#38a169;">🏠</span><span>回到首頁</span>
+      </button>
+      <button class="drawer-item drawer-home-only" onclick="joinTripByCode(); closeDrawer();">
+        <span class="drawer-item-icon" style="background:#3182ce;">🔑</span><span>加入行程</span>
       </button>
       <button class="drawer-item drawer-item-logout" onclick="doLogout()">
         <span class="drawer-item-icon" style="background:#ECC8BE;">🚪</span><span>登出帳號</span>
@@ -1710,8 +1722,9 @@
 
         myTripRefs.forEach((ref, idx) => subscribeTripLive(ref.code, idx));
         if (forceHome) {
+          closeDrawer();
           goToHome();
-          setTimeout(() => alert("登入成功！歡迎回來 🎉"), 100);
+          setTimeout(() => showToast("登入成功！歡迎回來 🎉"), 100);
         } else {
           restoreLastView();
         }
@@ -3114,6 +3127,16 @@
       syncPayersFromMembers(trip);
       saveData();
       renderMembersList();
+    }
+
+    let toastTimer = null;
+    function showToast(msg, duration = 2000) {
+      const el = document.getElementById('toastMessage');
+      if (!el) return;
+      el.textContent = msg;
+      el.classList.add('show');
+      clearTimeout(toastTimer);
+      toastTimer = setTimeout(() => { el.classList.remove('show'); }, duration);
     }
 
     function openDrawer() {
