@@ -819,12 +819,17 @@
             <input type="text" id="inputTitle" placeholder="">
           </div>
           <div class="form-group">
-            <label style="display:flex; align-items:center; gap:6px; cursor:pointer;">
-              <input type="checkbox" id="inputReserved" onchange="toggleReservedTime()" style="width:16px; height:16px;">
-              已預約
+            <label>已預約</label>
+            <label style="display:flex; align-items:center; gap:8px; padding:12px 14px; border:1.5px solid #e2e8f0; border-radius:12px; background:#f8fafc; cursor:pointer; box-sizing:border-box; font-size:14px; color:var(--text-main); min-height:0;">
+              <input type="checkbox" id="inputReserved" onchange="toggleReservedTime()" style="width:18px; height:18px; flex-shrink:0;">
+              <span>需要預約</span>
             </label>
-            <input type="time" id="inputReservedTime" value="09:00" style="display:none; margin-top:6px;">
           </div>
+        </div>
+
+        <div class="form-group" id="reservedTimeRow" style="display:none;">
+          <label>預約時間</label>
+          <input type="time" id="inputReservedTime" value="09:00">
         </div>
 
         <div class="form-group" style="position:relative;">
@@ -2902,12 +2907,10 @@
       modal.classList.add('active');
     }
 
-    // 已預約勾選框：打勾才顯示「預約時間」欄位（跟上方時間欄位一樣是原生時間選擇器，套用同一套 fake-picker 樣式）
+    // 已預約勾選框：這個框永遠都在，打勾後才會多出下方「預約時間」那一列可以選
     function toggleReservedTime() {
       const checked = document.getElementById('inputReserved').checked;
-      const input = document.getElementById('inputReservedTime');
-      const wrap = input.closest('.fake-picker-wrap');
-      (wrap || input).style.display = checked ? 'block' : 'none';
+      document.getElementById('reservedTimeRow').style.display = checked ? 'block' : 'none';
     }
 
     function removeSpotImage() {
