@@ -205,7 +205,7 @@
     .card-time { font-size: 12px; font-weight: 800; color: var(--primary-navy); }
     .tag-badge { font-size: 10px; font-weight: bold; color: #fff; padding: 1px 6px; border-radius: 10px; }
     .tag-spot { background: #3182ce; } .tag-food { background: #dd6b20; } .tag-shop { background: #d69e2e; } .tag-hotel { background: #319795; } .tag-park { background: #805ad5; } .tag-flight { background: #4a5568; }
-    .tag-reserved { font-size: 10px; font-weight: bold; color: #fff; padding: 1px 6px; border-radius: 10px; background: #38a169; margin-left: 4px; }
+    .tag-reserved { font-size: 10px; font-weight: bold; color: #7a1f28; padding: 1px 6px; border-radius: 10px; background: #FDA9AF; margin-left: 4px; }
     
     .card-title-link {
       font-size: 15px; font-weight: 800; color: var(--text-main); text-decoration: none;
@@ -820,7 +820,7 @@
             <input type="text" id="inputTitle" placeholder="">
           </div>
           <div class="form-group">
-            <label style="display:flex; align-items:center; justify-content:space-between; width:100%; box-sizing:border-box;">
+            <label style="display:flex; align-items:center; gap:6px; width:100%; box-sizing:border-box;">
               <span>已預約</span>
               <input type="checkbox" id="inputReserved" onchange="toggleReservedTime()" style="width:16px; height:16px; margin:0; cursor:pointer; flex-shrink:0;">
             </label>
@@ -2781,7 +2781,7 @@
           if (spot.category === "樂園") tagClass = "tag-park";
           if (spot.category === "住宿") tagClass = "tag-hotel";
           if (spot.category === "飛機") tagClass = "tag-flight";
-          const reservedBadge = spot.reserved ? `<span class="tag-reserved">✅ ${spot.reservedTime || '已預約'}</span>` : '';
+          const reservedBadge = spot.reserved ? `<span class="tag-reserved">已預約 ${spot.reservedTime || ''}</span>` : '';
 
           const defaultImg = DEFAULT_SPOT_IMAGE;
           const displayImg = spot.img || defaultImg;
