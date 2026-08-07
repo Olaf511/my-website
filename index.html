@@ -362,6 +362,25 @@
     .form-group input[type="date"], .form-group input[type="time"] {
       max-width: 100%; min-width: 0;
     }
+
+    /* 方案 B：原生 date/time input 完全透明化，蓋在自訂顯示框上方。
+       使用者實際點到的是這顆隱形的原生欄位（因此仍可用 showPicker() 叫出系統轉盤），
+       畫面上看到的則是下面這個 100% 由我們自己控制樣式、不會撐爆版面的框。 */
+    .fake-picker-wrap { position: relative; }
+    .fake-picker-wrap input.fake-picker-native {
+      position: absolute; inset: 0; width: 100%; height: 100%;
+      opacity: 0; margin: 0; padding: 0; border: none; z-index: 2;
+      cursor: pointer; -webkit-appearance: none; appearance: none;
+    }
+    .fake-picker-display {
+      position: relative; z-index: 1; width: 100%; box-sizing: border-box;
+      padding: 12px 14px; border: 1.5px solid #e2e8f0; border-radius: 12px; font-size: 14px;
+      background: #f8fafc; color: var(--text-main); min-height: 20px;
+      display: flex; align-items: center; cursor: pointer; pointer-events: none;
+    }
+    .fake-picker-display.is-placeholder { color: var(--text-muted); }
+    .fake-picker-wrap:active .fake-picker-display { border-color: var(--primary-navy); background: #fff; }
+
     .form-group textarea { resize: vertical; min-height: 60px; }
     .form-row { display: flex; gap: 10px; }
     .form-row .form-group { flex: 1; min-width: 0; }
@@ -435,6 +454,28 @@
     .read-mode-hide { display: block; }
     .is-read-mode .read-mode-hide { display: none !important; }
     .is-read-mode .pencil-icon { display: none !important; }
+
+    /* 編輯情況下要隱藏的元素（跟 read-mode-hide 相反：檢視模式才顯示，編輯模式隱藏），
+       例如編輯模式時不需要（也容易誤觸）的 Google Map 導航捷徑 */
+    body:not(.is-read-mode) .edit-mode-hide { display: none !important; }
+
+    /* 方案 C：手機／電腦統一用「⋮ 更多」按鈕觸發操作選單，不做滑動手勢 */
+    .icon-btn-more {
+      background: none; border: none; color: var(--text-muted); font-size: 20px; font-weight: 900;
+      cursor: pointer; padding: 4px 8px; line-height: 1; border-radius: 8px;
+    }
+    .icon-btn-more:active { background: #f1f5f9; }
+    .action-sheet-btn {
+      width: 100%; padding: 13px 14px; border-radius: 14px; border: 1.5px solid #e2e8f0;
+      background: #f8fafc; color: var(--text-main); font-weight: 800; font-size: 14px;
+      display: flex; align-items: center; gap: 8px; cursor: pointer; text-align: left;
+      box-sizing: border-box;
+    }
+    .action-sheet-btn.danger { color: #c53030; background: #fff5f5; border-color: #feb2b2; }
+    .action-sheet-title {
+      font-size: 13px; color: var(--text-muted); font-weight: 700; margin-bottom: 4px;
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
 
     /* 圖片放大 Lightbox Modal */
     #lightboxModal {
@@ -807,6 +848,21 @@
       <div class="modal-footer">
         <button class="modal-btn modal-btn-cancel" onclick="closeSpotModal()">取消</button>
         <button class="modal-btn modal-btn-save" onclick="saveSpot()">儲存</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== 景點操作選單（方案 C：⋮ 更多按鈕 → 選單，取代滑動手勢） ===== -->
+  <div class="modal-overlay" id="spotActionSheet">
+    <div class="modal-box" style="max-width:320px;">
+      <div class="modal-header">
+        <span class="action-sheet-title" id="spotActionSheetTitle">景點選項</span>
+        <button onclick="closeSpotActionSheet()">✕</button>
+      </div>
+      <div style="display:flex; flex-direction:column; gap:8px;">
+        <button type="button" class="action-sheet-btn" onclick="spotActionSheetEdit()">✎ 編輯景點</button>
+        <button type="button" class="action-sheet-btn danger" onclick="spotActionSheetDelete()">🗑️ 刪除景點</button>
+        <button type="button" class="action-sheet-btn" style="justify-content:center; color:var(--text-muted); background:none; border-color:transparent;" onclick="closeSpotActionSheet()">取消</button>
       </div>
     </div>
   </div>
@@ -1348,6 +1404,68 @@
     function formatNum(num) {
       if (num === null || num === undefined || isNaN(num)) return '0';
       return Number(num).toLocaleString('en-US');
+    }
+
+    /* ============================================================
+       方案 B：原生 date/time input 隱形化 + 自訂顯示框
+       - 原生 input 仍保留在畫面上（只是 opacity:0），使用者點到的其實是它，
+         所以還是能叫出 iOS / Android 熟悉的系統轉盤（showPicker）。
+       - 畫面上看到的是我們自己畫的 .fake-picker-display，樣式 100% 可控，
+         不會再被瀏覽器原生渲染撐爆版面。
+       ============================================================ */
+    const fakeDateTimeInputs = {};
+    function setupFakeDateTimeField(inputId) {
+      const input = document.getElementById(inputId);
+      if (!input || fakeDateTimeInputs[inputId]) return;
+      const isDate = input.type === 'date';
+
+      const wrap = document.createElement('div');
+      wrap.className = 'fake-picker-wrap';
+      input.parentNode.insertBefore(wrap, input);
+      wrap.appendChild(input);
+      input.classList.add('fake-picker-native');
+
+      const display = document.createElement('div');
+      display.className = 'fake-picker-display';
+      wrap.appendChild(display);
+
+      const openPicker = () => {
+        if (typeof input.showPicker === 'function') {
+          try { input.showPicker(); return; } catch (e) { /* 部分瀏覽器需使用者手勢直接觸發，忽略錯誤改走 focus */ }
+        }
+        input.focus();
+      };
+      input.addEventListener('click', openPicker);
+      input.addEventListener('focus', openPicker);
+      input.addEventListener('input', () => syncFakeDateTimeDisplay(inputId));
+      input.addEventListener('change', () => syncFakeDateTimeDisplay(inputId));
+
+      fakeDateTimeInputs[inputId] = { display, isDate };
+      syncFakeDateTimeDisplay(inputId);
+    }
+
+    function syncFakeDateTimeDisplay(inputId) {
+      const info = fakeDateTimeInputs[inputId];
+      const input = document.getElementById(inputId);
+      if (!info || !input) return;
+      const val = input.value;
+      if (!val) {
+        info.display.textContent = info.isDate ? '請選擇日期' : '請選擇時間';
+        info.display.classList.add('is-placeholder');
+        return;
+      }
+      info.display.classList.remove('is-placeholder');
+      if (info.isDate) {
+        const parts = val.split('-');
+        const y = parseInt(parts[0], 10), m = parseInt(parts[1], 10), d = parseInt(parts[2], 10);
+        info.display.textContent = `${y}年${m}月${d}日`;
+      } else {
+        info.display.textContent = val;
+      }
+    }
+
+    function setupAllFakeDateTimeFields() {
+      ['inputTime', 'expDate', 'editExpDate', 'flightEditDepTime', 'flightEditArrTime'].forEach(setupFakeDateTimeField);
     }
 
     /* 🔥跨裝置 Firebase 同步 (填入你的設定檔即刻啟用) */
@@ -1903,6 +2021,7 @@
       setupDropzones();
       setupCropperDrag();
       setupEdgeSwipeDrawer();
+      setupAllFakeDateTimeFields();
 
       if (auth) {
         auth.onAuthStateChanged(user => {
@@ -2661,11 +2780,10 @@
               <div class="card-title-link" onclick="focusMapMarker(${idx})">${spot.title}</div>
               ${spot.note ? `<div class="card-note">${spot.note}</div>` : ''}
             </div>
-            <a href="${mapsUrl}" target="_blank" class="card-action-btn" title="Google Map 導航">↗</a>
-            <div style="display:flex; flex-direction:column; gap:4px; margin-left:4px;" class="read-mode-hide">
+            <a href="${mapsUrl}" target="_blank" class="card-action-btn edit-mode-hide" title="Google Map 導航">↗</a>
+            <div style="display:flex; flex-direction:column; align-items:center; gap:4px; margin-left:4px;" class="read-mode-hide">
               <span class="drag-handle" title="拖曳排序">⠿</span>
-              <button class="icon-btn-edit-sm" onclick="openSpotModal(${idx})">✎</button>
-              <button class="icon-btn-del" onclick="deleteSpot(${idx})">✕</button>
+              <button class="icon-btn-more" onclick="openSpotActionMenu(event, ${idx})" title="更多操作">⋮</button>
             </div>
           `;
           listContainer.appendChild(card);
@@ -2755,6 +2873,7 @@
         document.getElementById('spotImgRemoveBtn').style.display = 'none';
         addressSelectedLatLng = null;
       }
+      syncFakeDateTimeDisplay('inputTime');
       modal.classList.add('active');
     }
 
@@ -2906,6 +3025,30 @@
       }
     }
 
+    /* ===== 方案 C：景點「⋮ 更多」操作選單（取代原本的鉛筆編輯 + 叉叉刪除兩顆按鈕） ===== */
+    let spotActionSheetIdx = -1;
+    function openSpotActionMenu(evt, idx) {
+      if (evt) { evt.preventDefault(); evt.stopPropagation(); }
+      spotActionSheetIdx = idx;
+      const spot = allTrips[currentTripIdx]?.days[currentDayIdx]?.spots[idx];
+      document.getElementById('spotActionSheetTitle').innerText = spot ? spot.title : '景點選項';
+      document.getElementById('spotActionSheet').classList.add('active');
+    }
+    function closeSpotActionSheet() {
+      document.getElementById('spotActionSheet').classList.remove('active');
+      spotActionSheetIdx = -1;
+    }
+    function spotActionSheetEdit() {
+      const idx = spotActionSheetIdx;
+      closeSpotActionSheet();
+      openSpotModal(idx);
+    }
+    function spotActionSheetDelete() {
+      const idx = spotActionSheetIdx;
+      closeSpotActionSheet();
+      deleteSpot(idx);
+    }
+
     /* ===== 側邊抽屜選單開關 ===== */
     function renderMembersList() {
       const listEl = document.getElementById('membersList');
@@ -3019,12 +3162,14 @@
     /* ===== 記帳相關邏輯 ===== */
     function initAccountingPage() {
       document.getElementById('expDate').value = new Date().toISOString().split('T')[0];
+      syncFakeDateTimeDisplay('expDate');
       renderPayerSelectOptions();
       renderExpenseList();
     }
 
     function openExpenseModal() {
       document.getElementById('expDate').value = new Date().toISOString().split('T')[0];
+      syncFakeDateTimeDisplay('expDate');
       document.getElementById('expTitle').value = '';
       document.getElementById('expAmount').value = '';
       document.getElementById('expenseModal').classList.add('active');
@@ -3226,6 +3371,7 @@
       const exp = allTrips[currentTripIdx].expenses[idx];
       document.getElementById('editExpIndex').value = idx;
       document.getElementById('editExpDate').value = exp.date;
+      syncFakeDateTimeDisplay('editExpDate');
       document.getElementById('editExpCategory').value = exp.category;
       document.getElementById('editExpPayerSelect').value = exp.payer;
       document.getElementById('editExpCurrency').value = exp.currency;
@@ -3486,6 +3632,8 @@
       document.getElementById('flightEditTo').value = to;
       document.getElementById('flightEditDepTime').value = depTime;
       document.getElementById('flightEditArrTime').value = arrTime;
+      syncFakeDateTimeDisplay('flightEditDepTime');
+      syncFakeDateTimeDisplay('flightEditArrTime');
       document.getElementById('flightEditModal').classList.add('active');
     }
 
