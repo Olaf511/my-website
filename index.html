@@ -404,9 +404,9 @@
       .form-row-eq { grid-template-columns: 1fr; }
     }
     /* 景點的「類別／時間」列：手機版也要維持同一行，不堆疊 */
-    .form-row-eq.keep-2col { grid-template-columns: 1fr 1fr; }
+    .form-row-eq.keep-2col { grid-template-columns: 0.75fr 1fr; }
     @media (max-width: 480px) {
-      .form-row-eq.keep-2col { grid-template-columns: 1fr 1fr; gap: 8px; }
+      .form-row-eq.keep-2col { grid-template-columns: 0.75fr 1fr; gap: 8px; }
       .form-row-eq.keep-2col select, .form-row-eq.keep-2col input, .form-row-eq.keep-2col .fake-picker-display { font-size: 13px; padding-left: 8px; padding-right: 8px; }
     }
 
@@ -817,6 +817,8 @@
               <option value="住宿">住宿</option>
               <option value="飛機">飛機</option>
             </select>
+            <!-- 純粹用來撐高度，跟右邊「已預約」欄位對齊，無任何功能，完全透明不可互動 -->
+            <input type="time" aria-hidden="true" tabindex="-1" disabled style="width:100%; box-sizing:border-box; visibility:hidden; margin-top:6px;">
           </div>
           <div class="form-group">
             <label>時間</label>
