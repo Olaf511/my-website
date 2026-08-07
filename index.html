@@ -204,7 +204,8 @@
     .card-header-row { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; margin-bottom: 2px; }
     .card-time { font-size: 12px; font-weight: 800; color: var(--primary-navy); }
     .tag-badge { font-size: 10px; font-weight: bold; color: #fff; padding: 1px 6px; border-radius: 10px; }
-    .tag-spot { background: #3182ce; } .tag-food { background: #dd6b20; } .tag-shop { background: #d69e2e; } .tag-hotel { background: #319795; }
+    .tag-spot { background: #3182ce; } .tag-food { background: #dd6b20; } .tag-shop { background: #d69e2e; } .tag-hotel { background: #319795; } .tag-park { background: #805ad5; } .tag-flight { background: #4a5568; }
+    .tag-reserved { font-size: 10px; font-weight: bold; color: #fff; padding: 1px 6px; border-radius: 10px; background: #38a169; margin-left: 4px; }
     
     .card-title-link {
       font-size: 15px; font-weight: 800; color: var(--text-main); text-decoration: none;
@@ -548,17 +549,6 @@
       transition: opacity 0.3s ease; opacity: 1;
     }
     #appLoadingSplash.hidden { opacity: 0; pointer-events: none; }
-    .loading-spinner-wrap { display: flex; flex-direction: column; align-items: center; gap: 10px; }
-    .loading-spinner {
-      width: 26px; height: 26px; border-radius: 50%;
-      border: 3px solid rgba(43,108,176,0.22); border-top-color: var(--primary-navy);
-      animation: loading-spin 0.8s linear infinite;
-    }
-    @keyframes loading-spin { to { transform: rotate(360deg); } }
-    .loading-spinner-text {
-      font-size: 13px; font-weight: 800; color: var(--primary-navy);
-      background: rgba(255,255,255,0.75); padding: 6px 14px; border-radius: 20px;
-    }
     .auth-card {
       width: 100%; max-width: 360px; background: rgba(255,255,255,0.92);
       border-radius: 28px; padding: 32px 26px; box-shadow: 0 20px 50px rgba(45,90,168,0.18);
@@ -806,7 +796,9 @@
               <option value="景點">景點</option>
               <option value="餐廳">餐廳</option>
               <option value="逛街">逛街</option>
+              <option value="樂園">樂園</option>
               <option value="住宿">住宿</option>
+              <option value="飛機">飛機</option>
             </select>
           </div>
           <div class="form-group">
@@ -815,27 +807,36 @@
           </div>
         </div>
 
-        <div class="form-group">
-          <label>名稱</label>
-          <input type="text" id="inputTitle" placeholder="">
+        <div class="form-row" style="align-items:flex-end;">
+          <div class="form-group" style="flex:1;">
+            <label>名稱</label>
+            <input type="text" id="inputTitle" placeholder="">
+          </div>
+          <div class="form-group" style="flex:0 0 auto; margin-bottom:11px;">
+            <label style="display:flex; align-items:center; gap:6px; cursor:pointer; white-space:nowrap;">
+              <input type="checkbox" id="inputReserved" onchange="toggleReservedTime()" style="width:16px; height:16px;">
+              已預約
+            </label>
+          </div>
+        </div>
+
+        <div class="form-group" id="reservedTimeGroup" style="display:none;">
+          <label>預約時間</label>
+          <select id="inputReservedTime"></select>
         </div>
 
         <div class="form-group" style="position:relative;">
-          <label>地址 / 關鍵字</label>
-          <input type="text" id="inputAddress" placeholder="輸入店名或地址，選單會列出附近符合的地點" autocomplete="off" oninput="onAddressInput()" onfocus="onAddressInput()">
+          <label>地址</label>
+          <input type="text" id="inputAddress" placeholder="" autocomplete="off" oninput="onAddressInput()" onfocus="onAddressInput()">
           <div id="addressSuggestList" class="address-suggest-list"></div>
         </div>
 
         <div class="form-group">
-          <label>景點照片</label>
+          <label>照片</label>
           <img id="spotImgPreview" src="" style="width:100%; height:130px; object-fit:cover; border-radius:12px; display:none; margin-bottom:8px;">
           <input type="hidden" id="inputImgUrl">
-          <div style="display:flex; gap:8px;">
-            <button type="button" class="btn-rounded-light" style="flex:1; justify-content:center;" onclick="document.getElementById('spotFileInput').click();">📷 上傳照片</button>
-            <button type="button" class="btn-rounded-light" id="autoFetchImgBtn" style="flex:1; justify-content:center;" onclick="autoFetchSpotImage()">🔍 自動抓圖</button>
-          </div>
+          <button type="button" class="btn-rounded-light" style="width:100%; justify-content:center;" onclick="document.getElementById('spotFileInput').click();">📷 上傳照片</button>
           <input type="file" id="spotFileInput" accept="image/*" style="display:none;" onchange="handleFileSelect(event, 'spotImgPreview', 'inputImgUrl', 'square', null, 'spotImgRemoveBtn')">
-          <div class="dropzone" id="spotDropzone">或把照片拖曳到這裡</div>
           <button type="button" class="btn-rounded-light" id="spotImgRemoveBtn" style="width:100%; justify-content:center; margin-top:6px; color:#c53030; border-color:#feb2b2; background:#fff5f5; display:none;" onclick="removeSpotImage()">🗑️ 移除照片</button>
         </div>
 
@@ -1333,12 +1334,7 @@
   </div>
 
   <!-- ===== 載入中 Splash（確認登入狀態前先顯示這個，不要讓登入表單先閃一下） ===== -->
-  <div id="appLoadingSplash" class="home-bg">
-    <div class="loading-spinner-wrap">
-      <div class="loading-spinner"></div>
-      <div class="loading-spinner-text">旅程準備中 ✈️</div>
-    </div>
-  </div>
+  <div id="appLoadingSplash" class="home-bg"></div>
 
   <!-- ===== 登入 / 註冊畫面 ===== -->
   <div id="authGate" class="home-bg">
@@ -2699,7 +2695,7 @@
       if (!currentDay) return;
 
       const bounds = [];
-      const categoryColors = { "景點": "#3182ce", "餐廳": "#dd6b20", "逛街": "#d69e2e", "住宿": "#319795" };
+      const categoryColors = { "景點": "#3182ce", "餐廳": "#dd6b20", "逛街": "#d69e2e", "樂園": "#805ad5", "住宿": "#319795", "飛機": "#4a5568" };
       currentDay.spots.forEach((spot, idx) => {
         if (spot.lat && spot.lng) {
           const badgeColor = categoryColors[spot.category] || "var(--accent-orange)";
@@ -2778,7 +2774,10 @@
           let tagClass = "tag-spot";
           if (spot.category === "餐廳") tagClass = "tag-food";
           if (spot.category === "逛街") tagClass = "tag-shop";
+          if (spot.category === "樂園") tagClass = "tag-park";
           if (spot.category === "住宿") tagClass = "tag-hotel";
+          if (spot.category === "飛機") tagClass = "tag-flight";
+          const reservedBadge = spot.reserved ? `<span class="tag-reserved">✅ ${spot.reservedTime || '已預約'}</span>` : '';
 
           const defaultImg = DEFAULT_SPOT_IMAGE;
           const displayImg = spot.img || defaultImg;
@@ -2791,7 +2790,7 @@
             <div class="card-main">
               <div class="card-header-row">
                 <span class="card-time">${spot.time || '09:00'}</span>
-                <span class="tag-badge ${tagClass}">${spot.category || '景點'}</span>
+                <span class="tag-badge ${tagClass}">${spot.category || '景點'}</span>${reservedBadge}
               </div>
               <div class="card-title-link" onclick="focusMapMarker(${idx})">${spot.title}</div>
               ${spot.note ? `<div class="card-note">${spot.note}</div>` : ''}
@@ -2870,6 +2869,9 @@
         document.getElementById('inputAddress').value = spot.address || "";
         document.getElementById('inputImgUrl').value = spot.img || "";
         document.getElementById('inputNote').value = spot.note || "";
+        document.getElementById('inputReserved').checked = !!spot.reserved;
+        document.getElementById('inputReservedTime').value = spot.reservedTime || "09:00";
+        toggleReservedTime();
         addressSelectedLatLng = (spot.lat && spot.lng) ? { lat: spot.lat, lng: spot.lng } : null;
         if (spot.img) {
           document.getElementById('spotImgPreview').src = spot.img;
@@ -2887,11 +2889,37 @@
         document.getElementById('inputNote').value = "";
         document.getElementById('spotImgPreview').style.display = 'none';
         document.getElementById('spotImgRemoveBtn').style.display = 'none';
+        document.getElementById('inputReserved').checked = false;
+        document.getElementById('inputReservedTime').value = "09:00";
+        toggleReservedTime();
         addressSelectedLatLng = null;
       }
       syncFakeDateTimeDisplay('inputTime');
       modal.classList.add('active');
     }
+
+    // 已預約勾選框：打勾才顯示「預約時間」下拉選單
+    function toggleReservedTime() {
+      const checked = document.getElementById('inputReserved').checked;
+      document.getElementById('reservedTimeGroup').style.display = checked ? 'block' : 'none';
+    }
+
+    // 產生每 30 分鐘一個選項的時間下拉選單
+    function populateTimeSelect(selectId) {
+      const sel = document.getElementById(selectId);
+      if (!sel || sel.options.length > 0) return;
+      for (let h = 0; h < 24; h++) {
+        for (let m = 0; m < 60; m += 30) {
+          const hh = String(h).padStart(2, '0');
+          const mm = String(m).padStart(2, '0');
+          const val = `${hh}:${mm}`;
+          const opt = document.createElement('option');
+          opt.value = val; opt.textContent = val;
+          sel.appendChild(opt);
+        }
+      }
+    }
+    populateTimeSelect('inputReservedTime');
 
     function removeSpotImage() {
       document.getElementById('inputImgUrl').value = '';
@@ -2947,56 +2975,6 @@
 
     function closeSpotModal() { document.getElementById('spotModal').classList.remove('active'); }
 
-    function getAutoImage(keyword, category) {
-      return DEFAULT_SPOT_IMAGE;
-    }
-
-    /* 🔥 免金鑰版：從維基百科自動抓取景點縮圖 (若你之後申請了 Google Places API 金鑰，
-       可以把這個函式換成呼叫 Google Place Photo，取得更精準的店家招牌照片) */
-    async function fetchWikiImage(query) {
-      if (!query) return null;
-      try {
-        const res = await fetch(`https://zh.wikipedia.org/w/api.php?action=query&titles=${encodeURIComponent(query)}&prop=pageimages&format=json&pithumbsize=400&origin=*`);
-        const data = await res.json();
-        const pages = data.query && data.query.pages;
-        if (!pages) return null;
-        const page = Object.values(pages)[0];
-        if (page && page.thumbnail && page.thumbnail.source) return page.thumbnail.source;
-      } catch (e) {}
-      return null;
-    }
-
-    async function autoFetchSpotImage() {
-      const query = document.getElementById('inputAddress').value || document.getElementById('inputTitle').value;
-      if (!query) return alert("請先輸入名稱或地址，才能自動抓圖喔！");
-      const btn = document.getElementById('autoFetchImgBtn');
-      const originalText = btn.innerText;
-      btn.innerText = '🔍 搜尋中...';
-      btn.disabled = true;
-
-      const wikiImg = await fetchWikiImage(query);
-      btn.innerText = originalText;
-      btn.disabled = false;
-
-      if (!wikiImg) {
-        alert("維基百科找不到這個地方的照片，先用預設情境圖代替，你可以改用上傳照片喔！");
-        const finalImg = DEFAULT_SPOT_IMAGE;
-        document.getElementById('inputImgUrl').value = finalImg;
-        const img = document.getElementById('spotImgPreview');
-        img.src = finalImg; img.style.display = 'block';
-        document.getElementById('spotImgRemoveBtn').style.display = 'block';
-        return;
-      }
-
-      // 維基百科圖片比例不一定是正方形，先進裁切器統一輸出成正方形，卡片縮圖才不會跑版
-      openCropperModal(wikiImg, 'square', function(croppedDataUrl) {
-        document.getElementById('inputImgUrl').value = croppedDataUrl;
-        const img = document.getElementById('spotImgPreview');
-        img.src = croppedDataUrl; img.style.display = 'block';
-        document.getElementById('spotImgRemoveBtn').style.display = 'block';
-      });
-    }
-
     async function saveSpot() {
       const editIdx = parseInt(document.getElementById('editSpotIndex').value);
       const category = document.getElementById('inputCategory').value;
@@ -3005,11 +2983,12 @@
       const address = document.getElementById('inputAddress').value;
       let img = document.getElementById('inputImgUrl').value;
       const note = document.getElementById('inputNote').value;
+      const reserved = document.getElementById('inputReserved').checked;
+      const reservedTime = reserved ? document.getElementById('inputReservedTime').value : '';
 
       if (!title) return alert("請輸入名稱！");
       if (!img && !spotImageRemoved) {
-        const wikiImg = await fetchWikiImage(address || title);
-        img = wikiImg || getAutoImage(address || title, category);
+        img = DEFAULT_SPOT_IMAGE;
       }
 
       let lat = 34.6937, lng = 135.5023;
@@ -3025,7 +3004,7 @@
         } catch (e) {}
       }
 
-      const spotObj = { id: Date.now(), category, time, title, address, img, note, lat, lng };
+      const spotObj = { id: Date.now(), category, time, title, address, img, note, lat, lng, reserved, reservedTime };
       const currentDay = allTrips[currentTripIdx].days[currentDayIdx];
 
       if (editIdx >= 0) { currentDay.spots[editIdx] = spotObj; }
