@@ -392,6 +392,12 @@
     @media (max-width: 480px) {
       .form-row-eq { grid-template-columns: 1fr; }
     }
+    /* 景點的「類別／時間」列：手機版也要維持同一行，不堆疊 */
+    .form-row-eq.keep-2col { grid-template-columns: 1fr 1fr; }
+    @media (max-width: 480px) {
+      .form-row-eq.keep-2col { grid-template-columns: 1fr 1fr; gap: 8px; }
+      .form-row-eq.keep-2col select, .form-row-eq.keep-2col input { font-size: 13px; padding-left: 8px; padding-right: 8px; }
+    }
 
     .modal-footer { display: flex; gap: 10px; margin-top: 18px; }
     .modal-btn { flex: 1; padding: 13px; border-radius: 14px; border: none; font-weight: 800; cursor: pointer; font-size: 14px; text-align: center; }
@@ -789,7 +795,7 @@
       <div class="modal-scroll-area">
         <input type="hidden" id="editSpotIndex" value="-1">
 
-        <div class="form-row form-row-eq">
+        <div class="form-row form-row-eq keep-2col">
           <div class="form-group">
             <label>類別</label>
             <select id="inputCategory">
@@ -807,22 +813,18 @@
           </div>
         </div>
 
-        <div class="form-row" style="align-items:flex-end;">
-          <div class="form-group" style="flex:1;">
+        <div class="form-row form-row-eq keep-2col">
+          <div class="form-group">
             <label>名稱</label>
             <input type="text" id="inputTitle" placeholder="">
           </div>
-          <div class="form-group" style="flex:0 0 auto; margin-bottom:11px;">
-            <label style="display:flex; align-items:center; gap:6px; cursor:pointer; white-space:nowrap;">
+          <div class="form-group">
+            <label style="display:flex; align-items:center; gap:6px; cursor:pointer;">
               <input type="checkbox" id="inputReserved" onchange="toggleReservedTime()" style="width:16px; height:16px;">
               已預約
             </label>
+            <input type="time" id="inputReservedTime" value="09:00" style="display:none; margin-top:6px;">
           </div>
-        </div>
-
-        <div class="form-group" id="reservedTimeGroup" style="display:none;">
-          <label>預約時間</label>
-          <select id="inputReservedTime"></select>
         </div>
 
         <div class="form-group" style="position:relative;">
@@ -1463,7 +1465,7 @@
     }
 
     function setupAllFakeDateTimeFields() {
-      ['inputTime', 'expDate', 'editExpDate', 'flightEditDepTime', 'flightEditArrTime'].forEach(setupFakeDateTimeField);
+      ['inputTime', 'inputReservedTime', 'expDate', 'editExpDate', 'flightEditDepTime', 'flightEditArrTime'].forEach(setupFakeDateTimeField);
     }
 
     /* 🔥跨裝置 Firebase 同步 (填入你的設定檔即刻啟用) */
@@ -2872,6 +2874,7 @@
         document.getElementById('inputReserved').checked = !!spot.reserved;
         document.getElementById('inputReservedTime').value = spot.reservedTime || "09:00";
         toggleReservedTime();
+        syncFakeDateTimeDisplay('inputReservedTime');
         addressSelectedLatLng = (spot.lat && spot.lng) ? { lat: spot.lat, lng: spot.lng } : null;
         if (spot.img) {
           document.getElementById('spotImgPreview').src = spot.img;
@@ -2892,34 +2895,20 @@
         document.getElementById('inputReserved').checked = false;
         document.getElementById('inputReservedTime').value = "09:00";
         toggleReservedTime();
+        syncFakeDateTimeDisplay('inputReservedTime');
         addressSelectedLatLng = null;
       }
       syncFakeDateTimeDisplay('inputTime');
       modal.classList.add('active');
     }
 
-    // 已預約勾選框：打勾才顯示「預約時間」下拉選單
+    // 已預約勾選框：打勾才顯示「預約時間」欄位（跟上方時間欄位一樣是原生時間選擇器，套用同一套 fake-picker 樣式）
     function toggleReservedTime() {
       const checked = document.getElementById('inputReserved').checked;
-      document.getElementById('reservedTimeGroup').style.display = checked ? 'block' : 'none';
+      const input = document.getElementById('inputReservedTime');
+      const wrap = input.closest('.fake-picker-wrap');
+      (wrap || input).style.display = checked ? 'block' : 'none';
     }
-
-    // 產生每 30 分鐘一個選項的時間下拉選單
-    function populateTimeSelect(selectId) {
-      const sel = document.getElementById(selectId);
-      if (!sel || sel.options.length > 0) return;
-      for (let h = 0; h < 24; h++) {
-        for (let m = 0; m < 60; m += 30) {
-          const hh = String(h).padStart(2, '0');
-          const mm = String(m).padStart(2, '0');
-          const val = `${hh}:${mm}`;
-          const opt = document.createElement('option');
-          opt.value = val; opt.textContent = val;
-          sel.appendChild(opt);
-        }
-      }
-    }
-    populateTimeSelect('inputReservedTime');
 
     function removeSpotImage() {
       document.getElementById('inputImgUrl').value = '';
