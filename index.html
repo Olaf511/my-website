@@ -381,6 +381,7 @@
     }
     .fake-picker-display.is-placeholder { color: var(--text-muted); }
     .fake-picker-wrap:active .fake-picker-display { border-color: var(--primary-navy); background: #fff; }
+    .fake-picker-wrap.is-disabled .fake-picker-display { opacity: .5; background: #eef1f4; cursor: not-allowed; }
 
     .form-group textarea { resize: vertical; min-height: 60px; }
     .form-row { display: flex; gap: 10px; }
@@ -819,17 +820,12 @@
             <input type="text" id="inputTitle" placeholder="">
           </div>
           <div class="form-group">
-            <label>已預約</label>
-            <label style="display:flex; align-items:center; gap:8px; padding:12px 14px; border:1.5px solid #e2e8f0; border-radius:12px; background:#f8fafc; cursor:pointer; box-sizing:border-box; font-size:14px; color:var(--text-main); min-height:0;">
-              <input type="checkbox" id="inputReserved" onchange="toggleReservedTime()" style="width:18px; height:18px; flex-shrink:0;">
-              <span>需要預約</span>
+            <label style="display:flex; align-items:center; justify-content:space-between;">
+              <span>已預約</span>
+              <input type="checkbox" id="inputReserved" onchange="toggleReservedTime()" style="width:16px; height:16px; margin:0; cursor:pointer;">
             </label>
+            <input type="time" id="inputReservedTime" value="09:00" disabled>
           </div>
-        </div>
-
-        <div class="form-group" id="reservedTimeRow" style="display:none;">
-          <label>預約時間</label>
-          <input type="time" id="inputReservedTime" value="09:00">
         </div>
 
         <div class="form-group" style="position:relative;">
@@ -2041,6 +2037,7 @@
       setupCropperDrag();
       setupEdgeSwipeDrawer();
       setupAllFakeDateTimeFields();
+      if (document.getElementById('inputReserved')) toggleReservedTime();
 
       if (auth) {
         auth.onAuthStateChanged(user => {
@@ -2879,7 +2876,6 @@
         document.getElementById('inputReserved').checked = !!spot.reserved;
         document.getElementById('inputReservedTime').value = spot.reservedTime || "09:00";
         toggleReservedTime();
-        syncFakeDateTimeDisplay('inputReservedTime');
         addressSelectedLatLng = (spot.lat && spot.lng) ? { lat: spot.lat, lng: spot.lng } : null;
         if (spot.img) {
           document.getElementById('spotImgPreview').src = spot.img;
@@ -2900,17 +2896,28 @@
         document.getElementById('inputReserved').checked = false;
         document.getElementById('inputReservedTime').value = "09:00";
         toggleReservedTime();
-        syncFakeDateTimeDisplay('inputReservedTime');
         addressSelectedLatLng = null;
       }
       syncFakeDateTimeDisplay('inputTime');
       modal.classList.add('active');
     }
 
-    // 已預約勾選框：這個框永遠都在，打勾後才會多出下方「預約時間」那一列可以選
+    // 已預約勾選框：打勾才能點選下面的時間欄位，沒打勾就是灰階不能選
     function toggleReservedTime() {
       const checked = document.getElementById('inputReserved').checked;
-      document.getElementById('reservedTimeRow').style.display = checked ? 'block' : 'none';
+      const input = document.getElementById('inputReservedTime');
+      input.disabled = !checked;
+      const wrap = input.closest('.fake-picker-wrap');
+      if (wrap) wrap.classList.toggle('is-disabled', !checked);
+      const info = fakeDateTimeInputs['inputReservedTime'];
+      if (info) {
+        if (checked) {
+          syncFakeDateTimeDisplay('inputReservedTime');
+        } else {
+          info.display.textContent = '打勾後可選時間';
+          info.display.classList.add('is-placeholder');
+        }
+      }
     }
 
     function removeSpotImage() {
