@@ -927,7 +927,7 @@
       </div>
 
       <div class="section-card">
-        <div class="section-card-title">🌤️ 每日天氣與降雨預報</div>
+        <div class="section-card-title"><i class="bi bi-cloudy-fill"></i>  每日天氣與降雨預報</div>
         <div id="weatherDisplay"><div class="loading-spinner">資料載入中...</div></div>
       </div>
     </div>
@@ -3730,10 +3730,10 @@
           const pop = data.daily.precipitation_probability_max[idx];
           const code = data.daily.weathercode[idx];
 
-          let weatherIcon = "☀️晴朗";
-          if (code >= 1 && code <= 3) weatherIcon = "⛅多雲";
-          if (code >= 51 && code <= 67) weatherIcon = "🌧️陣雨";
-          if (code >= 80) weatherIcon = "🌩️雷雨";
+          let weatherIcon = "<i class="bi bi-cloud-sun"></i> 晴朗";
+          if (code >= 1 && code <= 3) weatherIcon = "<i class="bi bi-clouds-fill"></i> 多雲";
+          if (code >= 51 && code <= 67) weatherIcon = "<i class="bi bi-cloud-rain-fill"></i> 陣雨";
+          if (code >= 80) weatherIcon = "<i class="bi bi-cloud-lightning-rain-fill"></i> 雷雨";
 
           container.innerHTML += `
             <div class="weather-row">
