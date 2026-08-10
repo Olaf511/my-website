@@ -1601,7 +1601,7 @@
     }
 
     function setupAllFakeDateTimeFields() {
-      ['inputTime', 'inputReservedTime', 'expDate', 'editExpDate', 'flightEditDepTime', 'flightEditArrTime'].forEach(setupFakeDateTimeField);
+      ['inputTime', 'inputReservedTime', 'expDate', 'editExpDate', 'flightEditDepTime', 'flightEditArrTime', 'newTripStartDateInput', 'newTripEndDateInput'].forEach(setupFakeDateTimeField);
     }
 
     /* 🔥跨裝置 Firebase 同步 (填入你的設定檔即刻啟用) */
@@ -1838,7 +1838,7 @@
         if (forceHome) {
           closeDrawer();
           goToHome();
-          setTimeout(() => showToast("登入成功～旅程繼續囉！"), 100);
+          setTimeout(() => showToast("夫來啦！"), 100);
         } else {
           restoreLastView();
         }
@@ -2641,6 +2641,8 @@
       const in7 = new Date(today.getTime() + 7 * 24 * 60 * 60 * 1000);
       document.getElementById('newTripStartDateInput').value = today.toISOString().slice(0, 10);
       document.getElementById('newTripEndDateInput').value = in7.toISOString().slice(0, 10);
+      syncFakeDateTimeDisplay('newTripStartDateInput');
+      syncFakeDateTimeDisplay('newTripEndDateInput');
       document.getElementById('newTripModal').classList.add('active');
     }
 
