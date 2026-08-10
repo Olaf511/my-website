@@ -151,15 +151,15 @@
     .overview-day-area { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
     .overview-day-arrow { color: var(--text-muted); font-size: 18px; font-weight: 900; }
 
-    /* 行程總覽 - 滿版背景圖 */
-    #overviewPanel {
+    /* 各頁面 - 滿版背景圖 (行程總覽/匯率換算/航班天氣/消費記帳/必買清單/事前準備/行程成員) */
+    #pageDetail, #pageToolExchange, #pageToolFlight, #pageToolAccounting,
+    #pageToolShopping, #pageToolPrep, #pageToolMembers {
       position: relative;
-      min-height: calc(100vh - 210px);
-      border-radius: 16px;
-      padding: 2px 0 12px;
-      overflow: hidden;
+      min-height: 100vh;
     }
-    #overviewPanel::before {
+    #pageDetail::before, #pageToolExchange::before, #pageToolFlight::before,
+    #pageToolAccounting::before, #pageToolShopping::before, #pageToolPrep::before,
+    #pageToolMembers::before {
       content: "";
       position: absolute;
       inset: 0;
@@ -168,13 +168,8 @@
       background-position: center top;
       background-repeat: no-repeat;
       opacity: 0.16;
-      z-index: 0;
+      z-index: -1;
       pointer-events: none;
-    }
-    #overviewPanel .overview-day-row,
-    #overviewPanel .empty-state {
-      position: relative;
-      z-index: 1;
     }
 
     /* 天數頁籤 */
