@@ -1295,6 +1295,34 @@
     </div>
   </div>
 
+  <!-- ===== 新增行程 Modal ===== -->
+  <div class="modal-overlay" id="newTripModal">
+    <div class="modal-box">
+      <div class="modal-header">
+        <span class="modal-title-with-icon"><span class="page-icon-badge" style="background:#fff; border:1.5px solid #D7E9FD; color:#3862AE;"><i class="bi bi-airplane-fill"></i></span>新增行程</span>
+        <button onclick="closeNewTripModal()">✕</button>
+      </div>
+      <div class="form-group">
+        <label>行程名稱</label>
+        <input type="text" id="newTripTitleInput" placeholder="例如：大阪京都之旅">
+      </div>
+      <div class="form-row form-row-eq keep-2col">
+        <div class="form-group">
+          <label>出發日期</label>
+          <input type="date" id="newTripStartDateInput">
+        </div>
+        <div class="form-group">
+          <label>回程日期</label>
+          <input type="date" id="newTripEndDateInput">
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="modal-btn modal-btn-cancel" onclick="closeNewTripModal()">取消</button>
+        <button class="modal-btn modal-btn-save" onclick="submitNewTrip()">建立行程</button>
+      </div>
+    </div>
+  </div>
+
   <!-- ===== 圖片放大 Lightbox Modal ===== -->
   <div id="lightboxModal" onclick="closeLightbox()">
     <img id="lightboxImg" src="" alt="放大圖片">
@@ -1307,9 +1335,20 @@
       <div style="font-size:32px; margin-bottom:8px;"></div>
       <div style="font-weight:900; font-size:16px; color:var(--primary-navy); margin-bottom:4px;">你想成為此行程的？</div>
       <div style="font-size:12px; color:var(--text-muted); margin-bottom:18px;">之後隨時可以請建立者幫你調整身份</div>
-      <button class="btn-rounded-light" style="width:100%; justify-content:center; padding:12px; margin-bottom:10px; font-size:14px;" onclick="chooseRoleAndJoin('viewer')">👀 檢視者（只看不編輯）</button>
+      <button class="btn-rounded-light" style="width:100%; justify-content:center; padding:12px; margin-bottom:10px; font-size:14px;" onclick="chooseRoleAndJoin('viewer')"><i class="bi bi-search" style="color:#3862AE;"></i> 檢視者（只看不編輯）</button>
       <button class="btn-rounded-light" style="width:100%; justify-content:center; padding:12px; margin-bottom:14px; font-size:14px;" onclick="chooseRoleAndJoin('editor')"><i class="bi bi-highlighter" style="color:#3862AE;"></i> 編輯者（一起記帳規劃）</button>
       <button style="background:none; border:none; color:var(--text-muted); font-size:12px; cursor:pointer;" onclick="closeRoleChoiceModal()">取消</button>
+    </div>
+  </div>
+
+  <!-- ===== 登出確認 Modal ===== -->
+  <div class="modal-overlay" id="logoutConfirmModal">
+    <div class="modal-box" style="max-width:300px; text-align:center;">
+      <div style="font-size:32px; margin-bottom:8px; color:#3862AE;"><i class="bi bi-box-arrow-right"></i></div>
+      <div style="font-weight:900; font-size:16px; color:var(--primary-navy); margin-bottom:4px;">確定要登出嗎？</div>
+      <div style="font-size:12px; color:var(--text-muted); margin-bottom:18px;">登出後需要重新輸入帳號密碼才能繼續使用</div>
+      <button class="modal-btn modal-btn-save" style="width:100%; margin-bottom:8px;" onclick="confirmLogout()">確定登出</button>
+      <button style="background:none; border:none; color:var(--text-muted); font-size:12px; cursor:pointer; padding:6px;" onclick="closeLogoutConfirmModal()">取消</button>
     </div>
   </div>
 
@@ -1386,7 +1425,7 @@
       <button class="drawer-item drawer-home-only" onclick="joinTripByCode(); closeDrawer();">
         <span class="drawer-item-icon"><i class="bi bi-egg-fried"></i></span><span>加入行程</span>
       </button>
-      <button class="drawer-item drawer-item-logout" onclick="doLogout()">
+      <button class="drawer-item drawer-item-logout" onclick="closeDrawer(); doLogout();">
         <span class="drawer-item-icon"><i class="bi bi-moon-fill"></i></span><span>登出帳號</span>
       </button>
     </div>
@@ -1450,7 +1489,7 @@
         <div style="display:flex; align-items:center; gap:8px; margin:16px 0; color:var(--text-muted); font-size:12px;">
           <div style="flex:1; height:1px; background:var(--border-color);"></div>或使用其他方式登入<div style="flex:1; height:1px; background:var(--border-color);"></div>
         </div>
-        <button class="btn-rounded-light" style="width:100%; justify-content:center; padding:11px;" onclick="doGoogleLogin()">🔵 使用 Google 帳號登入</button>
+        <button class="btn-rounded-light" style="width:100%; justify-content:center; padding:11px;" onclick="doGoogleLogin()"><i class="bi bi-google" style="color:#3862AE;"></i> 使用 Google 帳號登入</button>
         <div class="auth-switch-line">還沒有帳號？<a href="#" onclick="showAuthStep('registerStep1'); return false;">註冊</a></div>
       </div>
 
@@ -2004,7 +2043,16 @@
 
     function doLogout() {
       if (!auth) return;
-      if (confirm("確定要登出嗎？")) auth.signOut();
+      document.getElementById('logoutConfirmModal').classList.add('active');
+    }
+
+    function closeLogoutConfirmModal() {
+      document.getElementById('logoutConfirmModal').classList.remove('active');
+    }
+
+    function confirmLogout() {
+      closeLogoutConfirmModal();
+      if (auth) auth.signOut();
     }
 
     function updateDrawerProfileUI() {
@@ -2587,17 +2635,37 @@
     }
 
     function createNewTrip() {
-      const title = prompt("請輸入行程名稱：", "大阪京都之旅");
-      if (!title) return;
-      const dates = prompt("請輸入日期區間 (YYYY/MM/DD - YYYY/MM/DD)：", "2026/10/16 - 2026/10/24");
+      document.getElementById('newTripTitleInput').value = '';
+      const today = new Date();
+      const in7 = new Date(today.getTime() + 7 * 24 * 60 * 60 * 1000);
+      document.getElementById('newTripStartDateInput').value = today.toISOString().slice(0, 10);
+      document.getElementById('newTripEndDateInput').value = in7.toISOString().slice(0, 10);
+      document.getElementById('newTripModal').classList.add('active');
+    }
+
+    function closeNewTripModal() {
+      document.getElementById('newTripModal').classList.remove('active');
+    }
+
+    function submitNewTrip() {
+      const title = document.getElementById('newTripTitleInput').value.trim();
+      const startVal = document.getElementById('newTripStartDateInput').value;
+      const endVal = document.getElementById('newTripEndDateInput').value;
+
+      if (!title) { alert('請輸入行程名稱'); return; }
+      if (!startVal || !endVal) { alert('請選擇出發與回程日期'); return; }
+      if (startVal > endVal) { alert('回程日期不能早於出發日期'); return; }
+
+      const startDate = startVal.split('-').join('/');
+      const endDate = endVal.split('-').join('/');
       const nickname = currentUser ? (currentUser.nickname || '我') : getMyNickname();
       const code = generateInviteCode();
 
       const newTrip = {
         id: "trip-" + Date.now(),
         title: title,
-        startDate: dates ? dates.split('-')[0].trim() : "2026/10/16",
-        endDate: dates ? dates.split('-')[1]?.trim() || "2026/10/24" : "2026/10/24",
+        startDate: startDate,
+        endDate: endDate,
         inviteCode: code,
         creatorUid: currentUser ? currentUser.uid : null,
         members: currentUser ? { [currentUser.uid]: { nickname, avatar: currentUser.avatar || '', role: 'editor' } } : {},
@@ -2617,6 +2685,7 @@
       subscribeTripLive(code, newIdx);
 
       renderTripList();
+      closeNewTripModal();
       openTripDetail(newIdx);
     }
 
@@ -3182,7 +3251,7 @@
         const avatarHtml = m.avatar
           ? `<img src="${m.avatar}" class="member-avatar">`
           : `<span class="member-avatar member-avatar-placeholder">🐶</span>`;
-        const roleLabel = m.role === 'editor' ? '<i class="bi bi-highlighter" style="color:#3862AE;"></i> 編輯者' : '👀 檢視者';
+        const roleLabel = m.role === 'editor' ? '<i class="bi bi-highlighter" style="color:#3862AE;"></i> 編輯者' : '<i class="bi bi-search" style="color:#3862AE;"></i> 檢視者';
         const canManage = isCreator && !isSelf && !uid.startsWith('legacy_');
 
         return `
@@ -3851,11 +3920,12 @@
       const list = allTrips[currentTripIdx].prepList;
 
       const categories = ["隨身包包", "托運行李"];
+      const categoryIcons = { "隨身包包": "bi-handbag-fill", "托運行李": "bi-suitcase-fill" };
       categories.forEach(cat => {
         const catItems = list.filter(i => (i.category || "隨身包包") === cat);
         const box = document.createElement('div');
         box.style.cssText = "margin-bottom:10px; background:#f7fafc; padding:10px; border-radius:10px; border:1px solid var(--border-color);";
-        box.innerHTML = `<div style="font-weight:800; color:var(--primary-navy); margin-bottom:6px; font-size:12px;">👜 ${cat}</div>`;
+        box.innerHTML = `<div style="font-weight:800; color:var(--primary-navy); margin-bottom:6px; font-size:12px;"><i class="bi ${categoryIcons[cat] || 'bi-bag-fill'}" style="color:#3862AE;"></i> ${cat}</div>`;
 
         catItems.forEach(item => {
           const originalIdx = list.indexOf(item);
