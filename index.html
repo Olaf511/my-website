@@ -942,26 +942,26 @@
       </div>
       <input type="hidden" id="flightEditDirection" value="out">
       <div class="form-group">
-        <label>✈️ 航班號碼</label>
+        <label>✈ 航班號碼</label>
         <input type="text" id="flightEditCode" placeholder="如: CI156">
       </div>
       <div class="form-row form-row-eq">
         <div class="form-group">
-          <label>🛫 出發地</label>
+          <label> 出發地</label>
           <input type="text" id="flightEditFrom" placeholder="如: TPE">
         </div>
         <div class="form-group">
-          <label>🛬 目的地</label>
+          <label> 目的地</label>
           <input type="text" id="flightEditTo" placeholder="如: KIX">
         </div>
       </div>
       <div class="form-row form-row-eq">
         <div class="form-group">
-          <label>🕐 出發時間</label>
+          <label> 出發時間</label>
           <input type="time" id="flightEditDepTime">
         </div>
         <div class="form-group">
-          <label>🕐 抵達時間</label>
+          <label> 抵達時間</label>
           <input type="time" id="flightEditArrTime">
         </div>
       </div>
@@ -1749,7 +1749,7 @@
         if (forceHome) {
           closeDrawer();
           goToHome();
-          setTimeout(() => showToast("登入成功！旅程繼續囉"), 100);
+          setTimeout(() => showToast("登入成功～旅程繼續囉！"), 100);
         } else {
           restoreLastView();
         }
