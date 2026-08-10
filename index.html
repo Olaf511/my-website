@@ -3730,10 +3730,10 @@
           const pop = data.daily.precipitation_probability_max[idx];
           const code = data.daily.weathercode[idx];
 
-          let weatherIcon = "☀️晴朗";
-          if (code >= 1 && code <= 3) weatherIcon = "⛅多雲";
-          if (code >= 51 && code <= 67) weatherIcon = "🌧️陣雨";
-          if (code >= 80) weatherIcon = "🌩️雷雨";
+          let weatherIcon = "<i class="bi bi-cloud-sun">晴朗";
+          if (code >= 1 && code <= 3) weatherIcon = "<i class="bi bi-clouds-fill">多雲";
+          if (code >= 51 && code <= 67) weatherIcon = "<i class="bi bi-cloud-rain-heavy-fill">陣雨";
+          if (code >= 80) weatherIcon = "<i class="bi bi-cloud-lightning-rain-fill">雷雨";
 
           container.innerHTML += `
             <div class="weather-row">
