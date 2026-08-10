@@ -2784,7 +2784,7 @@
 
       const overviewBtn = document.createElement('button');
       overviewBtn.className = `tab-btn ${currentDayIdx === -1 ? 'active' : ''}`;
-      overviewBtn.innerHTML = `📋 總覽`;
+      overviewBtn.innerHTML = `<i class="bi bi-journal-bookmark-fill"></i> 總覽`;
       overviewBtn.onclick = () => switchDay(-1);
       tabContainer.appendChild(overviewBtn);
 
