@@ -927,7 +927,7 @@
       </div>
 
       <div class="section-card">
-        <div class="section-card-title"><i class="bi bi-cloudy-fill"></i>  每日天氣與降雨預報</div>
+        <div class="section-card-title"><i class="bi bi-cloudy-fill" style="color:#3862AE;"></i> 每日天氣與降雨預報</div>
         <div id="weatherDisplay"><div class="loading-spinner">資料載入中...</div></div>
       </div>
     </div>
@@ -2784,7 +2784,7 @@
 
       const overviewBtn = document.createElement('button');
       overviewBtn.className = `tab-btn ${currentDayIdx === -1 ? 'active' : ''}`;
-      overviewBtn.innerHTML = `📋 總覽`;
+      overviewBtn.innerHTML = `<i class="bi bi-journal-bookmark-fill" style="color:#3862AE;"></i> 總覽`;
       overviewBtn.onclick = () => switchDay(-1);
       tabContainer.appendChild(overviewBtn);
 
@@ -3730,10 +3730,10 @@
           const pop = data.daily.precipitation_probability_max[idx];
           const code = data.daily.weathercode[idx];
 
-          let weatherIcon = "<i class="bi bi-cloud-sun"></i> 晴朗";
-          if (code >= 1 && code <= 3) weatherIcon = "<i class="bi bi-clouds-fill"></i> 多雲";
-          if (code >= 51 && code <= 67) weatherIcon = "<i class="bi bi-cloud-rain-fill"></i> 陣雨";
-          if (code >= 80) weatherIcon = "<i class="bi bi-cloud-lightning-rain-fill"></i> 雷雨";
+          let weatherIcon = '<i class="bi bi-cloud-sun" style="color:#3862AE;"></i> 晴朗';
+          if (code >= 1 && code <= 3) weatherIcon = '<i class="bi bi-clouds-fill" style="color:#3862AE;"></i> 多雲';
+          if (code >= 51 && code <= 67) weatherIcon = '<i class="bi bi-cloud-rain-fill" style="color:#3862AE;"></i> 陣雨';
+          if (code >= 80) weatherIcon = '<i class="bi bi-cloud-lightning-rain-fill" style="color:#3862AE;"></i> 雷雨';
 
           container.innerHTML += `
             <div class="weather-row">
