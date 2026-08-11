@@ -87,7 +87,7 @@
       background-image: linear-gradient(135deg, var(--soft-blue), #dbeafe);
       display: flex; align-items: center; justify-content: center; font-size: 24px;
     }
-    .trip-card-actions { display:flex; flex-direction:row; align-items:center; gap:4px; flex-shrink:0; }
+    .trip-card-actions { display:flex; flex-direction:column; align-items:center; gap:2px; flex-shrink:0; }
     .icon-btn-edit { background: none; border: none; color: #2d3748; font-size: 14px; cursor: pointer; padding: 2px 6px; }
     .trip-card-main { cursor: pointer; flex: 1; }
     .trip-card-title { font-size: 17px; font-weight: 800; color: var(--primary-navy); }
@@ -188,6 +188,11 @@
     .tab-btn.active::after {
       content: ''; position: absolute; left: 50%; bottom: -5px; transform: translateX(-50%);
       width: 5px; height: 5px; border-radius: 50%; background: var(--primary-navy);
+    }
+    .tab-btn.drop-target-hover {
+      background: linear-gradient(135deg, #ffd166, #ffb84d) !important; color: #7a4a00 !important;
+      transform: scale(1.12); box-shadow: 0 4px 12px rgba(255, 180, 60, 0.5);
+      transition: transform .1s;
     }
 
     /* Banner */
@@ -2775,7 +2780,7 @@
     function updateTripHeaderInfo() {
       const trip = allTrips[currentTripIdx];
       document.getElementById('headerTripTitle').innerText = trip.title;
-      document.getElementById('headerTripDates').innerHTML = `${trip.startDate} - ${trip.endDate} <span class="pencil-icon"><i class="bi bi-highlighter" style="color:#3862AE;"></i></span>`;
+      document.getElementById('headerTripDates').innerHTML = `${trip.startDate} - ${trip.endDate}`;
     }
 
     function editTripTitle() {
@@ -2958,6 +2963,7 @@
       trip.days.forEach((day, index) => {
         const btn = document.createElement('button');
         btn.className = `tab-btn ${index === currentDayIdx ? 'active' : ''}`;
+        btn.dataset.dayIndex = index;
         btn.innerHTML = `DAY ${day.dayNum}<br><span style="font-size:10px;">${day.dateStr}</span>`;
         btn.onclick = () => switchDay(index);
         tabContainer.appendChild(btn);
@@ -3029,6 +3035,45 @@
     }
 
     let spotSortableInstance = null;
+    let isDraggingSpot = false;
+    let lastDragPointer = { x: 0, y: 0 };
+    let lastDropTargetTab = null;
+
+    function updateDragPointer(x, y) {
+      lastDragPointer.x = x;
+      lastDragPointer.y = y;
+      if (!isDraggingSpot) return;
+      const el = document.elementFromPoint(x, y);
+      const tabBtn = el ? el.closest('.tab-btn[data-day-index]') : null;
+      if (tabBtn !== lastDropTargetTab) {
+        if (lastDropTargetTab) lastDropTargetTab.classList.remove('drop-target-hover');
+        if (tabBtn) tabBtn.classList.add('drop-target-hover');
+        lastDropTargetTab = tabBtn;
+      }
+    }
+    document.addEventListener('pointermove', (e) => updateDragPointer(e.clientX, e.clientY), { passive: true });
+    document.addEventListener('touchmove', (e) => {
+      if (e.touches && e.touches[0]) updateDragPointer(e.touches[0].clientX, e.touches[0].clientY);
+    }, { passive: true });
+
+    function clearDropTargetHover() {
+      if (lastDropTargetTab) { lastDropTargetTab.classList.remove('drop-target-hover'); lastDropTargetTab = null; }
+    }
+
+    // 把景點從目前這天移到別天（拖曳卡片到上方日期頁籤時觸發）
+    function moveSpotToDay(spotIdx, targetDayIdx) {
+      const trip = allTrips[currentTripIdx];
+      const fromDay = trip?.days[currentDayIdx];
+      const targetDay = trip?.days[targetDayIdx];
+      if (!fromDay || !targetDay || targetDayIdx === currentDayIdx) return;
+      const moved = fromDay.spots.splice(spotIdx, 1)[0];
+      if (!moved) return;
+      targetDay.spots.push(moved);
+      saveData();
+      renderDayView();
+      showToast(`已移到 DAY ${targetDay.dayNum}`);
+    }
+
     function initSpotSortable() {
       const listEl = document.getElementById('spotList');
       if (spotSortableInstance) { spotSortableInstance.destroy(); spotSortableInstance = null; }
@@ -3040,7 +3085,31 @@
       spotSortableInstance = new Sortable(listEl, {
         animation: 150,
         handle: '.drag-handle',
+        onStart: function () {
+          isDraggingSpot = true;
+        },
         onEnd: function (evt) {
+          isDraggingSpot = false;
+
+          // 判斷放開時是否停在上方某個日期頁籤上，若是就把景點移到那一天
+          let dropTab = lastDropTargetTab;
+          if (!dropTab) {
+            const oe = evt.originalEvent;
+            const px = (oe && oe.clientX) || (oe && oe.changedTouches && oe.changedTouches[0] && oe.changedTouches[0].clientX) || lastDragPointer.x;
+            const py = (oe && oe.clientY) || (oe && oe.changedTouches && oe.changedTouches[0] && oe.changedTouches[0].clientY) || lastDragPointer.y;
+            const el = document.elementFromPoint(px, py);
+            dropTab = el ? el.closest('.tab-btn[data-day-index]') : null;
+          }
+          clearDropTargetHover();
+
+          if (dropTab) {
+            const targetDayIdx = parseInt(dropTab.dataset.dayIndex, 10);
+            if (!isNaN(targetDayIdx) && targetDayIdx !== currentDayIdx) {
+              moveSpotToDay(evt.oldIndex, targetDayIdx);
+              return;
+            }
+          }
+
           if (evt.oldIndex === evt.newIndex) return;
           const day = allTrips[currentTripIdx].days[currentDayIdx];
           const moved = day.spots.splice(evt.oldIndex, 1)[0];
