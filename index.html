@@ -1163,7 +1163,7 @@
   </div>
 
   <!-- ===== 新增/編輯 逛街地點 Modal ===== -->
-  <div class="modal-overlay" id="guidePlaceModal">
+  <div class="modal-overlay" id="guidePlaceModal" style="z-index:2001;">
     <div class="modal-box">
       <div class="modal-header">
         <span id="guidePlaceModalTitle" class="modal-title-with-icon">必去清單</span>
@@ -1193,22 +1193,20 @@
     </div>
   </div>
 
-  <!-- ===== 逛街攻略：單一地點的樓層品項清單 ===== -->
-  <div id="pageGuideDetail" class="app-page">
-    <div class="app-header">
-      <button class="menu-btn back-btn" onclick="closeGuideDetail()"><i class="bi bi-arrow-left" style="color:#3862AE;"></i></button>
-      <h1 id="guideDetailTitle">地點</h1>
-    </div>
-    <div class="container">
-      <div class="section-card">
-        <div class="section-card-title">
-          <span id="guideDetailAddress" style="font-weight:normal; font-size:12px; color:var(--text-muted); white-space:pre-wrap; display:block;"></span>
-          <button class="btn-rounded-light" onclick="openGuidePlaceModal(currentGuideDetailIdx)">編輯地點</button>
+  <!-- ===== 逛街攻略：單一地點的樓層品項清單 (彈跳視窗) ===== -->
+  <div class="modal-overlay" id="guideDetailModal" onclick="if(event.target===this) closeGuideDetail()">
+    <div class="modal-box">
+      <div class="modal-header">
+        <span class="modal-title-with-icon" id="guideDetailTitle">地點</span>
+        <div style="display:flex; align-items:center; gap:6px;">
+          <button onclick="openGuidePlaceModal(currentGuideDetailIdx)"><i class="bi bi-pencil-square" style="color:#3862AE;"></i></button>
+          <button onclick="closeGuideDetail()">✕</button>
         </div>
-        <div id="guideDetailItems"></div>
       </div>
+      <div id="guideDetailAddress" style="font-size:12px; color:var(--text-muted); white-space:pre-wrap; margin-bottom:10px;"></div>
+      <div id="guideDetailItems"></div>
+      <button class="btn-rounded-light" style="width:100%; justify-content:center; margin-top:10px;" onclick="openGuideItemModal()">+ 新增品項</button>
     </div>
-    <button class="fab-add" onclick="openGuideItemModal()">+</button>
   </div>
 
   <!-- ===== 新增逛街品項 Modal ===== -->
@@ -1237,7 +1235,7 @@
   </div>
 
   <!-- ===== 行程景點連結逛街攻略：快速預覽 Modal ===== -->
-  <div class="modal-overlay" id="spotGuideQuickViewModal">
+  <div class="modal-overlay" id="spotGuideQuickViewModal" onclick="if(event.target===this) closeSpotGuideQuickView()">
     <div class="modal-box">
       <div class="modal-header">
         <span class="modal-title-with-icon"><span class="page-icon-badge" style="background:#fff; border:1.5px solid #D7E9FD; color:#3862AE;"><i class="bi bi-signpost-fill"></i></span>逛街攻略清單</span>
@@ -4177,7 +4175,7 @@
         trip.shoppingGuide.push({ id: Date.now(), region, name, address, items: [] });
       }
       saveData(); closeGuidePlaceModal();
-      if (document.getElementById('pageGuideDetail').classList.contains('active')) { renderGuideDetail(); }
+      if (document.getElementById('guideDetailModal').classList.contains('active')) { renderGuideDetail(); }
       else { renderGuideBoxes(); }
       populateSpotGuideLinkSelect();
     }
@@ -4212,7 +4210,6 @@
             <div class="guide-place-card" onclick="openGuideDetail(${place.originalIndex}, 'pageToolShoppingGuide')">
               <div class="guide-place-main">
                 <div class="guide-place-name">${place.name}</div>
-                <div class="guide-place-meta">${place.address ? place.address.replace(/\n+/g, ' ') + ' · ' : ''}共 ${(place.items || []).length} 項</div>
               </div>
               <button class="icon-btn-del" onclick="event.stopPropagation(); deleteGuidePlaceDirect(${place.originalIndex})"><i class="bi bi-x" style="color:#3862AE;"></i></button>
             </div>
@@ -4241,14 +4238,12 @@
     function openGuideDetail(idx, returnPage) {
       currentGuideDetailIdx = idx;
       guideDetailReturnPage = returnPage || 'pageToolShoppingGuide';
-      document.querySelectorAll('.app-page').forEach(p => p.classList.remove('active'));
-      document.getElementById('pageGuideDetail').classList.add('active');
       renderGuideDetail();
+      document.getElementById('guideDetailModal').classList.add('active');
     }
 
     function closeGuideDetail() {
-      document.querySelectorAll('.app-page').forEach(p => p.classList.remove('active'));
-      document.getElementById(guideDetailReturnPage).classList.add('active');
+      document.getElementById('guideDetailModal').classList.remove('active');
       if (guideDetailReturnPage === 'pageToolShoppingGuide') { renderGuideBoxes(); }
       else if (guideDetailReturnPage === 'pageDetail') { renderCurrentDayOrOverview(); }
     }
