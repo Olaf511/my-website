@@ -3063,6 +3063,28 @@
       if (lastDropTargetTab) { lastDropTargetTab.classList.remove('drop-target-hover'); lastDropTargetTab = null; }
     }
 
+    // 拖曳景點卡片時，如果手指停在日期頁籤列的左/右邊緣，自動幫忙橫向捲動那一列
+    // （只捲動頁籤列本身，不會捲動整個頁面，避免跟畫面亂跑的問題）
+    let tabAutoScrollRAF = null;
+    function tabAutoScrollLoop() {
+      if (!isDraggingSpot) { tabAutoScrollRAF = null; return; }
+      const tabContainer = document.getElementById('tabContainer');
+      if (tabContainer) {
+        const rect = tabContainer.getBoundingClientRect();
+        const edge = 44;
+        const x = lastDragPointer.x;
+        const y = lastDragPointer.y;
+        if (y >= rect.top - 20 && y <= rect.bottom + 20) {
+          if (x < rect.left + edge && x >= 0) {
+            tabContainer.scrollLeft -= 10;
+          } else if (x > rect.right - edge && x <= window.innerWidth) {
+            tabContainer.scrollLeft += 10;
+          }
+        }
+      }
+      tabAutoScrollRAF = requestAnimationFrame(tabAutoScrollLoop);
+    }
+
     // 把景點從目前這天移到別天（拖曳卡片到上方日期頁籤時觸發）
     function moveSpotToDay(spotIdx, targetDayIdx) {
       const trip = allTrips[currentTripIdx];
@@ -3092,6 +3114,7 @@
         onStart: function () {
           isDraggingSpot = true;
           document.body.classList.add('is-dragging-spot');
+          if (!tabAutoScrollRAF) tabAutoScrollRAF = requestAnimationFrame(tabAutoScrollLoop);
         },
         onEnd: function (evt) {
           isDraggingSpot = false;
