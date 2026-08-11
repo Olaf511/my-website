@@ -34,6 +34,7 @@
       --border-color: #e2e8f0;
     }
 
+    html { overflow-x: hidden; }
     * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
     body {
       font-family: "Zen Maru Gothic", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
@@ -42,7 +43,9 @@
       line-height: 1.55;
       -webkit-font-smoothing: antialiased;
       -moz-osx-font-smoothing: grayscale;
+      overflow-x: hidden;
     }
+    body.is-dragging-spot { touch-action: none; overscroll-behavior: none; }
 
     .app-page { display: none; }
     .app-page.active { display: block; }
@@ -190,8 +193,8 @@
       width: 5px; height: 5px; border-radius: 50%; background: var(--primary-navy);
     }
     .tab-btn.drop-target-hover {
-      background: linear-gradient(135deg, #bfe0ff, #8ecbff) !important; color: #0b4a8f !important;
-      transform: scale(1.12); box-shadow: 0 4px 12px rgba(60, 150, 255, 0.5);
+      background: linear-gradient(135deg, #fff3b0, #ffe066) !important; color: #7a5d00 !important;
+      transform: scale(1.12); box-shadow: 0 4px 12px rgba(255, 210, 60, 0.5);
       transition: transform .1s;
     }
 
@@ -3085,11 +3088,14 @@
       spotSortableInstance = new Sortable(listEl, {
         animation: 150,
         handle: '.drag-handle',
+        scroll: false,
         onStart: function () {
           isDraggingSpot = true;
+          document.body.classList.add('is-dragging-spot');
         },
         onEnd: function (evt) {
           isDraggingSpot = false;
+          document.body.classList.remove('is-dragging-spot');
 
           // 判斷放開時是否停在上方某個日期頁籤上，若是就把景點移到那一天
           let dropTab = lastDropTargetTab;
