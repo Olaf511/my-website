@@ -254,9 +254,36 @@
       color: var(--primary-navy); background: var(--soft-blue); border: 1px solid #bee3f8;
       padding: 3px 9px; border-radius: 12px; margin-top: 5px; cursor: pointer; width: fit-content;
     }
+    /* 小抄多圖縮圖 */
+    .cheat-img-strip {
+      display: flex; flex-direction: column; gap: 6px; flex-shrink: 0;
+    }
+    .cheat-img-strip-thumb {
+      width: 60px; height: 60px; position: relative;
+    }
+    .cheat-img-strip-more {
+      position: absolute; inset: 0; background: rgba(0,0,0,0.45); color: #fff;
+      display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 800; border-radius: 12px;
+    }
+    .cheat-img-edit-list {
+      display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px;
+    }
+    .cheat-img-edit-thumb {
+      position: relative; width: 60px; height: 60px;
+    }
+    .cheat-img-edit-thumb img {
+      width: 100%; height: 100%; object-fit: cover; border-radius: 6px;
+    }
+    .cheat-img-edit-thumb button {
+      position: absolute; top: -6px; right: -6px; width: 20px; height: 20px; border-radius: 50%;
+      background: #c53030; color: #fff; border: 2px solid #fff; font-size: 11px; line-height: 1;
+      cursor: pointer; display: flex; align-items: center; justify-content: center; padding: 0;
+    }
+
     .guide-place-card {
-      display: flex; align-items: center; gap: 10px; background: #fff; border: 1px solid var(--border-color);
-      border-radius: 10px; padding: 10px 12px; margin-bottom: 8px; cursor: pointer;
+      display: flex; align-items: center; gap: 10px; background: var(--card-bg); border: 1px solid var(--border-color);
+      border-radius: 16px; padding: 10px 12px; margin-bottom: 8px; cursor: pointer;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.02);
     }
     .guide-place-card .guide-place-icon {
       width: 38px; height: 38px; border-radius: 50%; background: var(--soft-blue); color: var(--primary-navy);
@@ -1139,7 +1166,7 @@
   <div class="modal-overlay" id="guidePlaceModal">
     <div class="modal-box">
       <div class="modal-header">
-        <span id="guidePlaceModalTitle" class="modal-title-with-icon"><span class="page-icon-badge" style="background:#fff; border:1.5px solid #D7E9FD; color:#3862AE;"><i class="bi bi-check-circle"></i></span>新增逛街地點</span>
+        <span id="guidePlaceModalTitle" class="modal-title-with-icon"><span class="page-icon-badge" style="background:#fff; border:1.5px solid #D7E9FD; color:#3862AE;"><i class="bi bi-check-circle"></i></span>必去清單</span>
         <button onclick="closeGuidePlaceModal()">✕</button>
       </div>
       <input type="hidden" id="editGuidePlaceIndex" value="-1">
@@ -1156,8 +1183,8 @@
         <input type="text" id="guidePlaceNameInput" placeholder="例：天王寺 Q's mall">
       </div>
       <div class="form-group">
-        <label>地址／備註<span class="optional-tag">選填</span></label>
-        <input type="text" id="guidePlaceAddressInput" placeholder="">
+        <label>備註</label>
+        <textarea id="guidePlaceAddressInput" placeholder=""></textarea>
       </div>
       <div class="modal-footer">
         <button class="modal-btn modal-btn-cancel" onclick="closeGuidePlaceModal()">取消</button>
@@ -1175,7 +1202,7 @@
     <div class="container">
       <div class="section-card">
         <div class="section-card-title">
-          <span id="guideDetailAddress" style="font-weight:normal; font-size:12px; color:var(--text-muted);"></span>
+          <span id="guideDetailAddress" style="font-weight:normal; font-size:12px; color:var(--text-muted); white-space:pre-wrap; display:block;"></span>
           <button class="btn-rounded-light" onclick="openGuidePlaceModal(currentGuideDetailIdx)"><i class="bi bi-highlighter" style="color:#3862AE;"></i> 編輯地點</button>
         </div>
         <div id="guideDetailItems"></div>
@@ -1226,7 +1253,7 @@
   <div class="modal-overlay" id="cheatModal">
     <div class="modal-box">
       <div class="modal-header">
-        <span id="cheatModalTitle" class="modal-title-with-icon"><span class="page-icon-badge" style="background:#fff; border:1.5px solid #D7E9FD; color:#3862AE;"><i class="bi bi-check-circle"></i></span>新增小抄</span>
+        <span id="cheatModalTitle" class="modal-title-with-icon"><span class="page-icon-badge" style="background:#fff; border:1.5px solid #D7E9FD; color:#3862AE;"><i class="bi bi-check-circle"></i></span>來點小抄</span>
         <button onclick="closeCheatModal()">✕</button>
       </div>
       <input type="hidden" id="editCheatIndex" value="-1">
@@ -1247,10 +1274,9 @@
         </div>
       </div>
       <div class="form-group">
-        <label>縮圖<span class="optional-tag">選填</span></label>
-        <input type="file" id="cheatFileInput" accept="image/*" onchange="handleFileSelect(event, 'cheatImgPreview', 'cheatImgBase64', 'square')">
-        <input type="hidden" id="cheatImgBase64">
-        <img id="cheatImgPreview" src="" style="width:60px; height:60px; object-fit:cover; border-radius:6px; margin-top:4px; display:none;">
+        <label>圖片<span class="optional-tag">選填</span></label>
+        <input type="file" id="cheatFileInput" accept="image/*" onchange="handleCheatFileSelect(event)">
+        <div id="cheatImgList" class="cheat-img-edit-list"></div>
       </div>
       <div class="form-group">
         <label>備註</label>
@@ -1934,6 +1960,10 @@
       if (!trip.shoppingGuide) trip.shoppingGuide = [];
       if (!trip.guideRegions) trip.guideRegions = [];
       if (!trip.cheatSheet) trip.cheatSheet = [];
+      // 相容舊資料：舊版小抄只有單張 img 欄位，統一轉成 imgs 陣列
+      trip.cheatSheet.forEach(item => {
+        if (!item.imgs) item.imgs = item.img ? [item.img] : [];
+      });
       if (!trip.prepList) trip.prepList = [];
       if (!trip.payers) trip.payers = [];
       if (!trip.flightOut) trip.flightOut = {};
@@ -3688,16 +3718,21 @@
     function goToSubPage(pageId) {
       document.querySelectorAll('.app-page').forEach(p => p.classList.remove('active'));
       document.getElementById(pageId).classList.add('active');
-      if (pageId === 'pageToolExchange') { calcTopExchange(); }
-      if (pageId === 'pageToolFlight') { renderFlightInfo(); fetchWeather(); }
-      if (pageId === 'pageToolShopping') { renderShoppingAreaSelectOptions(); renderShoppingBoxes(); }
-      if (pageId === 'pageToolShoppingGuide') { renderGuideBoxes(); }
-      if (pageId === 'pageToolCheatSheet') { renderCheatFilterRow(); renderCheatList(); }
-      if (pageId === 'pageToolAccounting') { initAccountingPage(); }
-      if (pageId === 'pageToolPrep') { renderPrepList(); }
-      if (pageId === 'pageToolMembers') { renderMembersList(); }
+      // 選單收合跟切換頁面一定要先做，就算下面的 render 出錯，頁面也已經切過去、選單也已經收起來了
       closeDrawer();
       saveLastView(pageId);
+      try {
+        if (pageId === 'pageToolExchange') { calcTopExchange(); }
+        if (pageId === 'pageToolFlight') { renderFlightInfo(); fetchWeather(); }
+        if (pageId === 'pageToolShopping') { renderShoppingAreaSelectOptions(); renderShoppingBoxes(); }
+        if (pageId === 'pageToolShoppingGuide') { renderGuideBoxes(); }
+        if (pageId === 'pageToolCheatSheet') { renderCheatFilterRow(); renderCheatList(); }
+        if (pageId === 'pageToolAccounting') { initAccountingPage(); }
+        if (pageId === 'pageToolPrep') { renderPrepList(); }
+        if (pageId === 'pageToolMembers') { renderMembersList(); }
+      } catch (e) {
+        console.error('goToSubPage render error:', pageId, e);
+      }
     }
 
     function calcTopExchange() {
@@ -4075,7 +4110,7 @@
         document.getElementById('guidePlaceNameInput').value = place.name || '';
         document.getElementById('guidePlaceAddressInput').value = place.address || '';
       } else {
-        document.getElementById('guidePlaceModalTitle').innerHTML = '<i class="bi bi-check-circle" style="color:#3862AE;"></i> 新增逛街地點';
+        document.getElementById('guidePlaceModalTitle').innerHTML = '<i class="bi bi-check-circle" style="color:#3862AE;"></i> 必去清單';
         document.getElementById('guidePlaceNameInput').value = '';
         document.getElementById('guidePlaceAddressInput').value = '';
       }
@@ -4131,7 +4166,7 @@
 
     function renderGuideBoxes() {
       const container = document.getElementById('guideRegionBoxes');
-      const list = allTrips[currentTripIdx].shoppingGuide;
+      const list = allTrips[currentTripIdx].shoppingGuide || [];
       container.innerHTML = '';
 
       if (list.length === 0) {
@@ -4160,7 +4195,7 @@
               <div class="guide-place-icon"><i class="bi bi-buildings-fill"></i></div>
               <div class="guide-place-main">
                 <div class="guide-place-name">${place.name}</div>
-                <div class="guide-place-meta">${place.address ? place.address + ' · ' : ''}共 ${place.items.length} 項</div>
+                <div class="guide-place-meta">${place.address ? place.address.replace(/\n+/g, ' ') + ' · ' : ''}共 ${(place.items || []).length} 項</div>
               </div>
               <button class="icon-btn-del" onclick="event.stopPropagation(); deleteGuidePlaceDirect(${place.originalIndex})"><i class="bi bi-x" style="color:#3862AE;"></i></button>
             </div>
@@ -4366,7 +4401,7 @@
     function renderCheatList() {
       const container = document.getElementById('cheatSheetList');
       const trip = allTrips[currentTripIdx];
-      let list = trip.cheatSheet.map((item, index) => ({ ...item, originalIndex: index }));
+      let list = (trip.cheatSheet || []).map((item, index) => ({ ...item, originalIndex: index }));
       if (cheatFilterActive.length > 0) {
         list = list.filter(item => (item.tags || []).some(t => cheatFilterActive.includes(t)));
       }
@@ -4385,9 +4420,15 @@
         const card = document.createElement('div');
         card.className = 'card';
         card.style.marginBottom = '10px';
-        const imgBlock = item.img ? `
-          <div class="card-img-wrapper" onclick="openLightbox('${item.img}')">
-            <img src="${item.img}" class="card-img">
+        const imgs = item.imgs && item.imgs.length ? item.imgs : (item.img ? [item.img] : []);
+        const imgBlock = imgs.length ? `
+          <div class="cheat-img-strip">
+            ${imgs.slice(0, 4).map((src, i) => `
+              <div class="card-img-wrapper cheat-img-strip-thumb" onclick="openLightbox('${src}')">
+                <img src="${src}" class="card-img">
+                ${(i === 3 && imgs.length > 4) ? `<div class="cheat-img-strip-more">+${imgs.length - 4}</div>` : ''}
+              </div>
+            `).join('')}
           </div>
         ` : '';
         const tagsHtml = (item.tags || []).map(t => `<span class="cheat-tag ${CHEAT_TAG_META[t] ? CHEAT_TAG_META[t].cls : 'cheat-tag-other'}">${t}</span>`).join('');
@@ -4410,15 +4451,44 @@
       });
     }
 
+    let cheatModalImgs = []; // 目前編輯中的小抄，暫存的圖片陣列 (base64)
+
+    function renderCheatImgEditList() {
+      const box = document.getElementById('cheatImgList');
+      box.innerHTML = cheatModalImgs.map((src, i) => `
+        <div class="cheat-img-edit-thumb">
+          <img src="${src}">
+          <button type="button" onclick="removeCheatModalImg(${i})">✕</button>
+        </div>
+      `).join('');
+    }
+
+    function removeCheatModalImg(i) {
+      cheatModalImgs.splice(i, 1);
+      renderCheatImgEditList();
+    }
+
+    function handleCheatFileSelect(evt) {
+      const file = evt.target.files[0];
+      evt.target.value = '';
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        openCropperModal(e.target.result, 'square', function(croppedDataUrl) {
+          cheatModalImgs.push(croppedDataUrl);
+          renderCheatImgEditList();
+        });
+      };
+      reader.readAsDataURL(file);
+    }
+
     function openCheatModal(idx = -1) {
       document.getElementById('editCheatIndex').value = idx;
       document.getElementById('cheatTagTransport').checked = false;
       document.getElementById('cheatTagTicket').checked = false;
       document.getElementById('cheatTagOther').checked = false;
-      document.getElementById('cheatImgBase64').value = '';
-      document.getElementById('cheatImgPreview').style.display = 'none';
-      document.getElementById('cheatImgPreview').src = '';
       document.getElementById('cheatFileInput').value = '';
+      cheatModalImgs = [];
 
       if (idx >= 0) {
         const item = allTrips[currentTripIdx].cheatSheet[idx];
@@ -4431,17 +4501,15 @@
           if (t === '票券') document.getElementById('cheatTagTicket').checked = true;
           if (t === '其他') document.getElementById('cheatTagOther').checked = true;
         });
-        if (item.img) {
-          document.getElementById('cheatImgBase64').value = item.img;
-          document.getElementById('cheatImgPreview').src = item.img;
-          document.getElementById('cheatImgPreview').style.display = 'block';
-        }
+        // 相容舊資料：舊小抄只有單張 img 欄位，沒有 imgs 陣列
+        cheatModalImgs = item.imgs && item.imgs.length ? [...item.imgs] : (item.img ? [item.img] : []);
       } else {
-        document.getElementById('cheatModalTitle').innerHTML = '<i class="bi bi-check-circle" style="color:#3862AE;"></i> 新增小抄';
+        document.getElementById('cheatModalTitle').innerHTML = '<i class="bi bi-check-circle" style="color:#3862AE;"></i> 來點小抄';
         document.getElementById('cheatTitleInput').value = '';
         document.getElementById('cheatUrlInput').value = '';
         document.getElementById('cheatNoteInput').value = '';
       }
+      renderCheatImgEditList();
       document.getElementById('cheatModal').classList.add('active');
     }
 
@@ -4456,14 +4524,14 @@
       let url = document.getElementById('cheatUrlInput').value.trim();
       if (url && !/^https?:\/\//i.test(url)) url = 'https://' + url;
       const note = document.getElementById('cheatNoteInput').value;
-      const img = document.getElementById('cheatImgBase64').value;
+      const imgs = cheatModalImgs.slice();
       const tags = [];
       if (document.getElementById('cheatTagTransport').checked) tags.push('交通');
       if (document.getElementById('cheatTagTicket').checked) tags.push('票券');
       if (document.getElementById('cheatTagOther').checked) tags.push('其他');
 
       const trip = allTrips[currentTripIdx];
-      const itemObj = { title, url, note, img, tags };
+      const itemObj = { title, url, note, imgs, tags };
       if (editIdx >= 0) { trip.cheatSheet[editIdx] = itemObj; }
       else { trip.cheatSheet.push(itemObj); }
 
