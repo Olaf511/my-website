@@ -1470,10 +1470,10 @@
     </div>
   </div>
 
-  <!-- ===== 行程封面圖編輯 Modal (只有上傳/自動抓圖，沒有網址欄位) ===== -->
+  <!-- ===== 行程編輯 Modal (封面圖 / 行程名字 / 出發回程日期) ===== -->
   <div class="modal-overlay" id="tripCoverModal">
     <div class="modal-box">
-      <div class="modal-header"><span> 更換行程封面</span><button onclick="closeTripCoverModal()">✕</button></div>
+      <div class="modal-header"><span>編輯行程</span><button onclick="closeTripCoverModal()">✕</button></div>
       <div style="text-align:center;">
         <img id="tripCoverPreview" src="" style="width:100%; height:140px; object-fit:cover; border-radius:12px; display:none; margin-bottom:10px;">
         <input type="hidden" id="tripCoverBase64">
@@ -1481,9 +1481,36 @@
         <input type="file" id="tripCoverFileInput" accept="image/*" style="display:none;" onchange="handleFileSelect(event, 'tripCoverPreview', 'tripCoverBase64', 'square')">
         <button class="btn-rounded-light" style="width:100%; justify-content:center; margin-top:8px; color:#c53030; border-color:#feb2b2; background:#fff5f5;" onclick="removeTripCoverImage()"><i class="bi bi-x" style="color:#3862AE;"></i> 移除封面圖</button>
       </div>
+      <div class="form-group">
+        <label>行程名稱</label>
+        <input type="text" id="tripEditTitleInput" placeholder="例如：大阪京都之旅">
+      </div>
+      <div class="form-group">
+        <label>出發日期</label>
+        <input type="date" id="tripEditStartDateInput">
+      </div>
+      <div class="form-group">
+        <label>回程日期</label>
+        <input type="date" id="tripEditEndDateInput">
+      </div>
       <div class="modal-footer">
         <button class="modal-btn modal-btn-cancel" onclick="closeTripCoverModal()">取消</button>
         <button class="modal-btn modal-btn-save" onclick="saveTripCover()">儲存</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== 修改當日區域/主要景點 Modal ===== -->
+  <div class="modal-overlay" id="editDayAreaModal">
+    <div class="modal-box">
+      <div class="modal-header"><span>修改區域景點</span><button onclick="closeEditDayAreaModal()">✕</button></div>
+      <div class="form-group">
+        <label>區域 / 主要景點</label>
+        <input type="text" id="editDayAreaInput" placeholder="例如：市區景點">
+      </div>
+      <div class="modal-footer">
+        <button class="modal-btn modal-btn-cancel" onclick="closeEditDayAreaModal()">取消</button>
+        <button class="modal-btn modal-btn-save" onclick="saveDayArea()">儲存</button>
       </div>
     </div>
   </div>
@@ -1617,7 +1644,7 @@
     }
 
     function setupAllFakeDateTimeFields() {
-      ['inputTime', 'inputReservedTime', 'expDate', 'editExpDate', 'flightEditDepTime', 'flightEditArrTime', 'newTripStartDateInput', 'newTripEndDateInput'].forEach(setupFakeDateTimeField);
+      ['inputTime', 'inputReservedTime', 'expDate', 'editExpDate', 'flightEditDepTime', 'flightEditArrTime', 'newTripStartDateInput', 'newTripEndDateInput', 'tripEditStartDateInput', 'tripEditEndDateInput'].forEach(setupFakeDateTimeField);
     }
 
     /* 🔥跨裝置 Firebase 同步 (填入你的設定檔即刻啟用) */
@@ -1718,14 +1745,12 @@
     }
 
     // 依成員資料重新計算付款人名單：只有「編輯者」才會出現在記帳付款人裡
-    // 排序規則：建立者永遠排第一位，之後依加入行程的先後順序排列
+    // 排序規則：依加入行程的先後順序排列（建立者因為最早加入，會自然排第一位）
     function syncPayersFromMembers(trip) {
       const sortedEntries = Object.entries(trip.members || {}).sort((a, b) => {
-        const aCreator = a[0] === trip.creatorUid;
-        const bCreator = b[0] === trip.creatorUid;
-        if (aCreator && !bCreator) return -1;
-        if (!aCreator && bCreator) return 1;
-        return 0;
+        const at = typeof a[1].joinedAt === 'number' ? a[1].joinedAt : 0;
+        const bt = typeof b[1].joinedAt === 'number' ? b[1].joinedAt : 0;
+        return at - bt;
       });
       trip.payers = sortedEntries.filter(([uid, m]) => m.role === 'editor').map(([uid, m]) => m.nickname);
     }
@@ -1792,7 +1817,7 @@
         endDate: "2026/01/03",
         inviteCode: code,
         creatorUid: uid,
-        members: { [uid]: { nickname, avatar: currentUser.avatar || '', role: 'editor' } },
+        members: { [uid]: { nickname, avatar: currentUser.avatar || '', role: 'editor', joinedAt: Date.now() } },
         flightOut: {}, flightIn: {},
         payers: [nickname],
         expenses: [], shoppingList: [], shoppingAreas: ["藥妝店", "機場"], prepList: getDefaultPrepList(), days: []
@@ -1899,7 +1924,7 @@
         if (!val) { alert("找不到這個邀請碼對應的行程，請確認邀請碼是否正確。"); return; }
 
         normalizeTripData(val);
-        val.members[currentUser.uid] = { nickname, avatar: currentUser.avatar || '', role };
+        val.members[currentUser.uid] = { nickname, avatar: currentUser.avatar || '', role, joinedAt: Date.now() };
         syncPayersFromMembers(val);
         db.ref('trips/' + cleanCode + '/members').set(val.members);
         db.ref('trips/' + cleanCode + '/payers').set(val.payers);
@@ -2570,7 +2595,7 @@
           </div>
           <div class="trip-card-main" onclick="openTripDetail(${index})">
             <div class="trip-card-title">${trip.title}</div>
-            <div class="trip-card-date">🗓️ ${trip.startDate} - ${trip.endDate} • ${trip.days.length} 天</div>
+            <div class="trip-card-date"><i class="bi bi-calendar" style="color:#3862AE;"></i> ${trip.startDate} - ${trip.endDate} • ${trip.days.length} 天</div>
           </div>
           <button class="icon-btn-del read-mode-hide" onclick="deleteTrip(${index})"><i class="bi bi-x" style="color:#3862AE;"></i></button>
         `;
@@ -2610,7 +2635,7 @@
           <div class="drawer-trip-item-thumb" style="background-image:url('${cover || DEFAULT_TRIP_PHOTO}');"></div>
           <div class="drawer-trip-item-info">
             <div class="drawer-trip-item-title">${trip.title}</div>
-            <div class="drawer-trip-item-date">🗓️ ${trip.startDate} - ${trip.endDate} • ${trip.days.length} 天</div>
+            <div class="drawer-trip-item-date">${trip.startDate} - ${trip.endDate} • ${trip.days.length} 天</div>
           </div>
         `;
         wrap.appendChild(item);
@@ -2639,6 +2664,11 @@
       const img = document.getElementById('tripCoverPreview');
       if (cover) { img.src = cover; img.style.display = 'block'; } else { img.style.display = 'none'; }
       document.getElementById('tripCoverBase64').value = trip.coverImg || '';
+      document.getElementById('tripEditTitleInput').value = trip.title || '';
+      document.getElementById('tripEditStartDateInput').value = (trip.startDate || '').split('/').join('-');
+      document.getElementById('tripEditEndDateInput').value = (trip.endDate || '').split('/').join('-');
+      syncFakeDateTimeDisplay('tripEditStartDateInput');
+      syncFakeDateTimeDisplay('tripEditEndDateInput');
       document.getElementById('tripCoverModal').classList.add('active');
     }
 
@@ -2655,9 +2685,28 @@
     function saveTripCover() {
       const trip = allTrips[tripCoverEditIdx];
       if (!trip) return;
+
+      const title = document.getElementById('tripEditTitleInput').value.trim();
+      const startVal = document.getElementById('tripEditStartDateInput').value;
+      const endVal = document.getElementById('tripEditEndDateInput').value;
+      if (!title) { alert('請輸入行程名稱'); return; }
+      if (!startVal || !endVal) { alert('請選擇出發與回程日期'); return; }
+      if (startVal > endVal) { alert('回程日期不能早於出發日期'); return; }
+
       trip.coverImg = document.getElementById('tripCoverBase64').value || '';
+      trip.title = title;
+      trip.startDate = startVal.split('-').join('/');
+      trip.endDate = endVal.split('-').join('/');
+      generateDaysFromDates(trip);
+      if (currentDayIdx !== -1 && currentDayIdx >= trip.days.length) currentDayIdx = 0;
+
       saveData(tripCoverEditIdx);
       renderTripList();
+      if (currentTripIdx === tripCoverEditIdx) {
+        updateTripHeaderInfo();
+        renderTabs();
+        renderCurrentDayOrOverview();
+      }
       closeTripCoverModal();
     }
 
@@ -2697,7 +2746,7 @@
         endDate: endDate,
         inviteCode: code,
         creatorUid: currentUser ? currentUser.uid : null,
-        members: currentUser ? { [currentUser.uid]: { nickname, avatar: currentUser.avatar || '', role: 'editor' } } : {},
+        members: currentUser ? { [currentUser.uid]: { nickname, avatar: currentUser.avatar || '', role: 'editor', joinedAt: Date.now() } } : {},
         flightOut: {}, flightIn: {},
         payers: [nickname],
         expenses: [], shoppingList: [], shoppingAreas: ["藥妝店", "機場"], prepList: getDefaultPrepList(), days: []
@@ -2796,12 +2845,23 @@
       if (!isEditMode) return;
       const currentDay = allTrips[currentTripIdx]?.days[currentDayIdx];
       if (!currentDay) return;
-      const newArea = prompt("修改當日區域/主要景點：", currentDay.area || "市區景點");
-      if (newArea) {
-        currentDay.area = newArea;
-        saveData();
-        renderDayView();
-      }
+      document.getElementById('editDayAreaInput').value = currentDay.area || '市區景點';
+      document.getElementById('editDayAreaModal').classList.add('active');
+    }
+
+    function closeEditDayAreaModal() {
+      document.getElementById('editDayAreaModal').classList.remove('active');
+    }
+
+    function saveDayArea() {
+      const currentDay = allTrips[currentTripIdx]?.days[currentDayIdx];
+      if (!currentDay) return;
+      const newArea = document.getElementById('editDayAreaInput').value.trim();
+      if (!newArea) { alert('請輸入區域名稱'); return; }
+      currentDay.area = newArea;
+      saveData();
+      renderDayView();
+      closeEditDayAreaModal();
     }
 
     function toggleEditMode(newState) {
@@ -3268,11 +3328,9 @@
       const isCreator = currentUser && trip.creatorUid === currentUser.uid;
 
       const sortedMemberEntries = Object.entries(trip.members).sort((a, b) => {
-        const aCreator = a[0] === trip.creatorUid;
-        const bCreator = b[0] === trip.creatorUid;
-        if (aCreator && !bCreator) return -1;
-        if (!aCreator && bCreator) return 1;
-        return 0;
+        const at = typeof a[1].joinedAt === 'number' ? a[1].joinedAt : 0;
+        const bt = typeof b[1].joinedAt === 'number' ? b[1].joinedAt : 0;
+        return at - bt;
       });
 
       listEl.innerHTML = sortedMemberEntries.map(([uid, m]) => {
