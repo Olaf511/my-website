@@ -148,13 +148,13 @@
     .overview-day-area { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
     .overview-day-arrow { color: var(--text-muted); font-size: 18px; font-weight: 900; }
 
-    /* 各頁面 - 滿版背景圖 (行程總覽/匯率換算/航班天氣/消費記帳/必買清單/事前準備/行程成員) */
-    #pageDetail, #pageToolExchange, #pageToolFlight, #pageToolAccounting,
+    /* 各頁面 - 滿版背景圖 (首頁/行程總覽/匯率換算/航班天氣/消費記帳/必買清單/事前準備/行程成員) */
+    #pageHome, #pageDetail, #pageToolExchange, #pageToolFlight, #pageToolAccounting,
     #pageToolShopping, #pageToolPrep, #pageToolMembers {
       position: relative;
       min-height: 100vh;
     }
-    #pageDetail::before, #pageToolExchange::before, #pageToolFlight::before,
+    #pageHome::before, #pageDetail::before, #pageToolExchange::before, #pageToolFlight::before,
     #pageToolAccounting::before, #pageToolShopping::before, #pageToolPrep::before,
     #pageToolMembers::before {
       content: "";
@@ -234,6 +234,7 @@
       font-size: 12px; color: var(--text-muted); margin-top: 4px; background: #f7fafc;
       padding: 6px 8px; border-radius: 6px; white-space: pre-wrap; word-break: break-word;
     }
+    .is-read-mode .card-note { margin-right: 36px; }
     .spot-meta-row {
       font-size: 12px; color: var(--text-muted); margin-top: 3px;
       display: flex; align-items: flex-start; gap: 5px; line-height: 1.4;
@@ -1809,46 +1810,6 @@
       refs.forEach(ref => { db.ref('users/' + uid + '/myTrips/' + ref.code).set(true); });
     }
 
-    function createFirstTripForUser(uid) {
-      const nickname = currentUser.nickname || '我';
-      const code = generateInviteCode();
-      const newTrip = {
-        id: "trip-" + Date.now(),
-        title: "我的旅遊行程",
-        startDate: "2026/01/01",
-        endDate: "2026/01/03",
-        inviteCode: code,
-        creatorUid: uid,
-        members: { [uid]: { nickname, avatar: currentUser.avatar || '', role: 'editor', joinedAt: Date.now() } },
-        flightOut: {}, flightIn: {},
-        payers: [nickname],
-        expenses: [], shoppingList: [], shoppingAreas: ["藥妝店", "機場"], prepList: getDefaultPrepList(), days: []
-      };
-      generateDaysFromDates(newTrip);
-
-      // 新帳號第一次使用：帶一點示範內容，避免整頁空白，都可以直接編輯或刪除
-      if (newTrip.days[0]) {
-        newTrip.days[0].spots.push({
-          title: "示範景點：東京鐵塔", time: "10:00", category: "景點",
-          address: "東京鐵塔", lat: 35.6586, lng: 139.7454,
-          img: "", note: "這是示範景點，可以直接編輯內容或刪除"
-        });
-      }
-      newTrip.expenses.push({
-        date: newTrip.days[0] ? newTrip.days[0].rawDate : "2026-01-01",
-        category: "吃喝", payer: nickname, currency: "JPY", amount: 1000, title: "示範消費：拉麵", isSplit: false
-      });
-      newTrip.shoppingList.push({ area: "藥妝店", text: "示範項目：面膜", img: "", done: false });
-
-      myTripRefs = [{ code, nickname }];
-      allTrips = [newTrip];
-      localStorage.setItem('TRIP_DATA_' + code, JSON.stringify(newTrip));
-      db.ref('users/' + uid + '/myTrips/' + code).set(true);
-      db.ref('trips/' + code).set(newTrip);
-      subscribeTripLive(code, 0);
-      restoreLastView();
-    }
-
     // 登入後的資料載入入口：這個帳號名下有哪些行程，完全由雲端 users/{uid}/myTrips 決定，
     // 不再依賴「這台裝置本來就知道哪些行程」，這樣邀請碼分享才會精準只帶入該行程，不會混進你其他行程。
     let justLoggedIn = false;
@@ -1860,7 +1821,14 @@
         const codes = Object.keys(tripsMap);
 
         if (codes.length === 0) {
-          createFirstTripForUser(uid);
+          myTripRefs = [];
+          allTrips = [];
+          if (forceHome) {
+            closeDrawer();
+            goToHome();
+          } else {
+            restoreLastView();
+          }
           return;
         }
 
@@ -2569,8 +2537,8 @@
       if (allTrips.length === 0) {
         container.innerHTML = `
           <div class="empty-state">
-            <span class="empty-icon">🧳</span>
-            <div class="empty-text">還沒有行程，點右下角「+」新增第一趟旅行吧！</div>
+            <i class="bi bi-star-fill" style="font-size:36px; color:#3862AE; display:block; margin:0 auto 14px;"></i>
+            <div class="empty-text">還沒有行程，開始第一趟旅行吧！</div>
           </div>
         `;
         return;
@@ -3016,7 +2984,6 @@
       if (currentDay.spots.length === 0) {
         listContainer.innerHTML = `
           <div class="empty-state">
-            <span class="empty-icon">📍</span>
             <div class="empty-text">這天還沒有行程，來安排一下吧！</div>
           </div>
         `;
@@ -3047,11 +3014,11 @@
                 <span class="tag-badge ${tagClass}">${spot.category || '景點'}</span>${reservedBadge}
               </div>
               <div class="card-title-link" onclick="focusMapMarker(${idx})">${spot.title}</div>
-              ${spot.transport ? `<div class="spot-meta-row"><i class="bi bi-bus-front-fill"></i><span>${spot.transport}</span></div>` : ''}
               ${spot.hours ? `<div class="spot-meta-row"><i class="bi bi-clock"></i><span>${spot.hours}</span></div>` : ''}
+              ${spot.transport ? `<div class="spot-meta-row"><i class="bi bi-bus-front-fill"></i><span>${spot.transport}</span></div>` : ''}
               ${spot.note ? `<div class="card-note">${spot.note}</div>` : ''}
             </div>
-            <a href="${mapsUrl}" target="_blank" class="card-action-btn edit-mode-hide" title="Google Map 導航">↗</a>
+            <a href="${mapsUrl}" target="_blank" class="card-action-btn edit-mode-hide" title="Google Map 導航"><i class="bi bi-geo-alt" style="color:#3862AE;"></i></a>
             <div style="display:flex; flex-direction:column; align-items:center; gap:4px; margin-left:4px;" class="read-mode-hide">
               <span class="drag-handle" title="拖曳排序">⠿</span>
               <button class="icon-btn-more" onclick="openSpotActionMenu(event, ${idx})" title="更多操作">⋮</button>
@@ -3335,7 +3302,7 @@
           : `<span class="member-avatar member-avatar-placeholder">🐶</span>`;
         const isRowCreator = uid === trip.creatorUid;
         const roleLabel = isRowCreator
-          ? '<i class="bi bi-github" style="color:#3862AE;"></i> 建立者'
+          ? '<i class="bi bi-brightness-low" style="color:#3862AE;"></i> 建立者'
           : (m.role === 'editor' ? '<i class="bi bi-highlighter" style="color:#3862AE;"></i> 編輯者' : '<i class="bi bi-search" style="color:#3862AE;"></i> 檢視者');
         const canManage = isCreator && !isSelf && !uid.startsWith('legacy_');
 
