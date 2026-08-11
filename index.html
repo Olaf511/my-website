@@ -1178,7 +1178,7 @@
   <div class="modal-overlay" id="guidePlaceModal" style="z-index:2001;">
     <div class="modal-box">
       <div class="modal-header">
-        <span id="guidePlaceModalTitle" class="modal-title-with-icon">必去清單</span>
+        <span id="guidePlaceModalTitle" class="modal-title-with-icon"><i class="bi bi-check-circle" style="color:#3862AE;"></i> 必去清單</span>
         <button onclick="closeGuidePlaceModal()">✕</button>
       </div>
       <input type="hidden" id="editGuidePlaceIndex" value="-1">
@@ -1201,47 +1201,6 @@
       <div class="modal-footer">
         <button class="modal-btn modal-btn-cancel" onclick="closeGuidePlaceModal()">取消</button>
         <button class="modal-btn modal-btn-save" onclick="saveGuidePlace()">儲存</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- ===== 逛街攻略：單一地點的樓層品項清單 (彈跳視窗) ===== -->
-  <div class="modal-overlay" id="guideDetailModal" onclick="if(event.target===this) closeGuideDetail()">
-    <div class="modal-box">
-      <div class="modal-header">
-        <span class="modal-title-with-icon" id="guideDetailTitle">地點</span>
-        <div style="display:flex; align-items:center; gap:6px;">
-          <button onclick="openGuidePlaceModal(currentGuideDetailIdx)"><i class="bi bi-pencil-square" style="color:#3862AE;"></i></button>
-          <button onclick="closeGuideDetail()">✕</button>
-        </div>
-      </div>
-      <div id="guideDetailAddress" style="font-size:12px; color:var(--text-muted); white-space:pre-wrap; margin-bottom:10px;"></div>
-      <div id="guideDetailItems"></div>
-      <button class="btn-rounded-light" style="width:100%; justify-content:center; margin-top:10px;" onclick="openGuideItemModal()">+ 新增品項</button>
-    </div>
-  </div>
-
-  <!-- ===== 新增逛街品項 Modal ===== -->
-  <div class="modal-overlay" id="guideItemModal">
-    <div class="modal-box">
-      <div class="modal-header">
-        <span class="modal-title-with-icon">想逛的品項</span>
-        <button onclick="closeGuideItemModal()">✕</button>
-      </div>
-      <div class="form-group">
-        <label>樓層</label>
-        <div style="display:flex; gap:6px;">
-          <select id="guideFloorSelect" style="flex:1;" onchange="checkNewGuideFloorOption(this)"></select>
-        </div>
-        <input type="text" id="guideFloorCustomInput" placeholder="輸入樓層，例：3F" style="display:none; margin-top:6px;">
-      </div>
-      <div class="form-group">
-        <label>店家／品項名稱</label>
-        <input type="text" id="guideItemInput" placeholder="">
-      </div>
-      <div class="modal-footer">
-        <button class="modal-btn modal-btn-cancel" onclick="closeGuideItemModal()">取消</button>
-        <button class="modal-btn modal-btn-save" onclick="addGuideItem()">儲存</button>
       </div>
     </div>
   </div>
@@ -4189,12 +4148,12 @@
       document.getElementById('guideRegionCustomInput').value = '';
       if (idx >= 0) {
         const place = allTrips[currentTripIdx].shoppingGuide[idx];
-        document.getElementById('guidePlaceModalTitle').innerHTML = '編輯逛街地點';
+        document.getElementById('guidePlaceModalTitle').innerHTML = '<i class="bi bi-highlighter" style="color:#3862AE;"></i> 編輯逛街地點';
         document.getElementById('guideRegionSelect').value = place.region;
         document.getElementById('guidePlaceNameInput').value = place.name || '';
         document.getElementById('guidePlaceAddressInput').value = place.address || '';
       } else {
-        document.getElementById('guidePlaceModalTitle').innerHTML = '必去清單';
+        document.getElementById('guidePlaceModalTitle').innerHTML = '<i class="bi bi-check-circle" style="color:#3862AE;"></i> 必去清單';
         document.getElementById('guidePlaceNameInput').value = '';
         document.getElementById('guidePlaceAddressInput').value = '';
       }
@@ -4243,8 +4202,7 @@
         trip.shoppingGuide.push({ id: Date.now(), region, name, address, items: [] });
       }
       saveData(); closeGuidePlaceModal();
-      if (document.getElementById('guideDetailModal').classList.contains('active')) { renderGuideDetail(); }
-      else { renderGuideBoxes(); }
+      renderGuideBoxes();
       populateSpotGuideLinkSelect();
     }
 
@@ -4275,7 +4233,7 @@
         let itemsHtml = '';
         groups[regionName].forEach(place => {
           itemsHtml += `
-            <div class="guide-place-card" onclick="openGuideDetail(${place.originalIndex}, 'pageToolShoppingGuide')">
+            <div class="guide-place-card" onclick="openGuidePlaceModal(${place.originalIndex})">
               <div class="guide-place-main">
                 <div class="guide-place-name">${place.name}</div>
               </div>
@@ -4298,126 +4256,6 @@
       if (!confirm('確定要刪除這個逛街地點及底下所有品項嗎？')) return;
       allTrips[currentTripIdx].shoppingGuide.splice(idx, 1);
       saveData(); renderGuideBoxes(); populateSpotGuideLinkSelect();
-    }
-
-    let currentGuideDetailIdx = -1;
-    let guideDetailReturnPage = 'pageToolShoppingGuide';
-
-    function openGuideDetail(idx, returnPage) {
-      currentGuideDetailIdx = idx;
-      guideDetailReturnPage = returnPage || 'pageToolShoppingGuide';
-      // 先開視窗，避免內容渲染萬一出錯導致視窗完全沒反應
-      document.getElementById('guideDetailModal').classList.add('active');
-      try {
-        renderGuideDetail();
-      } catch (e) {
-        console.error('renderGuideDetail failed:', e);
-      }
-    }
-
-    function closeGuideDetail() {
-      document.getElementById('guideDetailModal').classList.remove('active');
-      if (guideDetailReturnPage === 'pageToolShoppingGuide') { renderGuideBoxes(); }
-      else if (guideDetailReturnPage === 'pageDetail') { renderCurrentDayOrOverview(); }
-    }
-
-    function renderGuideDetail() {
-      const trip = allTrips[currentTripIdx];
-      const place = trip.shoppingGuide[currentGuideDetailIdx];
-      if (!place) { closeGuideDetail(); return; }
-      if (!place.items) place.items = []; // 相容舊資料：沒有 items 欄位時補上
-
-      document.getElementById('guideDetailTitle').innerText = place.name;
-      document.getElementById('guideDetailAddress').innerText = place.address || '';
-
-      const container = document.getElementById('guideDetailItems');
-      container.innerHTML = '';
-
-      if (place.items.length === 0) {
-        container.innerHTML = `
-          <div class="empty-state">
-            <div class="empty-text">還沒有想逛的品項，來加一個吧！</div>
-          </div>
-        `;
-        return;
-      }
-
-      const groups = {};
-      place.items.forEach((item, index) => {
-        if (!groups[item.floor]) groups[item.floor] = [];
-        groups[item.floor].push({ ...item, originalIndex: index });
-      });
-
-      let html = '';
-      for (let floorName in groups) {
-        html += `<div class="floor-group-title">${floorName}</div>`;
-        groups[floorName].forEach(item => {
-          html += `
-            <div class="card" style="margin-bottom:8px; padding:10px; align-items:center;">
-              <div class="card-main">
-                <label style="display:flex; align-items:center; gap:8px; cursor:pointer;">
-                  <input type="checkbox" ${item.done ? 'checked' : ''} onchange="toggleGuideItem(${item.originalIndex})">
-                  <span style="font-weight:bold; font-size:14px; ${item.done ? 'text-decoration:line-through; color:#cbd5e1;' : ''}">${item.text}</span>
-                </label>
-              </div>
-              <button class="icon-btn-del" onclick="deleteGuideItem(${item.originalIndex})"><i class="bi bi-x" style="color:#3862AE;"></i></button>
-            </div>
-          `;
-        });
-      }
-      container.innerHTML = html;
-    }
-
-    function toggleGuideItem(idx) {
-      const place = allTrips[currentTripIdx].shoppingGuide[currentGuideDetailIdx];
-      place.items[idx].done = !place.items[idx].done;
-      saveData(); renderGuideDetail();
-    }
-
-    function deleteGuideItem(idx) {
-      const place = allTrips[currentTripIdx].shoppingGuide[currentGuideDetailIdx];
-      place.items.splice(idx, 1);
-      saveData(); renderGuideDetail(); populateSpotGuideLinkSelect();
-    }
-
-    function renderGuideFloorSelectOptions() {
-      const place = allTrips[currentTripIdx].shoppingGuide[currentGuideDetailIdx];
-      const select = document.getElementById('guideFloorSelect');
-      select.innerHTML = '';
-      const floors = new Set(place.items.map(i => i.floor));
-      floors.forEach(f => { select.innerHTML += `<option value="${f}">${f}</option>`; });
-      select.innerHTML += `<option value="__NEW__">+ 新增樓層</option>`;
-    }
-
-    function openGuideItemModal() {
-      renderGuideFloorSelectOptions();
-      document.getElementById('guideItemInput').value = '';
-      document.getElementById('guideFloorCustomInput').style.display = 'none';
-      document.getElementById('guideFloorCustomInput').value = '';
-      const select = document.getElementById('guideFloorSelect');
-      if (select.options.length > 1) { select.selectedIndex = 0; checkNewGuideFloorOption(select); }
-      else { checkNewGuideFloorOption(select); }
-      document.getElementById('guideItemModal').classList.add('active');
-    }
-
-    function closeGuideItemModal() {
-      document.getElementById('guideItemModal').classList.remove('active');
-    }
-
-    function checkNewGuideFloorOption(select) {
-      document.getElementById('guideFloorCustomInput').style.display = (select.value === '__NEW__') ? 'block' : 'none';
-    }
-
-    function addGuideItem() {
-      const selectVal = document.getElementById('guideFloorSelect').value;
-      const customFloor = document.getElementById('guideFloorCustomInput').value;
-      const floor = (selectVal === '__NEW__' || !selectVal) ? (customFloor || "樓層未定") : selectVal;
-      const text = document.getElementById('guideItemInput').value;
-      if (!text) return alert("請輸入店家／品項名稱！");
-
-      const place = allTrips[currentTripIdx].shoppingGuide[currentGuideDetailIdx];
-      place.items.push({ floor, text, done: false });
-      saveData(); renderGuideDetail(); closeGuideItemModal(); populateSpotGuideLinkSelect();
     }
 
     /* ===== 景點卡片「連結逛街攻略」邏輯 ===== */
@@ -4444,7 +4282,7 @@
       const idx = allTrips[currentTripIdx].shoppingGuide.findIndex(p => String(p.id) === String(val));
       if (idx < 0) return;
       closeSpotModal();
-      openGuideDetail(idx, 'pageDetail');
+      openSpotGuideQuickView(idx);
     }
 
     function openGuideDetailFromSpot(spotIdx) {
@@ -4468,7 +4306,7 @@
     }
 
     /* ===== 旅行小抄邏輯 ===== */
-    let cheatFilterActive = [];
+    let cheatFilterActive = '';
     const CHEAT_TAG_META = {
       "交通": { cls: "cheat-tag-transport" },
       "票券": { cls: "cheat-tag-ticket" },
@@ -4478,21 +4316,15 @@
     function renderCheatFilterRow() {
       const row = document.getElementById('cheatFilterRow');
       const tags = Object.keys(CHEAT_TAG_META);
-      let html = `<button type="button" class="filter-chip ${cheatFilterActive.length === 0 ? 'active' : ''}" onclick="setCheatFilter()">全部</button>`;
+      let html = `<button type="button" class="filter-chip ${cheatFilterActive === '' ? 'active' : ''}" onclick="setCheatFilter('')">全部</button>`;
       tags.forEach(t => {
-        html += `<button type="button" class="filter-chip ${cheatFilterActive.includes(t) ? 'active' : ''}" onclick="toggleCheatFilter('${t}')">${t}</button>`;
+        html += `<button type="button" class="filter-chip ${cheatFilterActive === t ? 'active' : ''}" onclick="setCheatFilter('${t}')">${t}</button>`;
       });
       row.innerHTML = html;
     }
 
-    function setCheatFilter() {
-      cheatFilterActive = [];
-      renderCheatFilterRow(); renderCheatList();
-    }
-
-    function toggleCheatFilter(tag) {
-      const i = cheatFilterActive.indexOf(tag);
-      if (i >= 0) cheatFilterActive.splice(i, 1); else cheatFilterActive.push(tag);
+    function setCheatFilter(tag) {
+      cheatFilterActive = (cheatFilterActive === tag) ? '' : tag;
       renderCheatFilterRow(); renderCheatList();
     }
 
@@ -4500,8 +4332,8 @@
       const container = document.getElementById('cheatSheetList');
       const trip = allTrips[currentTripIdx];
       let list = (trip.cheatSheet || []).map((item, index) => ({ ...item, originalIndex: index }));
-      if (cheatFilterActive.length > 0) {
-        list = list.filter(item => (item.tags || []).some(t => cheatFilterActive.includes(t)));
+      if (cheatFilterActive) {
+        list = list.filter(item => (item.tags || []).includes(cheatFilterActive));
       }
       container.innerHTML = '';
 
