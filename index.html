@@ -87,11 +87,8 @@
       background-image: linear-gradient(135deg, var(--soft-blue), #dbeafe);
       display: flex; align-items: center; justify-content: center; font-size: 24px;
     }
-    .thumb-edit-pencil {
-      position: absolute; right: -3px; bottom: -3px; width: 18px; height: 18px; border-radius: 50%;
-      background: #fff; border: 1px solid var(--border-color); font-size: 9px; color: var(--text-muted);
-      display: flex; align-items: center; justify-content: center; box-shadow: 0 1px 3px rgba(0,0,0,0.18);
-    }
+    .trip-card-actions { display:flex; flex-direction:column; align-items:center; gap:4px; flex-shrink:0; }
+    .icon-btn-edit { background: none; border: none; color: #2d3748; font-size: 14px; cursor: pointer; padding: 2px 6px; }
     .trip-card-main { cursor: pointer; flex: 1; }
     .trip-card-title { font-size: 17px; font-weight: 800; color: var(--primary-navy); }
     .trip-card-date { font-size: 12px; color: var(--text-muted); margin-top: 4px; }
@@ -929,9 +926,8 @@
 
         <div class="form-group">
           <label>照片</label>
-          <img id="spotImgPreview" src="" style="width:100%; height:130px; object-fit:cover; border-radius:12px; display:none; margin-bottom:8px;">
           <input type="hidden" id="inputImgUrl">
-          <button type="button" class="btn-rounded-light" style="width:100%; justify-content:center;" onclick="document.getElementById('spotFileInput').click();">📷 上傳照片</button>
+          <button type="button" class="btn-rounded-light" style="width:100%; justify-content:center;" onclick="document.getElementById('spotFileInput').click();"><i class="bi bi-camera-fill" style="color:#3862AE;"></i> 上傳照片</button>
           <input type="file" id="spotFileInput" accept="image/*" style="display:none;" onchange="handleFileSelect(event, 'spotImgPreview', 'inputImgUrl', 'square', null, 'spotImgRemoveBtn')">
           <button type="button" class="btn-rounded-light" id="spotImgRemoveBtn" style="width:100%; justify-content:center; margin-top:6px; color:#c53030; border-color:#feb2b2; background:#fff5f5; display:none;" onclick="removeSpotImage()"><i class="bi bi-x" style="color:#3862AE;"></i> 移除照片</button>
         </div>
@@ -1475,9 +1471,8 @@
     <div class="modal-box">
       <div class="modal-header"><span>編輯行程</span><button onclick="closeTripCoverModal()">✕</button></div>
       <div style="text-align:center;">
-        <img id="tripCoverPreview" src="" style="width:100%; height:140px; object-fit:cover; border-radius:12px; display:none; margin-bottom:10px;">
         <input type="hidden" id="tripCoverBase64">
-        <button class="btn-rounded-light" style="width:100%; justify-content:center;" onclick="document.getElementById('tripCoverFileInput').click();">📷 上傳照片</button>
+        <button class="btn-rounded-light" style="width:100%; justify-content:center;" onclick="document.getElementById('tripCoverFileInput').click();"><i class="bi bi-camera-fill" style="color:#3862AE;"></i> 上傳照片</button>
         <input type="file" id="tripCoverFileInput" accept="image/*" style="display:none;" onchange="handleFileSelect(event, 'tripCoverPreview', 'tripCoverBase64', 'square')">
         <button class="btn-rounded-light" style="width:100%; justify-content:center; margin-top:8px; color:#c53030; border-color:#feb2b2; background:#fff5f5;" onclick="removeTripCoverImage()"><i class="bi bi-x" style="color:#3862AE;"></i> 移除封面圖</button>
       </div>
@@ -1503,10 +1498,13 @@
   <!-- ===== 修改當日區域/主要景點 Modal ===== -->
   <div class="modal-overlay" id="editDayAreaModal">
     <div class="modal-box">
-      <div class="modal-header"><span>修改區域景點</span><button onclick="closeEditDayAreaModal()">✕</button></div>
+      <div class="modal-header"><span>修改行程主題</span><button onclick="closeEditDayAreaModal()">✕</button></div>
       <div class="form-group">
-        <label>區域 / 主要景點</label>
-        <input type="text" id="editDayAreaInput" placeholder="例如：市區景點">
+        <label>今天要去哪裡？</label>
+        <div style="position:relative;">
+          <input type="text" id="editDayAreaInput" placeholder="例如：市區景點" style="padding-right:34px;">
+          <button type="button" onclick="document.getElementById('editDayAreaInput').value=''; document.getElementById('editDayAreaInput').focus();" style="position:absolute; right:4px; top:50%; transform:translateY(-50%); background:none; border:none; cursor:pointer; padding:4px;"><i class="bi bi-x-circle-fill" style="color:#3862AE;"></i></button>
+        </div>
       </div>
       <div class="modal-footer">
         <button class="modal-btn modal-btn-cancel" onclick="closeEditDayAreaModal()">取消</button>
@@ -1745,9 +1743,13 @@
     }
 
     // 依成員資料重新計算付款人名單：只有「編輯者」才會出現在記帳付款人裡
-    // 排序規則：依加入行程的先後順序排列（建立者因為最早加入，會自然排第一位）
+    // 排序規則：建立者永遠排第一位，其他成員依加入行程的先後順序排列
     function syncPayersFromMembers(trip) {
       const sortedEntries = Object.entries(trip.members || {}).sort((a, b) => {
+        const aCreator = a[0] === trip.creatorUid;
+        const bCreator = b[0] === trip.creatorUid;
+        if (aCreator && !bCreator) return -1;
+        if (!aCreator && bCreator) return 1;
         const at = typeof a[1].joinedAt === 'number' ? a[1].joinedAt : 0;
         const bt = typeof b[1].joinedAt === 'number' ? b[1].joinedAt : 0;
         return at - bt;
@@ -2363,9 +2365,8 @@
       reader.onload = function(e) {
         openCropperModal(e.target.result, shape || 'square', function(croppedDataUrl) {
           document.getElementById(hiddenInputId).value = croppedDataUrl;
-          const img = document.getElementById(imgPreviewId);
-          img.src = croppedDataUrl;
-          img.style.display = 'block';
+          const img = imgPreviewId ? document.getElementById(imgPreviewId) : null;
+          if (img) { img.src = croppedDataUrl; img.style.display = 'block'; }
           if (placeholderId) {
             const ph = document.getElementById(placeholderId);
             if (ph) ph.style.display = 'none';
@@ -2589,15 +2590,15 @@
         card.className = 'trip-card';
         card.id = 'tripCard-' + index;
         card.innerHTML = `
-          <div class="trip-card-thumb" onclick="openTripCoverModal(${index})" style="background-image:url('${cover || DEFAULT_TRIP_PHOTO}');">
-            
-            <span class="thumb-edit-pencil read-mode-hide"><i class="bi bi-highlighter" style="color:#3862AE;"></i></span>
-          </div>
+          <div class="trip-card-thumb" onclick="openTripDetail(${index})" style="background-image:url('${cover || DEFAULT_TRIP_PHOTO}');"></div>
           <div class="trip-card-main" onclick="openTripDetail(${index})">
             <div class="trip-card-title">${trip.title}</div>
             <div class="trip-card-date"><i class="bi bi-calendar" style="color:#3862AE;"></i> ${trip.startDate} - ${trip.endDate} • ${trip.days.length} 天</div>
           </div>
-          <button class="icon-btn-del read-mode-hide" onclick="deleteTrip(${index})"><i class="bi bi-x" style="color:#3862AE;"></i></button>
+          <div class="trip-card-actions read-mode-hide">
+            <button class="icon-btn-edit" onclick="openTripCoverModal(${index})"><i class="bi bi-highlighter" style="color:#3862AE;"></i></button>
+            <button class="icon-btn-del" onclick="deleteTrip(${index})"><i class="bi bi-x" style="color:#3862AE;"></i></button>
+          </div>
         `;
         container.appendChild(card);
       });
@@ -2660,9 +2661,6 @@
       if (!isEditMode) return;
       tripCoverEditIdx = index;
       const trip = allTrips[index];
-      const cover = getTripCoverImage(trip);
-      const img = document.getElementById('tripCoverPreview');
-      if (cover) { img.src = cover; img.style.display = 'block'; } else { img.style.display = 'none'; }
       document.getElementById('tripCoverBase64').value = trip.coverImg || '';
       document.getElementById('tripEditTitleInput').value = trip.title || '';
       document.getElementById('tripEditStartDateInput').value = (trip.startDate || '').split('/').join('-');
@@ -2678,8 +2676,6 @@
 
     function removeTripCoverImage() {
       document.getElementById('tripCoverBase64').value = '';
-      const img = document.getElementById('tripCoverPreview');
-      img.src = ''; img.style.display = 'none';
     }
 
     function saveTripCover() {
@@ -3021,7 +3017,7 @@
         listContainer.innerHTML = `
           <div class="empty-state">
             <span class="empty-icon">📍</span>
-            <div class="empty-text">這天還沒有安排景點，點右下角「+」開始新增吧！</div>
+            <div class="empty-text">這天還沒有行程，來安排一下吧！</div>
           </div>
         `;
       } else {
@@ -3137,11 +3133,8 @@
         toggleSpotExtraFields(!!(spot.hours || spot.transport));
         addressSelectedLatLng = (spot.lat && spot.lng) ? { lat: spot.lat, lng: spot.lng } : null;
         if (spot.img) {
-          document.getElementById('spotImgPreview').src = spot.img;
-          document.getElementById('spotImgPreview').style.display = 'block';
           document.getElementById('spotImgRemoveBtn').style.display = 'block';
         } else {
-          document.getElementById('spotImgPreview').style.display = 'none';
           document.getElementById('spotImgRemoveBtn').style.display = 'none';
         }
       } else {
@@ -3150,7 +3143,6 @@
         document.getElementById('inputAddress').value = "";
         document.getElementById('inputImgUrl').value = "";
         document.getElementById('inputNote').value = "";
-        document.getElementById('spotImgPreview').style.display = 'none';
         document.getElementById('spotImgRemoveBtn').style.display = 'none';
         document.getElementById('inputReserved').checked = false;
         document.getElementById('inputReservedTime').value = "09:00";
@@ -3188,7 +3180,6 @@
 
     function removeSpotImage() {
       document.getElementById('inputImgUrl').value = '';
-      document.getElementById('spotImgPreview').style.display = 'none';
       document.getElementById('spotImgRemoveBtn').style.display = 'none';
       spotImageRemoved = true;
     }
@@ -3328,6 +3319,10 @@
       const isCreator = currentUser && trip.creatorUid === currentUser.uid;
 
       const sortedMemberEntries = Object.entries(trip.members).sort((a, b) => {
+        const aCreator = a[0] === trip.creatorUid;
+        const bCreator = b[0] === trip.creatorUid;
+        if (aCreator && !bCreator) return -1;
+        if (!aCreator && bCreator) return 1;
         const at = typeof a[1].joinedAt === 'number' ? a[1].joinedAt : 0;
         const bt = typeof b[1].joinedAt === 'number' ? b[1].joinedAt : 0;
         return at - bt;
