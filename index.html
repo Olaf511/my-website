@@ -233,6 +233,46 @@
     .tag-badge { font-size: 10px; font-weight: bold; color: #fff; padding: 1px 6px; border-radius: 10px; }
     .tag-spot { background: #3182ce; } .tag-food { background: #dd6b20; } .tag-shop { background: #d69e2e; } .tag-hotel { background: #319795; } .tag-park { background: #805ad5; } .tag-flight { background: #4a5568; }
     .tag-reserved { font-size: 10px; font-weight: bold; color: #7a1f28; padding: 1px 6px; border-radius: 10px; background: #FDA9AF; margin-left: 4px; }
+
+    /* ===== 逛街攻略 / 旅行小抄 共用樣式 ===== */
+    .filter-chip-row { display:flex; gap:6px; flex-wrap:wrap; margin-bottom:12px; }
+    .filter-chip {
+      font-size: 12px; font-weight: 700; padding: 5px 12px; border-radius: 16px;
+      border: 1px solid #cbd5e1; background: #fff; color: var(--text-muted); cursor: pointer;
+    }
+    .filter-chip.active { background: var(--primary-navy); border-color: var(--primary-navy); color: #fff; }
+    .cheat-tag { font-size: 10px; font-weight: bold; color: #fff; padding: 1px 7px; border-radius: 10px; margin-right: 4px; display: inline-block; }
+    .cheat-tag-transport { background: #3182ce; }
+    .cheat-tag-ticket { background: #d69e2e; }
+    .cheat-tag-other { background: #718096; }
+    .cheat-card-link {
+      display: inline-flex; align-items: center; gap: 4px; font-size: 12px; font-weight: 700;
+      color: var(--primary-navy); text-decoration: none; margin-top: 4px;
+    }
+    .guide-link-badge {
+      display: inline-flex; align-items: center; gap: 4px; font-size: 11px; font-weight: 700;
+      color: var(--primary-navy); background: var(--soft-blue); border: 1px solid #bee3f8;
+      padding: 3px 9px; border-radius: 12px; margin-top: 5px; cursor: pointer; width: fit-content;
+    }
+    .guide-place-card {
+      display: flex; align-items: center; gap: 10px; background: #fff; border: 1px solid var(--border-color);
+      border-radius: 10px; padding: 10px 12px; margin-bottom: 8px; cursor: pointer;
+    }
+    .guide-place-card .guide-place-icon {
+      width: 38px; height: 38px; border-radius: 50%; background: var(--soft-blue); color: var(--primary-navy);
+      display: flex; align-items: center; justify-content: center; font-size: 17px; flex-shrink: 0;
+    }
+    .guide-place-main { flex: 1; min-width: 0; }
+    .guide-place-name { font-weight: 800; font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .guide-place-meta { font-size: 11px; color: var(--text-muted); margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .floor-group-title {
+      font-size: 12px; font-weight: 800; color: var(--primary-navy); background: #eef4fb;
+      padding: 5px 10px; border-radius: 8px; margin: 12px 0 6px;
+    }
+    .guide-detail-header {
+      display: flex; align-items: center; gap: 10px; margin-bottom: 4px;
+    }
+    .guide-detail-header .guide-place-name { font-size: 16px; }
     
     .card-title-link {
       font-size: 15px; font-weight: 800; color: var(--text-main); text-decoration: none;
@@ -945,6 +985,14 @@
           <label>備註</label>
           <textarea id="inputNote" placeholder="注意事項、筆記..."></textarea>
         </div>
+
+        <div class="form-group">
+          <label><i class="bi bi-link-45deg"></i> 連結逛街攻略<span class="optional-tag">選填</span></label>
+          <select id="inputGuideLink" onchange="onSpotGuideLinkChange()"></select>
+          <button type="button" class="expand-link" id="spotGuideViewBtn" style="display:none;" onclick="viewLinkedGuideFromSpot()">
+            <i class="bi bi-box-arrow-up-right"></i> <span>查看已連結的清單</span>
+          </button>
+        </div>
       </div>
 
       <div class="modal-footer">
@@ -1071,6 +1119,146 @@
       <div class="modal-footer">
         <button class="modal-btn modal-btn-cancel" onclick="closeShopItemModal()">取消</button>
         <button class="modal-btn modal-btn-save" onclick="addShoppingItem()">儲存</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== 逛街攻略：地區/地點列表 ===== -->
+  <div id="pageToolShoppingGuide" class="app-page">
+    <div class="app-header">
+      <button class="menu-btn" onclick="openDrawer()">☰</button>
+      <h1><span class="page-icon-badge" style="background:#fff; border:1.5px solid #D7E9FD; color:#3862AE;"><i class="bi bi-shop-window"></i></span>逛街攻略</h1>
+    </div>
+    <div class="container">
+      <div id="guideRegionBoxes"></div>
+    </div>
+    <button class="fab-add" onclick="openGuidePlaceModal()">+</button>
+  </div>
+
+  <!-- ===== 新增/編輯 逛街地點 Modal ===== -->
+  <div class="modal-overlay" id="guidePlaceModal">
+    <div class="modal-box">
+      <div class="modal-header">
+        <span id="guidePlaceModalTitle" class="modal-title-with-icon"><span class="page-icon-badge" style="background:#fff; border:1.5px solid #D7E9FD; color:#3862AE;"><i class="bi bi-check-circle"></i></span>新增逛街地點</span>
+        <button onclick="closeGuidePlaceModal()">✕</button>
+      </div>
+      <input type="hidden" id="editGuidePlaceIndex" value="-1">
+      <div class="form-group">
+        <label>大地區</label>
+        <div style="display:flex; gap:6px;">
+          <select id="guideRegionSelect" style="flex:1;" onchange="checkNewGuideRegionOption(this)"></select>
+          <button class="btn-rounded-light" style="color:#2d3748; border-color:#cbd5e1; white-space:nowrap;" onclick="deleteCurrentGuideRegion()">✕ 刪除區域</button>
+        </div>
+        <input type="text" id="guideRegionCustomInput" placeholder="輸入新地區名稱" style="display:none; margin-top:6px;">
+      </div>
+      <div class="form-group">
+        <label>地點名稱</label>
+        <input type="text" id="guidePlaceNameInput" placeholder="例：天王寺 Q's mall">
+      </div>
+      <div class="form-group">
+        <label>地址／備註<span class="optional-tag">選填</span></label>
+        <input type="text" id="guidePlaceAddressInput" placeholder="">
+      </div>
+      <div class="modal-footer">
+        <button class="modal-btn modal-btn-cancel" onclick="closeGuidePlaceModal()">取消</button>
+        <button class="modal-btn modal-btn-save" onclick="saveGuidePlace()">儲存</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== 逛街攻略：單一地點的樓層品項清單 ===== -->
+  <div id="pageGuideDetail" class="app-page">
+    <div class="app-header">
+      <button class="menu-btn back-btn" onclick="closeGuideDetail()"><i class="bi bi-arrow-left" style="color:#3862AE;"></i></button>
+      <h1 id="guideDetailTitle">地點</h1>
+    </div>
+    <div class="container">
+      <div class="section-card">
+        <div class="section-card-title">
+          <span id="guideDetailAddress" style="font-weight:normal; font-size:12px; color:var(--text-muted);"></span>
+          <button class="btn-rounded-light" onclick="openGuidePlaceModal(currentGuideDetailIdx)"><i class="bi bi-highlighter" style="color:#3862AE;"></i> 編輯地點</button>
+        </div>
+        <div id="guideDetailItems"></div>
+      </div>
+    </div>
+    <button class="fab-add" onclick="openGuideItemModal()">+</button>
+  </div>
+
+  <!-- ===== 新增逛街品項 Modal ===== -->
+  <div class="modal-overlay" id="guideItemModal">
+    <div class="modal-box">
+      <div class="modal-header">
+        <span class="modal-title-with-icon"><span class="page-icon-badge" style="background:#fff; border:1.5px solid #D7E9FD; color:#3862AE;"><i class="bi bi-check-circle"></i></span>想逛的品項</span>
+        <button onclick="closeGuideItemModal()">✕</button>
+      </div>
+      <div class="form-group">
+        <label>樓層</label>
+        <div style="display:flex; gap:6px;">
+          <select id="guideFloorSelect" style="flex:1;" onchange="checkNewGuideFloorOption(this)"></select>
+        </div>
+        <input type="text" id="guideFloorCustomInput" placeholder="輸入樓層，例：3F" style="display:none; margin-top:6px;">
+      </div>
+      <div class="form-group">
+        <label>店家／品項名稱</label>
+        <input type="text" id="guideItemInput" placeholder="">
+      </div>
+      <div class="modal-footer">
+        <button class="modal-btn modal-btn-cancel" onclick="closeGuideItemModal()">取消</button>
+        <button class="modal-btn modal-btn-save" onclick="addGuideItem()">儲存</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== 旅行小抄 ===== -->
+  <div id="pageToolCheatSheet" class="app-page">
+    <div class="app-header">
+      <button class="menu-btn" onclick="openDrawer()">☰</button>
+      <h1><span class="page-icon-badge" style="background:#fff; border:1.5px solid #D7E9FD; color:#3862AE;"><i class="bi bi-stickies-fill"></i></span>旅行小抄</h1>
+    </div>
+    <div class="container">
+      <div class="filter-chip-row" id="cheatFilterRow"></div>
+      <div id="cheatSheetList"></div>
+    </div>
+    <button class="fab-add" onclick="openCheatModal()">+</button>
+  </div>
+
+  <!-- ===== 新增/編輯 旅行小抄 Modal ===== -->
+  <div class="modal-overlay" id="cheatModal">
+    <div class="modal-box">
+      <div class="modal-header">
+        <span id="cheatModalTitle" class="modal-title-with-icon"><span class="page-icon-badge" style="background:#fff; border:1.5px solid #D7E9FD; color:#3862AE;"><i class="bi bi-check-circle"></i></span>新增小抄</span>
+        <button onclick="closeCheatModal()">✕</button>
+      </div>
+      <input type="hidden" id="editCheatIndex" value="-1">
+      <div class="form-group">
+        <label>標題</label>
+        <input type="text" id="cheatTitleInput" placeholder="例：機場退稅流程">
+      </div>
+      <div class="form-group">
+        <label>網址<span class="optional-tag">選填</span></label>
+        <input type="text" id="cheatUrlInput" placeholder="https://...">
+      </div>
+      <div class="form-group">
+        <label>分類標籤</label>
+        <div style="display:flex; gap:14px; flex-wrap:wrap;">
+          <label style="display:flex; align-items:center; gap:5px; font-size:13px;"><input type="checkbox" id="cheatTagTransport" style="width:16px; height:16px;"> 交通</label>
+          <label style="display:flex; align-items:center; gap:5px; font-size:13px;"><input type="checkbox" id="cheatTagTicket" style="width:16px; height:16px;"> 票券</label>
+          <label style="display:flex; align-items:center; gap:5px; font-size:13px;"><input type="checkbox" id="cheatTagOther" style="width:16px; height:16px;"> 其他</label>
+        </div>
+      </div>
+      <div class="form-group">
+        <label>縮圖<span class="optional-tag">選填</span></label>
+        <input type="file" id="cheatFileInput" accept="image/*" onchange="handleFileSelect(event, 'cheatImgPreview', 'cheatImgBase64', 'square')">
+        <input type="hidden" id="cheatImgBase64">
+        <img id="cheatImgPreview" src="" style="width:60px; height:60px; object-fit:cover; border-radius:6px; margin-top:4px; display:none;">
+      </div>
+      <div class="form-group">
+        <label>備註</label>
+        <textarea id="cheatNoteInput" placeholder="重點、注意事項..."></textarea>
+      </div>
+      <div class="modal-footer">
+        <button class="modal-btn modal-btn-cancel" onclick="closeCheatModal()">取消</button>
+        <button class="modal-btn modal-btn-save" onclick="saveCheatItem()">儲存</button>
       </div>
     </div>
   </div>
@@ -1431,6 +1619,12 @@
       <button class="drawer-item" data-page="pageToolShopping" onclick="goToSubPage('pageToolShopping')">
         <span class="drawer-item-icon"><i class="bi bi-bag-check-fill"></i></span><span>必買清單</span>
       </button>
+      <button class="drawer-item" data-page="pageToolShoppingGuide" onclick="goToSubPage('pageToolShoppingGuide')">
+        <span class="drawer-item-icon"><i class="bi bi-shop-window"></i></span><span>逛街攻略</span>
+      </button>
+      <button class="drawer-item" data-page="pageToolCheatSheet" onclick="goToSubPage('pageToolCheatSheet')">
+        <span class="drawer-item-icon"><i class="bi bi-stickies-fill"></i></span><span>旅行小抄</span>
+      </button>
       <button class="drawer-item" data-page="pageToolPrep" onclick="goToSubPage('pageToolPrep')">
         <span class="drawer-item-icon"><i class="bi bi-backpack2-fill"></i></span><span>事前準備</span>
       </button>
@@ -1737,6 +1931,9 @@
       if (!trip.expenses) trip.expenses = [];
       if (!trip.shoppingList) trip.shoppingList = [];
       if (!trip.shoppingAreas) trip.shoppingAreas = ["藥妝店", "機場"];
+      if (!trip.shoppingGuide) trip.shoppingGuide = [];
+      if (!trip.guideRegions) trip.guideRegions = [];
+      if (!trip.cheatSheet) trip.cheatSheet = [];
       if (!trip.prepList) trip.prepList = [];
       if (!trip.payers) trip.payers = [];
       if (!trip.flightOut) trip.flightOut = {};
@@ -2719,7 +2916,7 @@
         members: currentUser ? { [currentUser.uid]: { nickname, avatar: currentUser.avatar || '', role: 'editor', joinedAt: Date.now() } } : {},
         flightOut: {}, flightIn: {},
         payers: [nickname],
-        expenses: [], shoppingList: [], shoppingAreas: ["藥妝店", "機場"], prepList: getDefaultPrepList(), days: []
+        expenses: [], shoppingList: [], shoppingAreas: ["藥妝店", "機場"], shoppingGuide: [], guideRegions: [], cheatSheet: [], prepList: getDefaultPrepList(), days: []
       };
 
       generateDaysFromDates(newTrip);
@@ -3022,6 +3219,7 @@
               ${spot.hours ? `<div class="spot-meta-row"><i class="bi bi-clock"></i><span>${spot.hours}</span></div>` : ''}
               ${spot.transport ? `<div class="spot-meta-row"><i class="bi bi-bus-front-fill"></i><span>${spot.transport}</span></div>` : ''}
               ${spot.note ? `<div class="card-note">${spot.note}</div>` : ''}
+              ${spot.linkedGuideId ? `<div class="guide-link-badge" onclick="event.stopPropagation(); openGuideDetailFromSpot(${idx})"><i class="bi bi-link-45deg"></i><span>逛街攻略清單</span></div>` : ''}
             </div>
             <a href="${mapsUrl}" target="_blank" class="card-action-btn edit-mode-hide" title="Google Map 導航"><i class="bi bi-geo-alt" style="color:#3862AE;"></i></a>
             <div style="display:flex; flex-direction:column; align-items:center; gap:4px; margin-left:4px;" class="read-mode-hide">
@@ -3176,6 +3374,7 @@
       const modal = document.getElementById('spotModal');
       document.getElementById('addressSuggestList').style.display = 'none';
       spotImageRemoved = false;
+      populateSpotGuideLinkSelect();
 
       if (spotIdx >= 0) {
         const spot = allTrips[currentTripIdx].days[currentDayIdx].spots[spotIdx];
@@ -3193,6 +3392,8 @@
         document.getElementById('inputTransport').value = spot.transport || "";
         toggleSpotExtraFields(!!(spot.hours || spot.transport));
         addressSelectedLatLng = (spot.lat && spot.lng) ? { lat: spot.lat, lng: spot.lng } : null;
+        document.getElementById('inputGuideLink').value = spot.linkedGuideId || "";
+        onSpotGuideLinkChange();
         if (spot.img) {
           document.getElementById('spotImgRemoveBtn').style.display = 'block';
         } else {
@@ -3212,6 +3413,8 @@
         document.getElementById('inputTransport').value = "";
         toggleSpotExtraFields(false);
         addressSelectedLatLng = null;
+        document.getElementById('inputGuideLink').value = "";
+        onSpotGuideLinkChange();
       }
       syncFakeDateTimeDisplay('inputTime');
       modal.classList.add('active');
@@ -3304,6 +3507,7 @@
       const reservedTime = reserved ? document.getElementById('inputReservedTime').value : '';
       const hours = document.getElementById('inputHours').value.trim();
       const transport = document.getElementById('inputTransport').value.trim();
+      const linkedGuideId = document.getElementById('inputGuideLink').value || null;
 
       if (!title) return alert("請輸入名稱！");
       if (!img && !spotImageRemoved) {
@@ -3323,7 +3527,7 @@
         } catch (e) {}
       }
 
-      const spotObj = { id: Date.now(), category, time, title, address, img, note, lat, lng, reserved, reservedTime, hours, transport };
+      const spotObj = { id: Date.now(), category, time, title, address, img, note, lat, lng, reserved, reservedTime, hours, transport, linkedGuideId };
       const currentDay = allTrips[currentTripIdx].days[currentDayIdx];
 
       if (editIdx >= 0) { currentDay.spots[editIdx] = spotObj; }
@@ -3487,6 +3691,8 @@
       if (pageId === 'pageToolExchange') { calcTopExchange(); }
       if (pageId === 'pageToolFlight') { renderFlightInfo(); fetchWeather(); }
       if (pageId === 'pageToolShopping') { renderShoppingAreaSelectOptions(); renderShoppingBoxes(); }
+      if (pageId === 'pageToolShoppingGuide') { renderGuideBoxes(); }
+      if (pageId === 'pageToolCheatSheet') { renderCheatFilterRow(); renderCheatList(); }
       if (pageId === 'pageToolAccounting') { initAccountingPage(); }
       if (pageId === 'pageToolPrep') { renderPrepList(); }
       if (pageId === 'pageToolMembers') { renderMembersList(); }
@@ -3843,6 +4049,431 @@
     function deleteShopItem(idx) {
       allTrips[currentTripIdx].shoppingList.splice(idx, 1);
       saveData(); renderShoppingBoxes();
+    }
+
+    /* ===== 逛街攻略邏輯：大地區 → 地點 → 樓層品項 ===== */
+    function renderGuideRegionSelectOptions() {
+      const trip = allTrips[currentTripIdx];
+      const select = document.getElementById('guideRegionSelect');
+      select.innerHTML = '';
+      const presetRegions = trip.guideRegions || [];
+      const itemRegions = trip.shoppingGuide.map(p => p.region || "其他地區");
+      const regions = new Set([...presetRegions, ...itemRegions]);
+      regions.forEach(r => { select.innerHTML += `<option value="${r}">${r}</option>`; });
+      select.innerHTML += `<option value="__NEW__">+ 新增其他地區</option>`;
+    }
+
+    function openGuidePlaceModal(idx = -1) {
+      renderGuideRegionSelectOptions();
+      document.getElementById('editGuidePlaceIndex').value = idx;
+      document.getElementById('guideRegionCustomInput').style.display = 'none';
+      document.getElementById('guideRegionCustomInput').value = '';
+      if (idx >= 0) {
+        const place = allTrips[currentTripIdx].shoppingGuide[idx];
+        document.getElementById('guidePlaceModalTitle').innerHTML = '<i class="bi bi-highlighter" style="color:#3862AE;"></i> 編輯逛街地點';
+        document.getElementById('guideRegionSelect').value = place.region;
+        document.getElementById('guidePlaceNameInput').value = place.name || '';
+        document.getElementById('guidePlaceAddressInput').value = place.address || '';
+      } else {
+        document.getElementById('guidePlaceModalTitle').innerHTML = '<i class="bi bi-check-circle" style="color:#3862AE;"></i> 新增逛街地點';
+        document.getElementById('guidePlaceNameInput').value = '';
+        document.getElementById('guidePlaceAddressInput').value = '';
+      }
+      document.getElementById('guidePlaceModal').classList.add('active');
+    }
+
+    function closeGuidePlaceModal() {
+      document.getElementById('guidePlaceModal').classList.remove('active');
+    }
+
+    function checkNewGuideRegionOption(select) {
+      document.getElementById('guideRegionCustomInput').style.display = (select.value === '__NEW__') ? 'block' : 'none';
+    }
+
+    function deleteCurrentGuideRegion() {
+      const selectVal = document.getElementById('guideRegionSelect').value;
+      if (selectVal === '__NEW__') return alert("請先選取要刪除的現有地區！");
+      if (confirm(`確定要刪除「${selectVal}」地區及其所有逛街地點嗎？`)) {
+        const trip = allTrips[currentTripIdx];
+        trip.shoppingGuide = trip.shoppingGuide.filter(p => p.region !== selectVal);
+        if (trip.guideRegions) trip.guideRegions = trip.guideRegions.filter(r => r !== selectVal);
+        saveData(); closeGuidePlaceModal(); renderGuideBoxes(); populateSpotGuideLinkSelect();
+      }
+    }
+
+    function saveGuidePlace() {
+      const editIdx = parseInt(document.getElementById('editGuidePlaceIndex').value);
+      const selectVal = document.getElementById('guideRegionSelect').value;
+      const customRegion = document.getElementById('guideRegionCustomInput').value;
+      const region = selectVal === '__NEW__' ? (customRegion || "新地區") : selectVal;
+      const name = document.getElementById('guidePlaceNameInput').value;
+      const address = document.getElementById('guidePlaceAddressInput').value;
+
+      if (!name) return alert("請輸入地點名稱！");
+
+      const trip = allTrips[currentTripIdx];
+      if (selectVal === '__NEW__') {
+        if (!trip.guideRegions) trip.guideRegions = [];
+        if (!trip.guideRegions.includes(region)) trip.guideRegions.push(region);
+      }
+
+      if (editIdx >= 0) {
+        const place = trip.shoppingGuide[editIdx];
+        place.region = region; place.name = name; place.address = address;
+      } else {
+        trip.shoppingGuide.push({ id: Date.now(), region, name, address, items: [] });
+      }
+      saveData(); closeGuidePlaceModal();
+      if (document.getElementById('pageGuideDetail').classList.contains('active')) { renderGuideDetail(); }
+      else { renderGuideBoxes(); }
+      populateSpotGuideLinkSelect();
+    }
+
+    function renderGuideBoxes() {
+      const container = document.getElementById('guideRegionBoxes');
+      const list = allTrips[currentTripIdx].shoppingGuide;
+      container.innerHTML = '';
+
+      if (list.length === 0) {
+        container.innerHTML = `
+          <div class="empty-state">
+            <div class="empty-text">還沒有想逛的地點，先加一個吧！</div>
+          </div>
+        `;
+        return;
+      }
+
+      const groups = {};
+      list.forEach((place, index) => {
+        if (!groups[place.region]) groups[place.region] = [];
+        groups[place.region].push({ ...place, originalIndex: index });
+      });
+
+      for (let regionName in groups) {
+        const box = document.createElement('div');
+        box.className = 'section-card';
+
+        let itemsHtml = '';
+        groups[regionName].forEach(place => {
+          itemsHtml += `
+            <div class="guide-place-card" onclick="openGuideDetail(${place.originalIndex}, 'pageToolShoppingGuide')">
+              <div class="guide-place-icon"><i class="bi bi-buildings-fill"></i></div>
+              <div class="guide-place-main">
+                <div class="guide-place-name">${place.name}</div>
+                <div class="guide-place-meta">${place.address ? place.address + ' · ' : ''}共 ${place.items.length} 項</div>
+              </div>
+              <button class="icon-btn-del" onclick="event.stopPropagation(); deleteGuidePlaceDirect(${place.originalIndex})"><i class="bi bi-x" style="color:#3862AE;"></i></button>
+            </div>
+          `;
+        });
+
+        box.innerHTML = `
+          <div class="section-card-title">
+            <span><i class="bi bi-geo-alt-fill" style="color:#3862AE;"></i> ${regionName}</span>
+          </div>
+          <div>${itemsHtml}</div>
+        `;
+        container.appendChild(box);
+      }
+    }
+
+    function deleteGuidePlaceDirect(idx) {
+      if (!confirm('確定要刪除這個逛街地點及底下所有品項嗎？')) return;
+      allTrips[currentTripIdx].shoppingGuide.splice(idx, 1);
+      saveData(); renderGuideBoxes(); populateSpotGuideLinkSelect();
+    }
+
+    let currentGuideDetailIdx = -1;
+    let guideDetailReturnPage = 'pageToolShoppingGuide';
+
+    function openGuideDetail(idx, returnPage) {
+      currentGuideDetailIdx = idx;
+      guideDetailReturnPage = returnPage || 'pageToolShoppingGuide';
+      document.querySelectorAll('.app-page').forEach(p => p.classList.remove('active'));
+      document.getElementById('pageGuideDetail').classList.add('active');
+      renderGuideDetail();
+    }
+
+    function closeGuideDetail() {
+      document.querySelectorAll('.app-page').forEach(p => p.classList.remove('active'));
+      document.getElementById(guideDetailReturnPage).classList.add('active');
+      if (guideDetailReturnPage === 'pageToolShoppingGuide') { renderGuideBoxes(); }
+      else if (guideDetailReturnPage === 'pageDetail') { renderCurrentDayOrOverview(); }
+    }
+
+    function renderGuideDetail() {
+      const trip = allTrips[currentTripIdx];
+      const place = trip.shoppingGuide[currentGuideDetailIdx];
+      if (!place) { closeGuideDetail(); return; }
+
+      document.getElementById('guideDetailTitle').innerText = place.name;
+      document.getElementById('guideDetailAddress').innerText = place.address || '';
+
+      const container = document.getElementById('guideDetailItems');
+      container.innerHTML = '';
+
+      if (place.items.length === 0) {
+        container.innerHTML = `
+          <div class="empty-state">
+            <div class="empty-text">還沒有想逛的品項，來加一個吧！</div>
+          </div>
+        `;
+        return;
+      }
+
+      const groups = {};
+      place.items.forEach((item, index) => {
+        if (!groups[item.floor]) groups[item.floor] = [];
+        groups[item.floor].push({ ...item, originalIndex: index });
+      });
+
+      let html = '';
+      for (let floorName in groups) {
+        html += `<div class="floor-group-title">${floorName}</div>`;
+        groups[floorName].forEach(item => {
+          html += `
+            <div class="card" style="margin-bottom:8px; padding:10px; align-items:center;">
+              <div class="card-main">
+                <label style="display:flex; align-items:center; gap:8px; cursor:pointer;">
+                  <input type="checkbox" ${item.done ? 'checked' : ''} onchange="toggleGuideItem(${item.originalIndex})">
+                  <span style="font-weight:bold; font-size:14px; ${item.done ? 'text-decoration:line-through; color:#cbd5e1;' : ''}">${item.text}</span>
+                </label>
+              </div>
+              <button class="icon-btn-del" onclick="deleteGuideItem(${item.originalIndex})"><i class="bi bi-x" style="color:#3862AE;"></i></button>
+            </div>
+          `;
+        });
+      }
+      container.innerHTML = html;
+    }
+
+    function toggleGuideItem(idx) {
+      const place = allTrips[currentTripIdx].shoppingGuide[currentGuideDetailIdx];
+      place.items[idx].done = !place.items[idx].done;
+      saveData(); renderGuideDetail();
+    }
+
+    function deleteGuideItem(idx) {
+      const place = allTrips[currentTripIdx].shoppingGuide[currentGuideDetailIdx];
+      place.items.splice(idx, 1);
+      saveData(); renderGuideDetail(); populateSpotGuideLinkSelect();
+    }
+
+    function renderGuideFloorSelectOptions() {
+      const place = allTrips[currentTripIdx].shoppingGuide[currentGuideDetailIdx];
+      const select = document.getElementById('guideFloorSelect');
+      select.innerHTML = '';
+      const floors = new Set(place.items.map(i => i.floor));
+      floors.forEach(f => { select.innerHTML += `<option value="${f}">${f}</option>`; });
+      select.innerHTML += `<option value="__NEW__">+ 新增樓層</option>`;
+    }
+
+    function openGuideItemModal() {
+      renderGuideFloorSelectOptions();
+      document.getElementById('guideItemInput').value = '';
+      document.getElementById('guideFloorCustomInput').style.display = 'none';
+      document.getElementById('guideFloorCustomInput').value = '';
+      const select = document.getElementById('guideFloorSelect');
+      if (select.options.length > 1) { select.selectedIndex = 0; checkNewGuideFloorOption(select); }
+      else { checkNewGuideFloorOption(select); }
+      document.getElementById('guideItemModal').classList.add('active');
+    }
+
+    function closeGuideItemModal() {
+      document.getElementById('guideItemModal').classList.remove('active');
+    }
+
+    function checkNewGuideFloorOption(select) {
+      document.getElementById('guideFloorCustomInput').style.display = (select.value === '__NEW__') ? 'block' : 'none';
+    }
+
+    function addGuideItem() {
+      const selectVal = document.getElementById('guideFloorSelect').value;
+      const customFloor = document.getElementById('guideFloorCustomInput').value;
+      const floor = (selectVal === '__NEW__' || !selectVal) ? (customFloor || "樓層未定") : selectVal;
+      const text = document.getElementById('guideItemInput').value;
+      if (!text) return alert("請輸入店家／品項名稱！");
+
+      const place = allTrips[currentTripIdx].shoppingGuide[currentGuideDetailIdx];
+      place.items.push({ floor, text, done: false });
+      saveData(); renderGuideDetail(); closeGuideItemModal(); populateSpotGuideLinkSelect();
+    }
+
+    /* ===== 景點卡片「連結逛街攻略」邏輯 ===== */
+    function populateSpotGuideLinkSelect() {
+      const select = document.getElementById('inputGuideLink');
+      if (!select) return;
+      const trip = allTrips[currentTripIdx];
+      const current = select.value;
+      select.innerHTML = '<option value="">不連結</option>';
+      (trip.shoppingGuide || []).forEach(place => {
+        select.innerHTML += `<option value="${place.id}">${place.region}・${place.name}</option>`;
+      });
+      select.value = current || '';
+    }
+
+    function onSpotGuideLinkChange() {
+      const val = document.getElementById('inputGuideLink').value;
+      document.getElementById('spotGuideViewBtn').style.display = val ? 'inline-flex' : 'none';
+    }
+
+    function viewLinkedGuideFromSpot() {
+      const val = document.getElementById('inputGuideLink').value;
+      if (!val) return;
+      const idx = allTrips[currentTripIdx].shoppingGuide.findIndex(p => String(p.id) === String(val));
+      if (idx < 0) return;
+      closeSpotModal();
+      openGuideDetail(idx, 'pageDetail');
+    }
+
+    function openGuideDetailFromSpot(spotIdx) {
+      const spot = allTrips[currentTripIdx].days[currentDayIdx].spots[spotIdx];
+      if (!spot || !spot.linkedGuideId) return;
+      const idx = allTrips[currentTripIdx].shoppingGuide.findIndex(p => String(p.id) === String(spot.linkedGuideId));
+      if (idx < 0) return;
+      openGuideDetail(idx, 'pageDetail');
+    }
+
+    /* ===== 旅行小抄邏輯 ===== */
+    let cheatFilterActive = [];
+    const CHEAT_TAG_META = {
+      "交通": { cls: "cheat-tag-transport" },
+      "票券": { cls: "cheat-tag-ticket" },
+      "其他": { cls: "cheat-tag-other" }
+    };
+
+    function renderCheatFilterRow() {
+      const row = document.getElementById('cheatFilterRow');
+      const tags = Object.keys(CHEAT_TAG_META);
+      let html = `<button type="button" class="filter-chip ${cheatFilterActive.length === 0 ? 'active' : ''}" onclick="setCheatFilter()">全部</button>`;
+      tags.forEach(t => {
+        html += `<button type="button" class="filter-chip ${cheatFilterActive.includes(t) ? 'active' : ''}" onclick="toggleCheatFilter('${t}')">${t}</button>`;
+      });
+      row.innerHTML = html;
+    }
+
+    function setCheatFilter() {
+      cheatFilterActive = [];
+      renderCheatFilterRow(); renderCheatList();
+    }
+
+    function toggleCheatFilter(tag) {
+      const i = cheatFilterActive.indexOf(tag);
+      if (i >= 0) cheatFilterActive.splice(i, 1); else cheatFilterActive.push(tag);
+      renderCheatFilterRow(); renderCheatList();
+    }
+
+    function renderCheatList() {
+      const container = document.getElementById('cheatSheetList');
+      const trip = allTrips[currentTripIdx];
+      let list = trip.cheatSheet.map((item, index) => ({ ...item, originalIndex: index }));
+      if (cheatFilterActive.length > 0) {
+        list = list.filter(item => (item.tags || []).some(t => cheatFilterActive.includes(t)));
+      }
+      container.innerHTML = '';
+
+      if (list.length === 0) {
+        container.innerHTML = `
+          <div class="empty-state">
+            <div class="empty-text">還沒有小抄，把常用的截圖或連結存起來吧！</div>
+          </div>
+        `;
+        return;
+      }
+
+      list.forEach(item => {
+        const card = document.createElement('div');
+        card.className = 'card';
+        card.style.marginBottom = '10px';
+        const imgBlock = item.img ? `
+          <div class="card-img-wrapper" onclick="openLightbox('${item.img}')">
+            <img src="${item.img}" class="card-img">
+          </div>
+        ` : '';
+        const tagsHtml = (item.tags || []).map(t => `<span class="cheat-tag ${CHEAT_TAG_META[t] ? CHEAT_TAG_META[t].cls : 'cheat-tag-other'}">${t}</span>`).join('');
+        const urlHtml = item.url ? `<a href="${item.url}" target="_blank" class="cheat-card-link" onclick="event.stopPropagation();"><i class="bi bi-box-arrow-up-right"></i> 開啟連結</a>` : '';
+
+        card.innerHTML = `
+          ${imgBlock}
+          <div class="card-main">
+            <div class="card-header-row">${tagsHtml}</div>
+            <div class="card-title-link">${item.title}</div>
+            ${item.note ? `<div class="card-note">${item.note}</div>` : ''}
+            ${urlHtml}
+          </div>
+          <div style="display:flex; flex-direction:column; align-items:center; gap:4px; margin-left:4px;">
+            <button class="icon-btn-more" onclick="openCheatModal(${item.originalIndex})" title="編輯"><i class="bi bi-highlighter" style="color:#3862AE;"></i></button>
+            <button class="icon-btn-del" onclick="deleteCheatItem(${item.originalIndex})"><i class="bi bi-x" style="color:#3862AE;"></i></button>
+          </div>
+        `;
+        container.appendChild(card);
+      });
+    }
+
+    function openCheatModal(idx = -1) {
+      document.getElementById('editCheatIndex').value = idx;
+      document.getElementById('cheatTagTransport').checked = false;
+      document.getElementById('cheatTagTicket').checked = false;
+      document.getElementById('cheatTagOther').checked = false;
+      document.getElementById('cheatImgBase64').value = '';
+      document.getElementById('cheatImgPreview').style.display = 'none';
+      document.getElementById('cheatImgPreview').src = '';
+      document.getElementById('cheatFileInput').value = '';
+
+      if (idx >= 0) {
+        const item = allTrips[currentTripIdx].cheatSheet[idx];
+        document.getElementById('cheatModalTitle').innerHTML = '<i class="bi bi-highlighter" style="color:#3862AE;"></i> 編輯小抄';
+        document.getElementById('cheatTitleInput').value = item.title || '';
+        document.getElementById('cheatUrlInput').value = item.url || '';
+        document.getElementById('cheatNoteInput').value = item.note || '';
+        (item.tags || []).forEach(t => {
+          if (t === '交通') document.getElementById('cheatTagTransport').checked = true;
+          if (t === '票券') document.getElementById('cheatTagTicket').checked = true;
+          if (t === '其他') document.getElementById('cheatTagOther').checked = true;
+        });
+        if (item.img) {
+          document.getElementById('cheatImgBase64').value = item.img;
+          document.getElementById('cheatImgPreview').src = item.img;
+          document.getElementById('cheatImgPreview').style.display = 'block';
+        }
+      } else {
+        document.getElementById('cheatModalTitle').innerHTML = '<i class="bi bi-check-circle" style="color:#3862AE;"></i> 新增小抄';
+        document.getElementById('cheatTitleInput').value = '';
+        document.getElementById('cheatUrlInput').value = '';
+        document.getElementById('cheatNoteInput').value = '';
+      }
+      document.getElementById('cheatModal').classList.add('active');
+    }
+
+    function closeCheatModal() {
+      document.getElementById('cheatModal').classList.remove('active');
+    }
+
+    function saveCheatItem() {
+      const editIdx = parseInt(document.getElementById('editCheatIndex').value);
+      const title = document.getElementById('cheatTitleInput').value;
+      if (!title) return alert("請輸入標題！");
+      let url = document.getElementById('cheatUrlInput').value.trim();
+      if (url && !/^https?:\/\//i.test(url)) url = 'https://' + url;
+      const note = document.getElementById('cheatNoteInput').value;
+      const img = document.getElementById('cheatImgBase64').value;
+      const tags = [];
+      if (document.getElementById('cheatTagTransport').checked) tags.push('交通');
+      if (document.getElementById('cheatTagTicket').checked) tags.push('票券');
+      if (document.getElementById('cheatTagOther').checked) tags.push('其他');
+
+      const trip = allTrips[currentTripIdx];
+      const itemObj = { title, url, note, img, tags };
+      if (editIdx >= 0) { trip.cheatSheet[editIdx] = itemObj; }
+      else { trip.cheatSheet.push(itemObj); }
+
+      saveData(); closeCheatModal(); renderCheatList();
+    }
+
+    function deleteCheatItem(idx) {
+      if (!confirm('確定要刪除這則小抄嗎？')) return;
+      allTrips[currentTripIdx].cheatSheet.splice(idx, 1);
+      saveData(); renderCheatList();
     }
 
     /* 輸入 0850 自動格式化成 08:50，供機票時間欄位使用 */
