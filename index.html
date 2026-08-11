@@ -190,8 +190,8 @@
       width: 5px; height: 5px; border-radius: 50%; background: var(--primary-navy);
     }
     .tab-btn.drop-target-hover {
-      background: linear-gradient(135deg, #ffd166, #ffb84d) !important; color: #7a4a00 !important;
-      transform: scale(1.12); box-shadow: 0 4px 12px rgba(255, 180, 60, 0.5);
+      background: linear-gradient(135deg, #bfe0ff, #8ecbff) !important; color: #0b4a8f !important;
+      transform: scale(1.12); box-shadow: 0 4px 12px rgba(60, 150, 255, 0.5);
       transition: transform .1s;
     }
 
@@ -745,11 +745,11 @@
 
     .drag-handle {
       cursor: grab; text-align: center; font-size: 16px; color: var(--text-muted);
-      user-select: none; padding: 2px 0;
+      user-select: none; padding: 2px 0; touch-action: none;
     }
     .drag-handle:active { cursor: grabbing; }
     .card.sortable-ghost { opacity: 0.4; }
-    .card.sortable-chosen { box-shadow: 0 6px 16px rgba(0,0,0,0.12); }
+    .card.sortable-chosen { box-shadow: 0 6px 16px rgba(0,0,0,0.12); touch-action: none; }
     /* ===== 消費記帳／必買清單：外框統一 #D7E9FD，不使用各自的彩色底 ===== */
     #pageToolShopping .section-card,
     #pageToolShopping .card,
