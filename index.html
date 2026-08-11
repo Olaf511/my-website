@@ -979,7 +979,7 @@
       </div>
 
       <div class="section-card">
-        <div class="section-card-title"><i class="bi bi-cloudy-fill" style="color:#3862AE;"></i> 每日天氣與降雨預報</div>
+        <div class="section-card-title"><span><i class="bi bi-cloudy-fill" style="color:#3862AE;"></i> 每日天氣與降雨預報</span></div>
         <div id="weatherDisplay"><div class="loading-spinner">資料載入中...</div></div>
       </div>
     </div>
@@ -1058,7 +1058,7 @@
         <input type="text" id="shopItemInput" placeholder="">
       </div>
       <div class="form-group">
-        <label> 照片 (選填：若不需要可不選，或自行手動上傳)</label>
+        <label>照片(選填)</label>
         <input type="file" id="shopFileInput" accept="image/*" onchange="handleFileSelect(event, 'shopImgPreview', 'shopImgBase64', 'square')">
         <input type="hidden" id="shopImgBase64">
         <img id="shopImgPreview" src="" style="width:60px; height:60px; object-fit:cover; border-radius:6px; margin-top:4px; display:none;">
@@ -1266,7 +1266,6 @@
       <div class="section-card">
         <div class="section-card-title">
           <span> 誰加入了這個行程</span>
-          <button class="btn-rounded-light" onclick="copyInviteCode()"> 邀請碼</button>
         </div>
         <div id="membersList"></div>
       </div>
@@ -1330,6 +1329,24 @@
   </div>
 
   <!-- ===== 圖片裁切 Modal ===== -->
+  <!-- ===== 加入行程：輸入邀請碼 Modal ===== -->
+  <div class="modal-overlay" id="joinTripModal">
+    <div class="modal-box" style="max-width:320px;">
+      <div class="modal-header">
+        <span class="modal-title-with-icon"><span class="page-icon-badge" style="background:#fff; border:1.5px solid #D7E9FD; color:#3862AE;"><i class="bi bi-egg-fried"></i></span>加入行程</span>
+        <button onclick="closeJoinTripModal()">✕</button>
+      </div>
+      <div class="form-group">
+        <label>邀請碼</label>
+        <input type="text" id="joinTripCodeInput" placeholder="請輸入邀請碼" style="text-transform:uppercase;" autocomplete="off">
+      </div>
+      <div class="modal-footer">
+        <button class="modal-btn modal-btn-cancel" onclick="closeJoinTripModal()">取消</button>
+        <button class="modal-btn modal-btn-save" onclick="submitJoinTripCode()">下一步</button>
+      </div>
+    </div>
+  </div>
+
   <!-- ===== 加入行程：身份選擇 Modal ===== -->
   <div class="modal-overlay" id="roleChoiceModal">
     <div class="modal-box" style="max-width:320px; text-align:center;">
@@ -1346,8 +1363,7 @@
   <div class="modal-overlay" id="logoutConfirmModal">
     <div class="modal-box" style="max-width:300px; text-align:center;">
       <div style="font-size:32px; margin-bottom:8px; color:#3862AE;"><i class="bi bi-box-arrow-right"></i></div>
-      <div style="font-weight:900; font-size:16px; color:var(--primary-navy); margin-bottom:4px;">確定要登出嗎？</div>
-      <div style="font-size:12px; color:var(--text-muted); margin-bottom:18px;">登出後需要重新輸入帳號密碼才能繼續使用</div>
+      <div style="font-weight:900; font-size:16px; color:var(--primary-navy); margin-bottom:18px;">確定要登出嗎？</div>
       <button class="modal-btn modal-btn-save" style="width:100%; margin-bottom:8px;" onclick="confirmLogout()">確定登出</button>
       <button style="background:none; border:none; color:var(--text-muted); font-size:12px; cursor:pointer; padding:6px;" onclick="closeLogoutConfirmModal()">取消</button>
     </div>
@@ -1849,13 +1865,23 @@
 
     function joinTripByCode() {
       if (!db || !currentUser) { alert("請先登入才能加入行程。"); return; }
-      const code = prompt("請輸入邀請碼：");
-      if (!code) return;
+      document.getElementById('joinTripCodeInput').value = '';
+      document.getElementById('joinTripModal').classList.add('active');
+    }
+
+    function closeJoinTripModal() {
+      document.getElementById('joinTripModal').classList.remove('active');
+    }
+
+    function submitJoinTripCode() {
+      const code = document.getElementById('joinTripCodeInput').value;
+      if (!code || !code.trim()) { alert("請輸入邀請碼"); return; }
       const cleanCode = code.trim().toUpperCase();
 
       if (myTripRefs.some(r => r.code === cleanCode)) { alert("這個行程你已經加入過了！"); return; }
 
       pendingJoinCode = cleanCode;
+      closeJoinTripModal();
       document.getElementById('roleChoiceModal').classList.add('active');
     }
 
@@ -3663,8 +3689,7 @@
       if (list.length === 0) {
         container.innerHTML = `
           <div class="empty-state">
-            <span class="empty-icon"></span>
-            <div class="empty-text">還沒有想買的東西，點右下角「+」開始列清單吧！</div>
+            <div class="empty-text">清單還空著，想買什麼就加進來吧！</div>
           </div>
         `;
         return;
