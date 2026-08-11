@@ -151,15 +151,15 @@
     .overview-day-area { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
     .overview-day-arrow { color: var(--text-muted); font-size: 18px; font-weight: 900; }
 
-    /* 各頁面 - 滿版背景圖 (首頁/行程總覽/匯率換算/航班天氣/消費記帳/必買清單/事前準備/行程成員) */
+    /* 各頁面 - 滿版背景圖 (首頁/行程總覽/匯率換算/航班天氣/消費記帳/必買清單/事前準備/行程成員/逛街攻略/旅行小抄) */
     #pageHome, #pageDetail, #pageToolExchange, #pageToolFlight, #pageToolAccounting,
-    #pageToolShopping, #pageToolPrep, #pageToolMembers {
+    #pageToolShopping, #pageToolPrep, #pageToolMembers, #pageToolShoppingGuide, #pageToolCheatSheet {
       position: relative;
       min-height: 100vh;
     }
     #pageHome::before, #pageDetail::before, #pageToolExchange::before, #pageToolFlight::before,
     #pageToolAccounting::before, #pageToolShopping::before, #pageToolPrep::before,
-    #pageToolMembers::before {
+    #pageToolMembers::before, #pageToolShoppingGuide::before, #pageToolCheatSheet::before {
       content: "";
       position: absolute;
       inset: 0;
@@ -1154,7 +1154,7 @@
   <div id="pageToolShoppingGuide" class="app-page">
     <div class="app-header">
       <button class="menu-btn" onclick="openDrawer()">☰</button>
-      <h1><span class="page-icon-badge" style="background:#fff; border:1.5px solid #D7E9FD; color:#3862AE;"><i class="bi bi-shop-window"></i></span>逛街攻略</h1>
+      <h1><span class="page-icon-badge" style="background:#fff; border:1.5px solid #D7E9FD; color:#3862AE;"><i class="bi bi-signpost-fill"></i></span>逛街攻略</h1>
     </div>
     <div class="container">
       <div id="guideRegionBoxes"></div>
@@ -1166,7 +1166,7 @@
   <div class="modal-overlay" id="guidePlaceModal">
     <div class="modal-box">
       <div class="modal-header">
-        <span id="guidePlaceModalTitle" class="modal-title-with-icon"><span class="page-icon-badge" style="background:#fff; border:1.5px solid #D7E9FD; color:#3862AE;"><i class="bi bi-check-circle"></i></span>必去清單</span>
+        <span id="guidePlaceModalTitle" class="modal-title-with-icon">必去清單</span>
         <button onclick="closeGuidePlaceModal()">✕</button>
       </div>
       <input type="hidden" id="editGuidePlaceIndex" value="-1">
@@ -1203,7 +1203,7 @@
       <div class="section-card">
         <div class="section-card-title">
           <span id="guideDetailAddress" style="font-weight:normal; font-size:12px; color:var(--text-muted); white-space:pre-wrap; display:block;"></span>
-          <button class="btn-rounded-light" onclick="openGuidePlaceModal(currentGuideDetailIdx)"><i class="bi bi-highlighter" style="color:#3862AE;"></i> 編輯地點</button>
+          <button class="btn-rounded-light" onclick="openGuidePlaceModal(currentGuideDetailIdx)">編輯地點</button>
         </div>
         <div id="guideDetailItems"></div>
       </div>
@@ -1215,7 +1215,7 @@
   <div class="modal-overlay" id="guideItemModal">
     <div class="modal-box">
       <div class="modal-header">
-        <span class="modal-title-with-icon"><span class="page-icon-badge" style="background:#fff; border:1.5px solid #D7E9FD; color:#3862AE;"><i class="bi bi-check-circle"></i></span>想逛的品項</span>
+        <span class="modal-title-with-icon">想逛的品項</span>
         <button onclick="closeGuideItemModal()">✕</button>
       </div>
       <div class="form-group">
@@ -1240,7 +1240,7 @@
   <div class="modal-overlay" id="spotGuideQuickViewModal">
     <div class="modal-box">
       <div class="modal-header">
-        <span class="modal-title-with-icon"><span class="page-icon-badge" style="background:#fff; border:1.5px solid #D7E9FD; color:#3862AE;"><i class="bi bi-shop-window"></i></span>逛街攻略清單</span>
+        <span class="modal-title-with-icon"><span class="page-icon-badge" style="background:#fff; border:1.5px solid #D7E9FD; color:#3862AE;"><i class="bi bi-signpost-fill"></i></span>逛街攻略清單</span>
         <button onclick="closeSpotGuideQuickView()">✕</button>
       </div>
       <div class="form-group">
@@ -1664,7 +1664,7 @@
         <span class="drawer-item-icon"><i class="bi bi-bag-check-fill"></i></span><span>必買清單</span>
       </button>
       <button class="drawer-item" data-page="pageToolShoppingGuide" onclick="goToSubPage('pageToolShoppingGuide')">
-        <span class="drawer-item-icon"><i class="bi bi-shop-window"></i></span><span>逛街攻略</span>
+        <span class="drawer-item-icon"><i class="bi bi-signpost-fill"></i></span><span>逛街攻略</span>
       </button>
       <button class="drawer-item" data-page="pageToolCheatSheet" onclick="goToSubPage('pageToolCheatSheet')">
         <span class="drawer-item-icon"><i class="bi bi-stickies-fill"></i></span><span>旅行小抄</span>
@@ -4123,12 +4123,12 @@
       document.getElementById('guideRegionCustomInput').value = '';
       if (idx >= 0) {
         const place = allTrips[currentTripIdx].shoppingGuide[idx];
-        document.getElementById('guidePlaceModalTitle').innerHTML = '<i class="bi bi-highlighter" style="color:#3862AE;"></i> 編輯逛街地點';
+        document.getElementById('guidePlaceModalTitle').innerHTML = '編輯逛街地點';
         document.getElementById('guideRegionSelect').value = place.region;
         document.getElementById('guidePlaceNameInput').value = place.name || '';
         document.getElementById('guidePlaceAddressInput').value = place.address || '';
       } else {
-        document.getElementById('guidePlaceModalTitle').innerHTML = '<i class="bi bi-check-circle" style="color:#3862AE;"></i> 必去清單';
+        document.getElementById('guidePlaceModalTitle').innerHTML = '必去清單';
         document.getElementById('guidePlaceNameInput').value = '';
         document.getElementById('guidePlaceAddressInput').value = '';
       }
@@ -4210,7 +4210,6 @@
         groups[regionName].forEach(place => {
           itemsHtml += `
             <div class="guide-place-card" onclick="openGuideDetail(${place.originalIndex}, 'pageToolShoppingGuide')">
-              <div class="guide-place-icon"><i class="bi bi-buildings-fill"></i></div>
               <div class="guide-place-main">
                 <div class="guide-place-name">${place.name}</div>
                 <div class="guide-place-meta">${place.address ? place.address.replace(/\n+/g, ' ') + ' · ' : ''}共 ${(place.items || []).length} 項</div>
@@ -4222,7 +4221,7 @@
 
         box.innerHTML = `
           <div class="section-card-title">
-            <span><i class="bi bi-geo-alt-fill" style="color:#3862AE;"></i> ${regionName}</span>
+            <span>${regionName}</span>
           </div>
           <div>${itemsHtml}</div>
         `;
