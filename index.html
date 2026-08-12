@@ -1623,24 +1623,14 @@
     </div>
   </div>
 
-  <!-- ===== 移除成員確認 Modal ===== -->
-  <div class="modal-overlay" id="kickMemberConfirmModal">
-    <div class="modal-box" style="max-width:300px; text-align:center;">
-      <div style="font-size:32px; margin-bottom:8px; color:#3862AE;"><i class="bi bi-person-dash-fill"></i></div>
-      <div style="font-weight:900; font-size:16px; color:var(--primary-navy); margin-bottom:4px;">確定要移除<span id="kickMemberNameText"></span>嗎？</div>
-      <div style="font-size:12px; color:var(--text-muted); margin-bottom:18px;">他之前記的消費紀錄會保留，但不會再是行程成員</div>
-      <button class="modal-btn" style="width:100%; margin-bottom:8px; background:#e53e3e; color:#fff;" onclick="confirmKickMember()">確定移除</button>
-      <button style="background:none; border:none; color:var(--text-muted); font-size:12px; cursor:pointer; padding:6px;" onclick="closeKickMemberConfirmModal()">取消</button>
-    </div>
-  </div>
-
-  <!-- ===== 刪除小抄確認 Modal ===== -->
-  <div class="modal-overlay" id="cheatDeleteConfirmModal">
+  <!-- ===== 通用刪除確認 Modal（所有「刪除／移除」動作共用同一個外觀跟圖示） ===== -->
+  <div class="modal-overlay" id="genericDeleteConfirmModal" style="z-index:2100;">
     <div class="modal-box" style="max-width:300px; text-align:center;">
       <div style="font-size:32px; margin-bottom:8px; color:#3862AE;"><i class="bi bi-trash"></i></div>
-      <div style="font-weight:900; font-size:16px; color:var(--primary-navy); margin-bottom:18px;">確定要刪除這則小抄嗎？</div>
-      <button class="modal-btn" style="width:100%; margin-bottom:8px; background:#e53e3e; color:#fff;" onclick="confirmDeleteCheatItem()">確定刪除</button>
-      <button style="background:none; border:none; color:var(--text-muted); font-size:12px; cursor:pointer; padding:6px;" onclick="closeCheatDeleteConfirmModal()">取消</button>
+      <div id="genericDeleteConfirmText" style="font-weight:900; font-size:16px; color:var(--primary-navy); margin-bottom:18px;"></div>
+      <div id="genericDeleteConfirmSubtext" style="font-size:12px; color:var(--text-muted); margin-bottom:18px; display:none;"></div>
+      <button class="modal-btn" style="width:100%; margin-bottom:8px; background:#e53e3e; color:#fff;" onclick="confirmGenericDelete()">確定刪除</button>
+      <button style="background:none; border:none; color:var(--text-muted); font-size:12px; cursor:pointer; padding:6px;" onclick="closeGenericDeleteConfirmModal()">取消</button>
     </div>
   </div>
 
@@ -2367,6 +2357,33 @@
       if (auth) auth.signOut();
     }
 
+    // ===== 通用刪除確認 Modal：所有「刪除／移除」動作都呼叫這個，統一外觀跟圖示 =====
+    let _genericDeleteConfirmCallback = null;
+    function showDeleteConfirm(message, onConfirm, subtext = '') {
+      document.getElementById('genericDeleteConfirmText').innerText = message;
+      const subEl = document.getElementById('genericDeleteConfirmSubtext');
+      if (subtext) {
+        subEl.innerText = subtext;
+        subEl.style.display = 'block';
+        document.getElementById('genericDeleteConfirmText').style.marginBottom = '4px';
+      } else {
+        subEl.innerText = '';
+        subEl.style.display = 'none';
+        document.getElementById('genericDeleteConfirmText').style.marginBottom = '18px';
+      }
+      _genericDeleteConfirmCallback = onConfirm;
+      document.getElementById('genericDeleteConfirmModal').classList.add('active');
+    }
+    function closeGenericDeleteConfirmModal() {
+      document.getElementById('genericDeleteConfirmModal').classList.remove('active');
+      _genericDeleteConfirmCallback = null;
+    }
+    function confirmGenericDelete() {
+      const cb = _genericDeleteConfirmCallback;
+      closeGenericDeleteConfirmModal();
+      if (cb) cb();
+    }
+
     function updateDrawerProfileUI() {
       if (!currentUser) return;
       const nameEl = document.getElementById('drawerNicknameText');
@@ -3077,8 +3094,7 @@
     function deleteTrip(index) {
       const trip = allTrips[index];
       const ref = myTripRefs[index];
-      const msg = "確定要移除這個行程嗎？";
-      if (confirm(msg)) {
+      showDeleteConfirm("確定要移除這個行程嗎？", () => {
         if (db && ref) db.ref('trips/' + ref.code).off();
         if (currentUser && ref && db) db.ref('users/' + currentUser.uid + '/myTrips/' + ref.code).remove();
         if (ref) localStorage.removeItem('TRIP_DATA_' + ref.code);
@@ -3086,7 +3102,7 @@
         myTripRefs.splice(index, 1);
         if (!currentUser) localStorage.setItem(MY_TRIPS_KEY, JSON.stringify(myTripRefs));
         renderTripList();
-      }
+      });
     }
 
     function openTripDetail(index, dayIdx = 0) {
@@ -3680,10 +3696,10 @@
     }
 
     function deleteSpot(idx) {
-      if (confirm("確定要刪除此景點？")) {
+      showDeleteConfirm("確定要刪除此景點？", () => {
         allTrips[currentTripIdx].days[currentDayIdx].spots.splice(idx, 1);
         saveData(); renderDayView();
-      }
+      });
     }
 
     /* ===== 方案 C：景點「⋮ 更多」操作選單（取代原本的鉛筆編輯 + 叉叉刪除兩顆按鈕） ===== */
@@ -3774,32 +3790,22 @@
       renderMembersList();
     }
 
-    let pendingKickUid = null;
-
     function kickMember(uid) {
       const trip = allTrips[currentTripIdx];
       if (!trip || !currentUser || trip.creatorUid !== currentUser.uid) return;
       const member = trip.members[uid];
       if (!member) return;
-      pendingKickUid = uid;
-      document.getElementById('kickMemberNameText').textContent = `「${member.nickname}」`;
-      document.getElementById('kickMemberConfirmModal').classList.add('active');
-    }
-
-    function closeKickMemberConfirmModal() {
-      pendingKickUid = null;
-      document.getElementById('kickMemberConfirmModal').classList.remove('active');
-    }
-
-    function confirmKickMember() {
-      const uid = pendingKickUid;
-      closeKickMemberConfirmModal();
-      const trip = allTrips[currentTripIdx];
-      if (!trip || !uid || !trip.members[uid]) return;
-      delete trip.members[uid];
-      syncPayersFromMembers(trip);
-      saveData();
-      renderMembersList();
+      showDeleteConfirm(
+        `確定要移除「${member.nickname}」嗎？`,
+        () => {
+          if (!trip.members[uid]) return;
+          delete trip.members[uid];
+          syncPayersFromMembers(trip);
+          saveData();
+          renderMembersList();
+        },
+        '他之前記的消費紀錄會保留，但不會再是行程成員'
+      );
     }
 
     let toastTimer = null;
@@ -4092,12 +4098,12 @@
     function deleteCurrentShopArea() {
       const selectVal = document.getElementById('shopAreaSelect').value;
       if (selectVal === '__NEW__') return alert("請先選取要刪除的現有區域！");
-      if (confirm(`確定要刪除「${selectVal}」區域及其所有採購品項嗎？`)) {
+      showDeleteConfirm(`確定要刪除「${selectVal}」區域及其所有採購品項嗎？`, () => {
         const trip = allTrips[currentTripIdx];
         trip.shoppingList = trip.shoppingList.filter(i => i.area !== selectVal);
         if (trip.shoppingAreas) trip.shoppingAreas = trip.shoppingAreas.filter(a => a !== selectVal);
         saveData(); renderShoppingAreaSelectOptions(); renderShoppingBoxes();
-      }
+      });
     }
 
     function addShoppingItem() {
@@ -4248,12 +4254,12 @@
     function deleteCurrentGuideRegion() {
       const selectVal = document.getElementById('guideRegionSelect').value;
       if (selectVal === '__NEW__') return alert("請先選取要刪除的現有地區！");
-      if (confirm(`確定要刪除「${selectVal}」地區及其所有逛街地點嗎？`)) {
+      showDeleteConfirm(`確定要刪除「${selectVal}」地區及其所有逛街地點嗎？`, () => {
         const trip = allTrips[currentTripIdx];
         trip.shoppingGuide = trip.shoppingGuide.filter(p => p.region !== selectVal);
         if (trip.guideRegions) trip.guideRegions = trip.guideRegions.filter(r => r !== selectVal);
         saveData(); closeGuidePlaceModal(); renderGuideBoxes(); populateSpotGuideLinkSelect();
-      }
+      });
     }
 
     function saveGuidePlace() {
@@ -4330,9 +4336,10 @@
     }
 
     function deleteGuidePlaceDirect(idx) {
-      if (!confirm('確定要刪除這個逛街地點及底下所有品項嗎？')) return;
-      allTrips[currentTripIdx].shoppingGuide.splice(idx, 1);
-      saveData(); renderGuideBoxes(); populateSpotGuideLinkSelect();
+      showDeleteConfirm('確定要刪除這個逛街地點及底下所有品項嗎？', () => {
+        allTrips[currentTripIdx].shoppingGuide.splice(idx, 1);
+        saveData(); renderGuideBoxes(); populateSpotGuideLinkSelect();
+      });
     }
 
     /* ===== 景點卡片「連結逛街攻略」邏輯 ===== */
@@ -4669,19 +4676,10 @@
     function deleteCheatItemFromModal() {
       const editIdx = parseInt(document.getElementById('editCheatIndex').value);
       if (editIdx < 0) return;
-      document.getElementById('cheatDeleteConfirmModal').classList.add('active');
-    }
-
-    function closeCheatDeleteConfirmModal() {
-      document.getElementById('cheatDeleteConfirmModal').classList.remove('active');
-    }
-
-    function confirmDeleteCheatItem() {
-      const editIdx = parseInt(document.getElementById('editCheatIndex').value);
-      closeCheatDeleteConfirmModal();
-      if (editIdx < 0) return;
-      allTrips[currentTripIdx].cheatSheet.splice(editIdx, 1);
-      saveData(); closeCheatModal(); renderCheatList();
+      showDeleteConfirm('確定要刪除這則小抄嗎？', () => {
+        allTrips[currentTripIdx].cheatSheet.splice(editIdx, 1);
+        saveData(); closeCheatModal(); renderCheatList();
+      });
     }
 
     /* 輸入 0850 自動格式化成 08:50，供機票時間欄位使用 */
