@@ -2238,7 +2238,7 @@
         return;
       }
 
-      const shareText = `一起加入${trip ? trip.title : ''}吧！✈️\n邀請碼：${code}\n點擊連結，開始規劃這趟旅程吧！`;
+      const shareText = `一起加入${trip ? trip.title : ''}吧！✈️\n邀請碼：${code}\n點擊連結，開始排行程！`;
 
       if (navigator.share) {
         navigator.share({ title: `一起加入${trip ? trip.title : ''}吧！`, text: shareText, url: siteUrl }).catch(() => {});
