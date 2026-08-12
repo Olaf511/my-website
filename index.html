@@ -3759,7 +3759,7 @@
           : `<span class="member-avatar member-avatar-placeholder">🐶</span>`;
         const isRowCreator = uid === trip.creatorUid;
         const roleLabel = isRowCreator
-          ? '<i class="bi bi-brightness-low" style="color:#3862AE;"></i> 建立者'
+          ? '<i class="bi bi-star-fill" style="color:#3862AE;"></i> 建立者'
           : (m.role === 'editor' ? '<i class="bi bi-highlighter" style="color:#3862AE;"></i> 編輯者' : '<i class="bi bi-search" style="color:#3862AE;"></i> 檢視者');
         const canManage = isCreator && !isSelf && !uid.startsWith('legacy_');
 
