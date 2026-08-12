@@ -1217,7 +1217,10 @@
     <div class="modal-box">
       <div class="modal-header">
         <span id="guidePlaceModalTitle" class="modal-title-with-icon"><i class="bi bi-check-circle" style="color:#3862AE;"></i> 必去清單</span>
-        <button onclick="closeGuidePlaceModal()">✕</button>
+        <div style="display:flex; align-items:center; gap:8px;">
+          <button id="guidePlaceModalDeleteBtn" onclick="deleteGuidePlaceFromModal()" style="display:none;" title="刪除"><i class="bi bi-trash"></i></button>
+          <button onclick="closeGuidePlaceModal()">✕</button>
+        </div>
       </div>
       <input type="hidden" id="editGuidePlaceIndex" value="-1">
       <div class="form-group">
@@ -1297,7 +1300,7 @@
       <div class="modal-header">
         <span id="cheatModalTitle" class="modal-title-with-icon"><span class="page-icon-badge" style="background:#fff; border:1.5px solid #D7E9FD; color:#3862AE;"><i class="bi bi-check-circle"></i></span>來點小抄</span>
         <div style="display:flex; align-items:center; gap:8px;">
-          <button id="cheatModalDeleteBtn" onclick="deleteCheatItemFromModal()" class="modal-header-close-text" style="display:none;" title="刪除">刪除</button>
+          <button id="cheatModalDeleteBtn" onclick="deleteCheatItemFromModal()" style="display:none;" title="刪除"><i class="bi bi-trash"></i></button>
         </div>
       </div>
       <input type="hidden" id="editCheatIndex" value="-1">
@@ -4222,6 +4225,7 @@
       document.getElementById('editGuidePlaceIndex').value = idx;
       document.getElementById('guideRegionCustomInput').style.display = 'none';
       document.getElementById('guideRegionCustomInput').value = '';
+      document.getElementById('guidePlaceModalDeleteBtn').style.display = idx >= 0 ? 'flex' : 'none';
       if (idx >= 0) {
         const place = allTrips[currentTripIdx].shoppingGuide[idx];
         document.getElementById('guidePlaceModalTitle').innerHTML = '<i class="bi bi-highlighter" style="color:#3862AE;"></i> 編輯逛街地點';
@@ -4320,7 +4324,6 @@
               <div class="guide-place-main">
                 <div class="guide-place-name">${place.name}</div>
               </div>
-              <button class="icon-btn-del" onclick="event.stopPropagation(); deleteGuidePlaceDirect(${place.originalIndex})"><i class="bi bi-x" style="color:#3862AE;"></i></button>
             </div>
           `;
         });
@@ -4335,10 +4338,12 @@
       }
     }
 
-    function deleteGuidePlaceDirect(idx) {
+    function deleteGuidePlaceFromModal() {
+      const idx = parseInt(document.getElementById('editGuidePlaceIndex').value);
+      if (idx < 0) return;
       showDeleteConfirm('確定要刪除這個逛街地點及底下所有品項嗎？', () => {
         allTrips[currentTripIdx].shoppingGuide.splice(idx, 1);
-        saveData(); renderGuideBoxes(); populateSpotGuideLinkSelect();
+        saveData(); closeGuidePlaceModal(); renderGuideBoxes(); populateSpotGuideLinkSelect();
       });
     }
 
