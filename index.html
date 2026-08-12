@@ -274,6 +274,26 @@
       background: #c53030; color: #fff; border: 2px solid #fff; font-size: 11px; line-height: 1;
       cursor: pointer; display: flex; align-items: center; justify-content: center; padding: 0;
     }
+    .cheat-img-edit-thumb { cursor: grab; }
+    .cheat-img-edit-thumb.sortable-ghost { opacity: 0.35; }
+
+    /* 小抄卡片：雙欄對稱、只顯示標題，點擊開啟詳情彈跳視窗 */
+    .cheat-card-grid {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 10px;
+    }
+    .cheat-mini-card {
+      position: relative; background: var(--card-bg); border: 1px solid var(--border-color);
+      border-radius: 14px; padding: 14px 32px 14px 14px; cursor: pointer;
+      display: flex; align-items: center; min-height: 26px;
+    }
+    .cheat-mini-card-title {
+      font-weight: 700; font-size: 13.5px; color: var(--text-main);
+      word-break: break-word; line-height: 1.4;
+    }
+    .cheat-mini-card-del {
+      position: absolute; top: 4px; right: 4px;
+    }
+    #cheatSheetList .empty-state { grid-column: 1 / -1; }
 
     .guide-place-card {
       display: flex; align-items: center; gap: 10px; background: var(--card-bg); border: 1px solid var(--border-color);
@@ -1232,9 +1252,26 @@
     </div>
     <div class="container">
       <div class="filter-chip-row" id="cheatFilterRow"></div>
-      <div id="cheatSheetList"></div>
+      <div id="cheatSheetList" class="cheat-card-grid"></div>
     </div>
     <button class="fab-add" onclick="openCheatModal()">+</button>
+  </div>
+
+  <!-- ===== 小抄詳情（唯讀）Modal ===== -->
+  <div class="modal-overlay" id="cheatViewModal" onclick="if(event.target===this) closeCheatViewModal()">
+    <div class="modal-box">
+      <div class="modal-header">
+        <span class="modal-title-with-icon" id="cheatViewTitle">標題</span>
+        <div style="display:flex; align-items:center; gap:6px;">
+          <button onclick="editCheatFromView()" title="編輯"><i class="bi bi-highlighter" style="color:#3862AE;"></i></button>
+          <button onclick="closeCheatViewModal()">✕</button>
+        </div>
+      </div>
+      <div id="cheatViewTags" style="margin-bottom:8px;"></div>
+      <div id="cheatViewUrl" style="margin-bottom:10px;"></div>
+      <div id="cheatViewNote" style="font-size:13px; color:var(--text-main); white-space:pre-wrap; line-height:1.6; margin-bottom:12px;"></div>
+      <div id="cheatViewImgs" style="display:flex; gap:8px; flex-wrap:wrap;"></div>
+    </div>
   </div>
 
   <!-- ===== 新增/編輯 旅行小抄 Modal ===== -->
@@ -4356,33 +4393,47 @@
 
       list.forEach(item => {
         const card = document.createElement('div');
-        card.className = 'card';
-        card.style.marginBottom = '10px';
-        const imgs = item.imgs && item.imgs.length ? item.imgs : (item.img ? [item.img] : []);
-        const imgBlock = imgs.length ? `
-          <div class="card-img-wrapper" onclick="openCheatLightbox(${item.originalIndex})" title="點擊放大圖片">
-            <img src="${imgs[0]}" class="card-img">
-            ${imgs.length > 1 ? `<div class="cheat-img-count-badge"><i class="bi bi-images"></i>${imgs.length}</div>` : ''}
-          </div>
-        ` : '';
-        const tagsHtml = (item.tags || []).map(t => `<span class="cheat-tag ${CHEAT_TAG_META[t] ? CHEAT_TAG_META[t].cls : 'cheat-tag-other'}">${t}</span>`).join('');
-        const urlHtml = item.url ? `<a href="${item.url}" target="_blank" class="cheat-card-link" onclick="event.stopPropagation();"><i class="bi bi-box-arrow-up-right"></i> 開啟連結</a>` : '';
-
+        card.className = 'cheat-mini-card';
+        card.onclick = () => openCheatView(item.originalIndex);
         card.innerHTML = `
-          ${imgBlock}
-          <div class="card-main">
-            <div class="card-header-row">${tagsHtml}</div>
-            <div class="card-title-link">${item.title}</div>
-            ${item.note ? `<div class="card-note">${item.note}</div>` : ''}
-            ${urlHtml}
-          </div>
-          <div style="display:flex; flex-direction:column; align-items:center; gap:4px; margin-left:4px;">
-            <button class="icon-btn-more" onclick="openCheatModal(${item.originalIndex})" title="編輯"><i class="bi bi-highlighter" style="color:#3862AE;"></i></button>
-            <button class="icon-btn-del" onclick="deleteCheatItem(${item.originalIndex})"><i class="bi bi-x" style="color:#3862AE;"></i></button>
-          </div>
+          <div class="cheat-mini-card-title">${item.title}</div>
+          <button class="icon-btn-del cheat-mini-card-del" onclick="event.stopPropagation(); deleteCheatItem(${item.originalIndex})"><i class="bi bi-x" style="color:#3862AE;"></i></button>
         `;
         container.appendChild(card);
       });
+    }
+
+    let currentCheatViewIdx = -1;
+
+    function openCheatView(idx) {
+      currentCheatViewIdx = idx;
+      const item = allTrips[currentTripIdx].cheatSheet[idx];
+      if (!item) return;
+
+      document.getElementById('cheatViewTitle').innerText = item.title;
+      const tagsHtml = (item.tags || []).map(t => `<span class="cheat-tag ${CHEAT_TAG_META[t] ? CHEAT_TAG_META[t].cls : 'cheat-tag-other'}">${t}</span>`).join('');
+      document.getElementById('cheatViewTags').innerHTML = tagsHtml;
+      document.getElementById('cheatViewUrl').innerHTML = item.url ? `<a href="${item.url}" target="_blank" class="cheat-card-link" onclick="event.stopPropagation();"><i class="bi bi-box-arrow-up-right"></i> 開啟連結</a>` : '';
+      document.getElementById('cheatViewNote').innerText = item.note || '';
+
+      const imgs = item.imgs && item.imgs.length ? item.imgs : (item.img ? [item.img] : []);
+      document.getElementById('cheatViewImgs').innerHTML = imgs.map((src, i) => `
+        <div class="card-img-wrapper" style="width:70px; height:70px;" onclick="openCheatLightbox(${idx}, ${i})" title="點擊放大圖片">
+          <img src="${src}" class="card-img">
+        </div>
+      `).join('');
+
+      document.getElementById('cheatViewModal').classList.add('active');
+    }
+
+    function closeCheatViewModal() {
+      document.getElementById('cheatViewModal').classList.remove('active');
+    }
+
+    function editCheatFromView() {
+      const idx = currentCheatViewIdx;
+      closeCheatViewModal();
+      openCheatModal(idx);
     }
 
     function openCheatLightbox(itemIdx, startIdx) {
@@ -4393,6 +4444,7 @@
     }
 
     let cheatModalImgs = []; // 目前編輯中的小抄，暫存的圖片陣列 (base64)
+    let cheatImgSortable = null;
 
     function renderCheatImgEditList() {
       const box = document.getElementById('cheatImgList');
@@ -4402,6 +4454,24 @@
           <button type="button" onclick="removeCheatModalImg(${i})">✕</button>
         </div>
       `).join('');
+      initCheatImgSortable();
+    }
+
+    function initCheatImgSortable() {
+      const box = document.getElementById('cheatImgList');
+      if (cheatImgSortable) { cheatImgSortable.destroy(); cheatImgSortable = null; }
+      if (typeof Sortable === 'undefined' || cheatModalImgs.length < 2) return;
+      cheatImgSortable = new Sortable(box, {
+        animation: 150,
+        filter: 'button',
+        preventOnFilter: false,
+        onEnd: function (evt) {
+          if (evt.oldIndex === evt.newIndex) return;
+          const moved = cheatModalImgs.splice(evt.oldIndex, 1)[0];
+          cheatModalImgs.splice(evt.newIndex, 0, moved);
+          renderCheatImgEditList();
+        }
+      });
     }
 
     function removeCheatModalImg(i) {
