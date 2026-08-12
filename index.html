@@ -269,12 +269,12 @@
       display: inline-flex; align-items: center; gap: 4px;
     }
     /* 小抄小卡片上直接顯示的連結按鈕 */
-    .cheat-mini-card-links { display: flex; flex-direction: column; gap: 4px; margin-top: 2px; width: 100%; }
+    .cheat-mini-card-links { display: flex; flex-direction: row; flex-wrap: nowrap; gap: 4px; margin-top: 2px; width: 100%; }
     .cheat-mini-link-btn {
-      display: flex; align-items: center; gap: 3px; font-size: 10.5px; font-weight: 700;
+      display: flex; align-items: center; gap: 2px; font-size: 9px; font-weight: 700;
       color: var(--primary-navy); background: var(--soft-blue); border: 1px solid #bee3f8;
-      padding: 3px 8px; border-radius: 8px; text-decoration: none;
-      white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; box-sizing: border-box;
+      padding: 2px 5px; border-radius: 8px; text-decoration: none;
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; flex: 0 1 auto; box-sizing: border-box;
     }
     .guide-link-badge {
       display: inline-flex; align-items: center; gap: 4px; font-size: 11px; font-weight: 700;
@@ -325,7 +325,7 @@
     }
     .cheat-mini-card.sortable-ghost { opacity: 0.35; }
     .cheat-mini-card-title {
-      font-weight: 800; font-size: 16px; color: var(--text-main);
+      font-weight: 800; font-size: 20px; color: var(--text-main);
       word-break: break-word; line-height: 1.4;
     }
     .cheat-mini-card-star {
@@ -1335,7 +1335,7 @@
       <div class="form-group">
         <label>攻略／購買連結</label>
         <div id="cheatLinkList" class="cheat-link-edit-list"></div>
-        <button type="button" class="cheat-link-add-btn" onclick="addCheatLink()"><i class="bi bi-plus-lg"></i> 新增連結</button>
+        <button type="button" class="cheat-link-add-btn" id="cheatLinkAddBtn" onclick="addCheatLink()"><i class="bi bi-plus-lg"></i> 新增連結</button>
       </div>
       <div class="form-group">
         <label>分類標籤</label>
@@ -4651,7 +4651,7 @@
       const box = document.getElementById('cheatLinkList');
       box.innerHTML = cheatModalLinks.map((link, i) => `
         <div class="cheat-link-edit-row">
-          <input type="text" class="cheat-link-name-input" placeholder="名稱" value="${(link.name || '').replace(/"/g, '&quot;')}" oninput="updateCheatLinkField(${i}, 'name', this.value)">
+          <input type="text" class="cheat-link-name-input" placeholder="名稱" maxlength="8" value="${(link.name || '').replace(/"/g, '&quot;')}" oninput="updateCheatLinkField(${i}, 'name', this.value)">
           <input type="text" class="cheat-link-url-input" placeholder="https://..." value="${(link.url || '').replace(/"/g, '&quot;')}" oninput="updateCheatLinkField(${i}, 'url', this.value)">
           <button type="button" onclick="removeCheatLink(${i})" title="刪除這組連結">✕</button>
         </div>
@@ -4664,6 +4664,7 @@
     }
 
     function addCheatLink() {
+      if (cheatModalLinks.length >= 2) return alert("最多只能新增 2 組連結喔！");
       cheatModalLinks.push({ name: '', url: '' });
       renderCheatLinkEditList();
     }
