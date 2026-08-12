@@ -269,11 +269,12 @@
       display: inline-flex; align-items: center; gap: 4px;
     }
     /* 小抄小卡片上直接顯示的連結按鈕 */
-    .cheat-mini-card-links { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 2px; }
+    .cheat-mini-card-links { display: flex; flex-direction: column; gap: 4px; margin-top: 2px; width: 100%; }
     .cheat-mini-link-btn {
-      display: inline-flex; align-items: center; gap: 3px; font-size: 11px; font-weight: 700;
+      display: flex; align-items: center; gap: 3px; font-size: 10.5px; font-weight: 700;
       color: var(--primary-navy); background: var(--soft-blue); border: 1px solid #bee3f8;
-      padding: 3px 8px; border-radius: 10px; text-decoration: none;
+      padding: 3px 8px; border-radius: 8px; text-decoration: none;
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; box-sizing: border-box;
     }
     .guide-link-badge {
       display: inline-flex; align-items: center; gap: 4px; font-size: 11px; font-weight: 700;
@@ -308,7 +309,7 @@
       display: flex; flex-direction: column; gap: 6px;
     }
     .cheat-card-subgrid {
-      display: grid; grid-template-columns: 1fr 1fr; gap: 10px;
+      column-count: 2; column-gap: 10px;
     }
     .cheat-group-title {
       font-size: 12px; font-weight: 800; color: var(--primary-navy); background: #eef4fb;
@@ -318,12 +319,13 @@
     .cheat-mini-card {
       position: relative; background: var(--card-bg); border: 1px solid var(--border-color);
       border-radius: 14px; padding: 14px 30px 14px 14px; cursor: pointer;
-      display: flex; flex-direction: column; align-items: flex-start; justify-content: center;
-      gap: 4px; min-height: 26px; user-select: none;
+      display: flex; flex-direction: column; align-items: flex-start; justify-content: flex-start;
+      gap: 6px; min-height: 26px; user-select: none;
+      break-inside: avoid; -webkit-column-break-inside: avoid; margin-bottom: 10px;
     }
     .cheat-mini-card.sortable-ghost { opacity: 0.35; }
     .cheat-mini-card-title {
-      font-weight: 700; font-size: 13.5px; color: var(--text-main);
+      font-weight: 800; font-size: 16px; color: var(--text-main);
       word-break: break-word; line-height: 1.4;
     }
     .cheat-mini-card-star {
@@ -773,7 +775,7 @@
     .logout-link { font-size: 12px; color: var(--text-muted); text-decoration: none; font-weight: 600; }
     .logout-link:active { color: #c53030; }
 
-    .drawer-menu { flex: 1; overflow-y: auto; padding: 8px; }
+    .drawer-menu { flex: 1; overflow-y: auto; padding: 8px; -webkit-overflow-scrolling: touch; overscroll-behavior: contain; touch-action: pan-y; }
     .drawer-item {
       display: flex; align-items: center; gap: 14px; width: 100%; padding: 14px 12px;
       border: none; background: none; text-align: left; font-size: 14px; font-weight: 800;
@@ -1331,7 +1333,7 @@
         <input type="text" id="cheatTitleInput" placeholder="例：機場退稅流程">
       </div>
       <div class="form-group">
-        <label>連結</label>
+        <label>攻略／購買連結</label>
         <div id="cheatLinkList" class="cheat-link-edit-list"></div>
         <button type="button" class="cheat-link-add-btn" onclick="addCheatLink()"><i class="bi bi-plus-lg"></i> 新增連結</button>
       </div>
@@ -4649,7 +4651,7 @@
       const box = document.getElementById('cheatLinkList');
       box.innerHTML = cheatModalLinks.map((link, i) => `
         <div class="cheat-link-edit-row">
-          <input type="text" class="cheat-link-name-input" placeholder=" " value="${(link.name || '').replace(/"/g, '&quot;')}" oninput="updateCheatLinkField(${i}, 'name', this.value)">
+          <input type="text" class="cheat-link-name-input" placeholder="名稱" value="${(link.name || '').replace(/"/g, '&quot;')}" oninput="updateCheatLinkField(${i}, 'name', this.value)">
           <input type="text" class="cheat-link-url-input" placeholder="https://..." value="${(link.url || '').replace(/"/g, '&quot;')}" oninput="updateCheatLinkField(${i}, 'url', this.value)">
           <button type="button" onclick="removeCheatLink(${i})" title="刪除這組連結">✕</button>
         </div>
