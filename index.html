@@ -1041,11 +1041,11 @@
         </button>
         <div id="spotExtraFields" style="display:none;">
           <div class="form-group">
-            <label><i class="bi bi-clock"></i> 營業時間<span class="optional-tag">選填</span></label>
+            <label><i class="bi bi-clock"></i> 營業時間</label>
             <input type="text" id="inputHours" placeholder=" 08:30–17:30">
           </div>
           <div class="form-group">
-            <label><i class="bi bi-bus-front-fill"></i> 交通方式<span class="optional-tag">選填</span></label>
+            <label><i class="bi bi-bus-front-fill"></i> 交通方式</label>
             <input type="text" id="inputTransport" placeholder=" ">
           </div>
         </div>
@@ -1064,7 +1064,7 @@
         </div>
 
         <div class="form-group">
-          <label><i class="bi bi-link-45deg"></i> 連結逛街攻略<span class="optional-tag">選填</span></label>
+          <label><i class="bi bi-link-45deg"></i> 連結逛街攻略</label>
           <select id="inputGuideLink" onchange="onSpotGuideLinkChange()"></select>
           <button type="button" class="expand-link" id="spotGuideViewBtn" style="display:none;" onclick="viewLinkedGuideFromSpot()">
             <i class="bi bi-box-arrow-up-right"></i> <span>查看已連結的清單</span>
@@ -1188,7 +1188,7 @@
         <input type="text" id="shopItemInput" placeholder="">
       </div>
       <div class="form-group">
-        <label>照片(選填)</label>
+        <label>照片</label>
         <input type="file" id="shopFileInput" accept="image/*" onchange="handleFileSelect(event, 'shopImgPreview', 'shopImgBase64', 'square')">
         <input type="hidden" id="shopImgBase64">
         <img id="shopImgPreview" src="" style="width:60px; height:60px; object-fit:cover; border-radius:6px; margin-top:4px; display:none;">
@@ -1306,7 +1306,7 @@
         <input type="text" id="cheatTitleInput" placeholder="例：機場退稅流程">
       </div>
       <div class="form-group">
-        <label>網址<span class="optional-tag">選填</span></label>
+        <label>網址</label>
         <input type="text" id="cheatUrlInput" placeholder="https://...">
       </div>
       <div class="form-group">
@@ -1315,7 +1315,7 @@
         <input type="hidden" id="cheatTagInput" value="">
       </div>
       <div class="form-group">
-        <label>圖片<span class="optional-tag">選填</span></label>
+        <label>圖片</label>
         <input type="file" id="cheatFileInput" accept="image/*" onchange="handleCheatFileSelect(event)">
         <div id="cheatImgList" class="cheat-img-edit-list"></div>
       </div>
@@ -1631,6 +1631,16 @@
       <div style="font-size:12px; color:var(--text-muted); margin-bottom:18px;">他之前記的消費紀錄會保留，但不會再是行程成員</div>
       <button class="modal-btn" style="width:100%; margin-bottom:8px; background:#e53e3e; color:#fff;" onclick="confirmKickMember()">確定移除</button>
       <button style="background:none; border:none; color:var(--text-muted); font-size:12px; cursor:pointer; padding:6px;" onclick="closeKickMemberConfirmModal()">取消</button>
+    </div>
+  </div>
+
+  <!-- ===== 刪除小抄確認 Modal ===== -->
+  <div class="modal-overlay" id="cheatDeleteConfirmModal">
+    <div class="modal-box" style="max-width:300px; text-align:center;">
+      <div style="font-size:32px; margin-bottom:8px; color:#3862AE;"><i class="bi bi-trash"></i></div>
+      <div style="font-weight:900; font-size:16px; color:var(--primary-navy); margin-bottom:18px;">確定要刪除這則小抄嗎？</div>
+      <button class="modal-btn" style="width:100%; margin-bottom:8px; background:#e53e3e; color:#fff;" onclick="confirmDeleteCheatItem()">確定刪除</button>
+      <button style="background:none; border:none; color:var(--text-muted); font-size:12px; cursor:pointer; padding:6px;" onclick="closeCheatDeleteConfirmModal()">取消</button>
     </div>
   </div>
 
@@ -4659,7 +4669,17 @@
     function deleteCheatItemFromModal() {
       const editIdx = parseInt(document.getElementById('editCheatIndex').value);
       if (editIdx < 0) return;
-      if (!confirm('確定要刪除這則小抄嗎？')) return;
+      document.getElementById('cheatDeleteConfirmModal').classList.add('active');
+    }
+
+    function closeCheatDeleteConfirmModal() {
+      document.getElementById('cheatDeleteConfirmModal').classList.remove('active');
+    }
+
+    function confirmDeleteCheatItem() {
+      const editIdx = parseInt(document.getElementById('editCheatIndex').value);
+      closeCheatDeleteConfirmModal();
+      if (editIdx < 0) return;
       allTrips[currentTripIdx].cheatSheet.splice(editIdx, 1);
       saveData(); closeCheatModal(); renderCheatList();
     }
@@ -4767,14 +4787,34 @@
       closeFlightEditModal();
     }
 
-    // 天氣預報要抓「這趟行程實際的位置」，用行程裡第一個有座標的景點；完全沒有景點座標時才退回大阪當保底
+    // 天氣預報要抓「這趟行程實際的位置」，用行程裡第一個有座標的景點；
+    // 如果整趟行程都還沒安排任何有座標的行程，就改抓手機目前位置；兩者都拿不到就顯示抓不到位置，不硬套預設城市
     function getTripWeatherLocation(trip) {
       for (const day of (trip.days || [])) {
         for (const spot of (day.spots || [])) {
           if (spot.lat && spot.lng) return { lat: spot.lat, lng: spot.lng };
         }
       }
-      return { lat: 34.6937, lng: 135.5023 };
+      return null;
+    }
+
+    function getDeviceLocation() {
+      return new Promise((resolve) => {
+        if (!navigator.geolocation) { resolve(null); return; }
+        navigator.geolocation.getCurrentPosition(
+          (pos) => resolve({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
+          () => resolve(null), // 使用者拒絕定位、逾時或裝置不支援時，回傳 null
+          { timeout: 8000, maximumAge: 10 * 60 * 1000 }
+        );
+      });
+    }
+
+    async function resolveWeatherLocation(trip) {
+      const tripLoc = getTripWeatherLocation(trip);
+      if (tripLoc) return { ...tripLoc, source: 'trip' };
+      const deviceLoc = await getDeviceLocation();
+      if (deviceLoc) return { ...deviceLoc, source: 'device' };
+      return null; // 行程沒地點、定位也拿不到，就不硬套任何城市
     }
 
     async function fetchWeather() {
@@ -4783,10 +4823,18 @@
       const trip = allTrips[currentTripIdx];
       try {
         // 抓最多 16 天的每日預報，並用實際日期 (YYYY-MM-DD) 比對，而不是用天數餘數硬套
-        const loc = getTripWeatherLocation(trip);
+        const loc = await resolveWeatherLocation(trip);
+        if (!loc) {
+          container.innerHTML = '<div style="font-size:12px; color:var(--text-muted); padding:8px 0;"><i class="bi bi-geo-alt"></i> 抓不到位置，無法顯示天氣。可以先安排一個行程地點，或允許瀏覽器取得目前位置。</div>';
+          return;
+        }
         const res = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${loc.lat}&longitude=${loc.lng}&daily=temperature_2m_max,temperature_2m_min,precipitation_probability_max,weathercode&timezone=auto&forecast_days=16`);
         const data = await res.json();
         container.innerHTML = '';
+
+        if (loc.source === 'device') {
+          container.innerHTML += `<div style="font-size:11px; color:var(--text-muted); margin-bottom:6px;"><i class="bi bi-geo-alt"></i> 尚未安排行程地點，暫用目前位置的天氣</div>`;
+        }
 
         const timeList = (data.daily && data.daily.time) ? data.daily.time : [];
 
