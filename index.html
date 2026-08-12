@@ -4868,7 +4868,7 @@
         container.innerHTML = '';
 
         if (usingDeviceFallback) {
-          container.innerHTML += `<div style="font-size:11px; color:var(--text-muted); margin-bottom:6px;"><i class="bi bi-geo-alt"></i> 尚未安排行程地點，暫用目前位置的天氣（每個人手機定位不同，看到的可能不一樣）</div>`;
+          container.innerHTML += `<div style="font-size:11px; color:var(--text-muted); margin-bottom:6px;"><i class="bi bi-geo-alt"></i> 尚未安排行程，暫用目前位置的天氣</div>`;
         }
 
         trip.days.forEach((day, i) => {
@@ -4908,7 +4908,7 @@
               <span class="weather-date">${day.dateStr}</span>
               <span class="weather-icon">${weatherIcon}</span>
               <span class="weather-temp">${minTemp}°C-${maxTemp}°C</span>
-              <span class="weather-pop">🌧️${pop}%</span>
+              <span class="weather-pop">${pop}%</span>
             </div>
           `;
         });
