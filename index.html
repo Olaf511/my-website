@@ -1804,7 +1804,7 @@
       <div class="form-group">
         <label>今天要去哪裡？</label>
         <div style="position:relative;">
-          <input type="text" id="editDayAreaInput" placeholder="" style="padding-right:34px;">
+          <input type="text" id="editDayAreaInput" placeholder="例如：市區景點" style="padding-right:34px;">
           <button type="button" onclick="document.getElementById('editDayAreaInput').value=''; document.getElementById('editDayAreaInput').focus();" style="position:absolute; right:4px; top:50%; transform:translateY(-50%); background:none; border:none; cursor:pointer; padding:4px;"><i class="bi bi-x-circle-fill" style="color:#3862AE;"></i></button>
         </div>
       </div>
@@ -2238,7 +2238,7 @@
         return;
       }
 
-      const shareText = `一起加入${trip ? trip.title : ''}吧！✈️\n邀請碼：${code}\n點擊連結，開始排行程~`;
+      const shareText = `一起加入${trip ? trip.title : ''}吧！✈️\n邀請碼：${code}\n點擊連結，開始規劃這趟旅程吧！`;
 
       if (navigator.share) {
         navigator.share({ title: `一起加入${trip ? trip.title : ''}吧！`, text: shareText, url: siteUrl }).catch(() => {});
@@ -3830,6 +3830,10 @@
           delete trip.members[uid];
           syncPayersFromMembers(trip);
           saveData();
+          // 順便清掉被移除成員自己帳號下的行程索引，這樣他下次打開 App 就不會再看到這個行程卡片
+          if (db && trip.inviteCode && !uid.startsWith('legacy_')) {
+            db.ref('users/' + uid + '/myTrips/' + trip.inviteCode).remove();
+          }
           renderMembersList();
         },
         '他之前記的消費紀錄會保留，但不會再是行程成員'
@@ -4651,7 +4655,7 @@
       const box = document.getElementById('cheatLinkList');
       box.innerHTML = cheatModalLinks.map((link, i) => `
         <div class="cheat-link-edit-row">
-          <input type="text" class="cheat-link-name-input" placeholder="名稱" maxlength="8" value="${(link.name || '').replace(/"/g, '&quot;')}" oninput="updateCheatLinkField(${i}, 'name', this.value)">
+          <input type="text" class="cheat-link-name-input" placeholder="名稱，例：迪卡攻略" maxlength="8" value="${(link.name || '').replace(/"/g, '&quot;')}" oninput="updateCheatLinkField(${i}, 'name', this.value)">
           <input type="text" class="cheat-link-url-input" placeholder="https://..." value="${(link.url || '').replace(/"/g, '&quot;')}" oninput="updateCheatLinkField(${i}, 'url', this.value)">
           <button type="button" onclick="removeCheatLink(${i})" title="刪除這組連結">✕</button>
         </div>
