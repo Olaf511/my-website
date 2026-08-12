@@ -243,8 +243,9 @@
     .filter-chip.active { background: var(--primary-navy); border-color: var(--primary-navy); color: #fff; }
     .cheat-tag { font-size: 10px; font-weight: bold; color: #fff; padding: 1px 7px; border-radius: 10px; margin-right: 4px; display: inline-block; }
     .cheat-tag-transport { background: #3182ce; }
-    .cheat-tag-ticket { background: #d69e2e; }
-    .cheat-tag-entry { background: #38a169; }
+    .cheat-tag-ticket { background: #CCECFF; color: #2b6690; }
+    .cheat-tag-restaurant { background: #FFBDBD; color: #a13a3a; }
+    .cheat-tag-entry { background: #E1FFE6; color: #2f8a45; }
     .cheat-tag-other { background: #718096; }
     .cheat-card-link {
       display: inline-flex; align-items: center; gap: 4px; font-size: 12px; font-weight: 700;
@@ -1329,6 +1330,11 @@
       </div>
       <input type="hidden" id="editCheatIndex" value="-1">
       <div class="form-group">
+        <label>分類標籤</label>
+        <div class="filter-chip-row" id="cheatTagSelectRow" style="margin-bottom:0;"></div>
+        <input type="hidden" id="cheatTagInput" value="">
+      </div>
+      <div class="form-group">
         <label>標題</label>
         <input type="text" id="cheatTitleInput" placeholder="例：機場退稅流程">
       </div>
@@ -1336,11 +1342,6 @@
         <label>攻略／購買連結</label>
         <div id="cheatLinkList" class="cheat-link-edit-list"></div>
         <button type="button" class="cheat-link-add-btn" id="cheatLinkAddBtn" onclick="addCheatLink()"><i class="bi bi-plus-lg"></i> 新增連結</button>
-      </div>
-      <div class="form-group">
-        <label>分類標籤</label>
-        <div class="filter-chip-row" id="cheatTagSelectRow" style="margin-bottom:0;"></div>
-        <input type="hidden" id="cheatTagInput" value="">
       </div>
       <div class="form-group">
         <label>圖片</label>
@@ -4428,6 +4429,7 @@
     const CHEAT_TAG_META = {
       "交通": { cls: "cheat-tag-transport" },
       "票券": { cls: "cheat-tag-ticket" },
+      "餐廳": { cls: "cheat-tag-restaurant" },
       "入境": { cls: "cheat-tag-entry" },
       "其他": { cls: "cheat-tag-other" }
     };
