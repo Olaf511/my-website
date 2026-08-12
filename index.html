@@ -244,6 +244,7 @@
     .cheat-tag { font-size: 10px; font-weight: bold; color: #fff; padding: 1px 7px; border-radius: 10px; margin-right: 4px; display: inline-block; }
     .cheat-tag-transport { background: #3182ce; }
     .cheat-tag-ticket { background: #d69e2e; }
+    .cheat-tag-entry { background: #38a169; }
     .cheat-tag-other { background: #718096; }
     .cheat-card-link {
       display: inline-flex; align-items: center; gap: 4px; font-size: 12px; font-weight: 700;
@@ -277,23 +278,35 @@
     .cheat-img-edit-thumb { cursor: grab; }
     .cheat-img-edit-thumb.sortable-ghost { opacity: 0.35; }
 
-    /* 小抄卡片：雙欄對稱、只顯示標題，點擊開啟詳情彈跳視窗 */
+    /* 小抄卡片：雙欄對稱、標題上方顯示分類，長按可拖移排序，右上角為釘選星號 */
     .cheat-card-grid {
+      display: flex; flex-direction: column; gap: 6px;
+    }
+    .cheat-card-subgrid {
       display: grid; grid-template-columns: 1fr 1fr; gap: 10px;
+    }
+    .cheat-group-title {
+      font-size: 12px; font-weight: 800; color: var(--primary-navy); background: #eef4fb;
+      padding: 5px 10px; border-radius: 8px; margin-top: 4px;
+      display: flex; align-items: center; gap: 4px; width: fit-content;
     }
     .cheat-mini-card {
       position: relative; background: var(--card-bg); border: 1px solid var(--border-color);
-      border-radius: 14px; padding: 14px 32px 14px 14px; cursor: pointer;
-      display: flex; align-items: center; min-height: 26px;
+      border-radius: 14px; padding: 14px 30px 14px 14px; cursor: pointer;
+      display: flex; flex-direction: column; align-items: flex-start; justify-content: center;
+      gap: 4px; min-height: 26px; user-select: none;
     }
+    .cheat-mini-card.sortable-ghost { opacity: 0.35; }
     .cheat-mini-card-title {
       font-weight: 700; font-size: 13.5px; color: var(--text-main);
       word-break: break-word; line-height: 1.4;
     }
-    .cheat-mini-card-del {
-      position: absolute; top: 4px; right: 4px;
+    .cheat-mini-card-star {
+      position: absolute; top: 6px; right: 6px; background: none; border: none; padding: 2px;
+      font-size: 15px; line-height: 1; color: #cbd5e1; cursor: pointer;
     }
-    #cheatSheetList .empty-state { grid-column: 1 / -1; }
+    .cheat-mini-card-star.active { color: #ecc94b; }
+    #cheatSheetList .empty-state { width: 100%; }
 
     .guide-place-card {
       display: flex; align-items: center; gap: 10px; background: var(--card-bg); border: 1px solid var(--border-color);
@@ -472,6 +485,10 @@
       color: var(--text-muted); cursor: pointer; padding: 0 !important;
     }
     .modal-title-with-icon { display: inline-flex; align-items: center; gap: 6px; }
+    .modal-header-close-text {
+      width: auto !important; height: 28px; border-radius: 14px !important; padding: 0 14px !important;
+      font-size: 12px !important; font-weight: 700 !important; background: #f1f5f9 !important; color: var(--text-muted);
+    }
 
     .form-group { margin-bottom: 14px; position: relative; }
     .form-group label {
@@ -1279,7 +1296,10 @@
     <div class="modal-box">
       <div class="modal-header">
         <span id="cheatModalTitle" class="modal-title-with-icon"><span class="page-icon-badge" style="background:#fff; border:1.5px solid #D7E9FD; color:#3862AE;"><i class="bi bi-check-circle"></i></span>來點小抄</span>
-        <button onclick="closeCheatModal()">✕</button>
+        <div style="display:flex; align-items:center; gap:8px;">
+          <button id="cheatModalDeleteBtn" onclick="deleteCheatItemFromModal()" style="display:none; background:#fff5f5 !important; color:#c53030;" title="刪除"><i class="bi bi-trash"></i></button>
+          <button onclick="closeCheatModal()" class="modal-header-close-text">關閉</button>
+        </div>
       </div>
       <input type="hidden" id="editCheatIndex" value="-1">
       <div class="form-group">
@@ -4355,6 +4375,7 @@
     const CHEAT_TAG_META = {
       "交通": { cls: "cheat-tag-transport" },
       "票券": { cls: "cheat-tag-ticket" },
+      "入境": { cls: "cheat-tag-entry" },
       "其他": { cls: "cheat-tag-other" }
     };
 
@@ -4391,16 +4412,90 @@
         return;
       }
 
-      list.forEach(item => {
+      function buildCheatCard(item) {
         const card = document.createElement('div');
         card.className = 'cheat-mini-card';
-        card.onclick = () => openCheatView(item.originalIndex);
+        card.onclick = () => { if (cheatJustDragged) return; openCheatView(item.originalIndex); };
+        const tag = (item.tags && item.tags[0]) || '';
+        const tagHtml = tag ? `<span class="cheat-tag ${CHEAT_TAG_META[tag] ? CHEAT_TAG_META[tag].cls : 'cheat-tag-other'}">${tag}</span>` : '';
         card.innerHTML = `
+          <button class="cheat-mini-card-star ${item.pinned ? 'active' : ''}" onclick="event.stopPropagation(); toggleCheatPin(${item.originalIndex})" title="${item.pinned ? '取消釘選' : '釘選在最上面'}"><i class="bi ${item.pinned ? 'bi-star-fill' : 'bi-star'}"></i></button>
+          ${tagHtml}
           <div class="cheat-mini-card-title">${item.title}</div>
-          <button class="icon-btn-del cheat-mini-card-del" onclick="event.stopPropagation(); deleteCheatItem(${item.originalIndex})"><i class="bi bi-x" style="color:#3862AE;"></i></button>
         `;
-        container.appendChild(card);
+        return card;
+      }
+
+      const pinned = list.filter(i => i.pinned);
+      const rest = list.filter(i => !i.pinned);
+
+      if (pinned.length > 0) {
+        const groupTitle = document.createElement('div');
+        groupTitle.className = 'cheat-group-title';
+        groupTitle.innerHTML = `<i class="bi bi-star-fill" style="font-size:11px;"></i> 已釘選`;
+        container.appendChild(groupTitle);
+        const pinnedGrid = document.createElement('div');
+        pinnedGrid.className = 'cheat-card-subgrid';
+        pinnedGrid.id = 'cheatPinnedGrid';
+        pinned.forEach(item => pinnedGrid.appendChild(buildCheatCard(item)));
+        container.appendChild(pinnedGrid);
+      }
+
+      const restGrid = document.createElement('div');
+      restGrid.className = 'cheat-card-subgrid';
+      restGrid.id = 'cheatRestGrid';
+      rest.forEach(item => restGrid.appendChild(buildCheatCard(item)));
+      container.appendChild(restGrid);
+
+      initCheatListSortable();
+    }
+
+    function toggleCheatPin(idx) {
+      const trip = allTrips[currentTripIdx];
+      trip.cheatSheet[idx].pinned = !trip.cheatSheet[idx].pinned;
+      saveData();
+      renderCheatList();
+    }
+
+    let cheatSortableInstances = [];
+    let cheatJustDragged = false;
+
+    function initCheatListSortable() {
+      cheatSortableInstances.forEach(s => s.destroy());
+      cheatSortableInstances = [];
+      // 排序僅在「全部」篩選狀態下進行，避免篩選時的顯示順序跟實際儲存順序對不上
+      if (typeof Sortable === 'undefined' || cheatFilterActive) return;
+
+      ['cheatPinnedGrid', 'cheatRestGrid'].forEach(gridId => {
+        const el = document.getElementById(gridId);
+        if (!el || el.children.length < 2) return;
+        const isPinnedGrid = gridId === 'cheatPinnedGrid';
+        const inst = new Sortable(el, {
+          animation: 150,
+          delay: 350,
+          delayOnTouchOnly: true,
+          touchStartThreshold: 6,
+          onStart: function () { cheatJustDragged = true; },
+          onEnd: function (evt) {
+            setTimeout(() => { cheatJustDragged = false; }, 300);
+            if (evt.oldIndex === evt.newIndex) return;
+            reorderCheatGroup(isPinnedGrid, evt.oldIndex, evt.newIndex);
+          }
+        });
+        cheatSortableInstances.push(inst);
       });
+    }
+
+    function reorderCheatGroup(isPinned, oldIdx, newIdx) {
+      const trip = allTrips[currentTripIdx];
+      const pinned = trip.cheatSheet.filter(i => i.pinned);
+      const rest = trip.cheatSheet.filter(i => !i.pinned);
+      const group = isPinned ? pinned : rest;
+      const moved = group.splice(oldIdx, 1)[0];
+      group.splice(newIdx, 0, moved);
+      trip.cheatSheet = [...pinned, ...rest];
+      saveData();
+      renderCheatList();
     }
 
     let currentCheatViewIdx = -1;
@@ -4511,6 +4606,7 @@
       document.getElementById('editCheatIndex').value = idx;
       document.getElementById('cheatTagInput').value = '';
       document.getElementById('cheatFileInput').value = '';
+      document.getElementById('cheatModalDeleteBtn').style.display = idx >= 0 ? 'flex' : 'none';
       cheatModalImgs = [];
 
       if (idx >= 0) {
@@ -4549,17 +4645,20 @@
       const tags = selectedTag ? [selectedTag] : [];
 
       const trip = allTrips[currentTripIdx];
-      const itemObj = { title, url, note, imgs, tags };
+      const pinned = (editIdx >= 0 && trip.cheatSheet[editIdx]) ? !!trip.cheatSheet[editIdx].pinned : false;
+      const itemObj = { title, url, note, imgs, tags, pinned };
       if (editIdx >= 0) { trip.cheatSheet[editIdx] = itemObj; }
       else { trip.cheatSheet.push(itemObj); }
 
       saveData(); closeCheatModal(); renderCheatList();
     }
 
-    function deleteCheatItem(idx) {
+    function deleteCheatItemFromModal() {
+      const editIdx = parseInt(document.getElementById('editCheatIndex').value);
+      if (editIdx < 0) return;
       if (!confirm('確定要刪除這則小抄嗎？')) return;
-      allTrips[currentTripIdx].cheatSheet.splice(idx, 1);
-      saveData(); renderCheatList();
+      allTrips[currentTripIdx].cheatSheet.splice(editIdx, 1);
+      saveData(); closeCheatModal(); renderCheatList();
     }
 
     /* 輸入 0850 自動格式化成 08:50，供機票時間欄位使用 */
