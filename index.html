@@ -250,6 +250,31 @@
       display: inline-flex; align-items: center; gap: 4px; font-size: 12px; font-weight: 700;
       color: var(--primary-navy); text-decoration: none; margin-top: 4px;
     }
+    #cheatViewUrl { display: flex; flex-wrap: wrap; gap: 10px; }
+    /* 小抄編輯：多組「名稱＋網址」連結列 */
+    .cheat-link-edit-list { display: flex; flex-direction: column; gap: 8px; margin-top: 8px; }
+    .cheat-link-edit-row { display: flex; gap: 6px; align-items: center; }
+    .cheat-link-edit-row .cheat-link-name-input { flex: 0 0 32%; min-width: 0; }
+    .cheat-link-edit-row .cheat-link-url-input { flex: 1; min-width: 0; }
+    .cheat-link-edit-row input {
+      font-size: 13px; padding: 8px 10px; border-radius: 8px; border: 1px solid var(--border-color);
+    }
+    .cheat-link-edit-row button {
+      flex: 0 0 auto; width: 28px; height: 28px; border-radius: 50%; background: #c53030; color: #fff;
+      border: none; font-size: 12px; line-height: 1; cursor: pointer; display: flex; align-items: center; justify-content: center; padding: 0;
+    }
+    .cheat-link-add-btn {
+      margin-top: 8px; font-size: 12px; font-weight: 700; color: var(--primary-navy); background: var(--soft-blue);
+      border: 1px solid #bee3f8; padding: 6px 12px; border-radius: 10px; cursor: pointer;
+      display: inline-flex; align-items: center; gap: 4px;
+    }
+    /* 小抄小卡片上直接顯示的連結按鈕 */
+    .cheat-mini-card-links { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 2px; }
+    .cheat-mini-link-btn {
+      display: inline-flex; align-items: center; gap: 3px; font-size: 11px; font-weight: 700;
+      color: var(--primary-navy); background: var(--soft-blue); border: 1px solid #bee3f8;
+      padding: 3px 8px; border-radius: 10px; text-decoration: none;
+    }
     .guide-link-badge {
       display: inline-flex; align-items: center; gap: 4px; font-size: 11px; font-weight: 700;
       color: var(--primary-navy); background: var(--soft-blue); border: 1px solid #bee3f8;
@@ -1306,8 +1331,9 @@
         <input type="text" id="cheatTitleInput" placeholder="例：機場退稅流程">
       </div>
       <div class="form-group">
-        <label>網址</label>
-        <input type="text" id="cheatUrlInput" placeholder="https://...">
+        <label>攻略／購買連結</label>
+        <div id="cheatLinkList" class="cheat-link-edit-list"></div>
+        <button type="button" class="cheat-link-add-btn" onclick="addCheatLink()"><i class="bi bi-plus-lg"></i> 新增連結</button>
       </div>
       <div class="form-group">
         <label>分類標籤</label>
@@ -2005,9 +2031,10 @@
       if (!trip.shoppingGuide) trip.shoppingGuide = [];
       if (!trip.guideRegions) trip.guideRegions = [];
       if (!trip.cheatSheet) trip.cheatSheet = [];
-      // 相容舊資料：舊版小抄只有單張 img 欄位，統一轉成 imgs 陣列
+      // 相容舊資料：舊版小抄只有單張 img 欄位，統一轉成 imgs 陣列；舊版只有單一網址，統一轉成 links 陣列
       trip.cheatSheet.forEach(item => {
         if (!item.imgs) item.imgs = item.img ? [item.img] : [];
+        if (!item.links) item.links = item.url ? [{ name: '', url: item.url }] : [];
       });
       if (!trip.prepList) trip.prepList = [];
       if (!trip.payers) trip.payers = [];
@@ -4438,10 +4465,16 @@
         card.onclick = () => { if (cheatJustDragged) return; openCheatView(item.originalIndex); };
         const tag = (item.tags && item.tags[0]) || '';
         const tagHtml = tag ? `<span class="cheat-tag ${CHEAT_TAG_META[tag] ? CHEAT_TAG_META[tag].cls : 'cheat-tag-other'}">${tag}</span>` : '';
+        const linksHtml = (item.links && item.links.length) ? `
+          <div class="cheat-mini-card-links">
+            ${item.links.map(l => `<a href="${l.url}" target="_blank" class="cheat-mini-link-btn" onclick="event.stopPropagation();"><i class="bi bi-box-arrow-up-right"></i> ${l.name || '開啟連結'}</a>`).join('')}
+          </div>
+        ` : '';
         card.innerHTML = `
           <button class="cheat-mini-card-star ${item.pinned ? 'active' : ''}" onclick="event.stopPropagation(); toggleCheatPin(${item.originalIndex})" title="${item.pinned ? '取消釘選' : '釘選在最上面'}"><i class="bi ${item.pinned ? 'bi-star-fill' : 'bi-star'}"></i></button>
           ${tagHtml}
           <div class="cheat-mini-card-title">${item.title}</div>
+          ${linksHtml}
         `;
         return card;
       }
@@ -4528,7 +4561,9 @@
       document.getElementById('cheatViewTitle').innerText = item.title;
       const tagsHtml = (item.tags || []).map(t => `<span class="cheat-tag ${CHEAT_TAG_META[t] ? CHEAT_TAG_META[t].cls : 'cheat-tag-other'}">${t}</span>`).join('');
       document.getElementById('cheatViewTags').innerHTML = tagsHtml;
-      document.getElementById('cheatViewUrl').innerHTML = item.url ? `<a href="${item.url}" target="_blank" class="cheat-card-link" onclick="event.stopPropagation();"><i class="bi bi-box-arrow-up-right"></i> 開啟連結</a>` : '';
+      document.getElementById('cheatViewUrl').innerHTML = (item.links && item.links.length)
+        ? item.links.map(l => `<a href="${l.url}" target="_blank" class="cheat-card-link" onclick="event.stopPropagation();"><i class="bi bi-box-arrow-up-right"></i> ${l.name || '開啟連結'}</a>`).join('')
+        : '';
       document.getElementById('cheatViewNote').innerText = item.note || '';
 
       const imgs = item.imgs && item.imgs.length ? item.imgs : (item.img ? [item.img] : []);
@@ -4608,6 +4643,34 @@
       reader.readAsDataURL(file);
     }
 
+    let cheatModalLinks = []; // 目前編輯中的小抄，暫存的「名稱＋網址」連結陣列
+
+    function renderCheatLinkEditList() {
+      const box = document.getElementById('cheatLinkList');
+      box.innerHTML = cheatModalLinks.map((link, i) => `
+        <div class="cheat-link-edit-row">
+          <input type="text" class="cheat-link-name-input" placeholder="名稱，例：迪卡攻略" value="${(link.name || '').replace(/"/g, '&quot;')}" oninput="updateCheatLinkField(${i}, 'name', this.value)">
+          <input type="text" class="cheat-link-url-input" placeholder="https://..." value="${(link.url || '').replace(/"/g, '&quot;')}" oninput="updateCheatLinkField(${i}, 'url', this.value)">
+          <button type="button" onclick="removeCheatLink(${i})" title="刪除這組連結">✕</button>
+        </div>
+      `).join('');
+    }
+
+    function updateCheatLinkField(i, field, value) {
+      if (!cheatModalLinks[i]) return;
+      cheatModalLinks[i][field] = value;
+    }
+
+    function addCheatLink() {
+      cheatModalLinks.push({ name: '', url: '' });
+      renderCheatLinkEditList();
+    }
+
+    function removeCheatLink(i) {
+      cheatModalLinks.splice(i, 1);
+      renderCheatLinkEditList();
+    }
+
     // 分類標籤：單選（點一下選取，再點一次可取消選取）
     function renderCheatTagSelect(selectedTag) {
       const row = document.getElementById('cheatTagSelectRow');
@@ -4633,19 +4696,20 @@
         const item = allTrips[currentTripIdx].cheatSheet[idx];
         document.getElementById('cheatModalTitle').innerHTML = '<i class="bi bi-highlighter" style="color:#3862AE;"></i> 編輯小抄';
         document.getElementById('cheatTitleInput').value = item.title || '';
-        document.getElementById('cheatUrlInput').value = item.url || '';
         document.getElementById('cheatNoteInput').value = item.note || '';
         document.getElementById('cheatTagInput').value = (item.tags && item.tags[0]) || '';
-        // 相容舊資料：舊小抄只有單張 img 欄位，沒有 imgs 陣列
+        // 相容舊資料：舊小抄只有單張 img 欄位，沒有 imgs 陣列；舊小抄只有單一網址，沒有 links 陣列
         cheatModalImgs = item.imgs && item.imgs.length ? [...item.imgs] : (item.img ? [item.img] : []);
+        cheatModalLinks = item.links && item.links.length ? item.links.map(l => ({ ...l })) : (item.url ? [{ name: '', url: item.url }] : []);
       } else {
         document.getElementById('cheatModalTitle').innerHTML = '<i class="bi bi-check-circle" style="color:#3862AE;"></i> 來點小抄';
         document.getElementById('cheatTitleInput').value = '';
-        document.getElementById('cheatUrlInput').value = '';
         document.getElementById('cheatNoteInput').value = '';
+        cheatModalLinks = [];
       }
       renderCheatTagSelect(document.getElementById('cheatTagInput').value);
       renderCheatImgEditList();
+      renderCheatLinkEditList();
       document.getElementById('cheatModal').classList.add('active');
       autoGrowTextarea(document.getElementById('cheatNoteInput'));
     }
@@ -4658,8 +4722,10 @@
       const editIdx = parseInt(document.getElementById('editCheatIndex').value);
       const title = document.getElementById('cheatTitleInput').value;
       if (!title) return alert("請輸入標題！");
-      let url = document.getElementById('cheatUrlInput').value.trim();
-      if (url && !/^https?:\/\//i.test(url)) url = 'https://' + url;
+      const links = cheatModalLinks
+        .map(l => ({ name: (l.name || '').trim(), url: (l.url || '').trim() }))
+        .filter(l => l.url)
+        .map(l => { let url = l.url; if (!/^https?:\/\//i.test(url)) url = 'https://' + url; return { name: l.name, url }; });
       const note = document.getElementById('cheatNoteInput').value;
       const imgs = cheatModalImgs.slice();
       const selectedTag = document.getElementById('cheatTagInput').value;
@@ -4667,7 +4733,7 @@
 
       const trip = allTrips[currentTripIdx];
       const pinned = (editIdx >= 0 && trip.cheatSheet[editIdx]) ? !!trip.cheatSheet[editIdx].pinned : false;
-      const itemObj = { title, url, note, imgs, tags, pinned };
+      const itemObj = { title, links, note, imgs, tags, pinned };
       if (editIdx >= 0) { trip.cheatSheet[editIdx] = itemObj; }
       else { trip.cheatSheet.push(itemObj); }
 
