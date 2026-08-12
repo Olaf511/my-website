@@ -1277,6 +1277,7 @@
   <!-- ===== 小抄詳情（唯讀）Modal ===== -->
   <div class="modal-overlay" id="cheatViewModal" onclick="if(event.target===this) closeCheatViewModal()">
     <div class="modal-box">
+      <div id="cheatViewTags" style="margin-bottom:8px;"></div>
       <div class="modal-header">
         <span class="modal-title-with-icon" id="cheatViewTitle">標題</span>
         <div style="display:flex; align-items:center; gap:6px;">
@@ -1284,9 +1285,8 @@
           <button onclick="closeCheatViewModal()">✕</button>
         </div>
       </div>
-      <div id="cheatViewTags" style="margin-bottom:8px;"></div>
-      <div id="cheatViewUrl" style="margin-bottom:10px;"></div>
       <div id="cheatViewNote" style="font-size:13px; color:var(--text-main); white-space:pre-wrap; line-height:1.6; margin-bottom:12px;"></div>
+      <div id="cheatViewUrl" style="margin-bottom:10px;"></div>
       <div id="cheatViewImgs" style="display:flex; gap:8px; flex-wrap:wrap;"></div>
     </div>
   </div>
@@ -1297,8 +1297,7 @@
       <div class="modal-header">
         <span id="cheatModalTitle" class="modal-title-with-icon"><span class="page-icon-badge" style="background:#fff; border:1.5px solid #D7E9FD; color:#3862AE;"><i class="bi bi-check-circle"></i></span>來點小抄</span>
         <div style="display:flex; align-items:center; gap:8px;">
-          <button id="cheatModalDeleteBtn" onclick="deleteCheatItemFromModal()" style="display:none; background:#fff5f5 !important; color:#c53030;" title="刪除"><i class="bi bi-trash"></i></button>
-          <button onclick="closeCheatModal()" class="modal-header-close-text">關閉</button>
+          <button id="cheatModalDeleteBtn" onclick="deleteCheatItemFromModal()" class="modal-header-close-text" style="display:none;" title="刪除">刪除</button>
         </div>
       </div>
       <input type="hidden" id="editCheatIndex" value="-1">
@@ -1322,7 +1321,7 @@
       </div>
       <div class="form-group">
         <label>備註</label>
-        <textarea id="cheatNoteInput" placeholder="重點、注意事項..."></textarea>
+        <textarea id="cheatNoteInput" class="textarea-autogrow" placeholder="重點、注意事項..." oninput="autoGrowTextarea(this)"></textarea>
       </div>
       <div class="modal-footer">
         <button class="modal-btn modal-btn-cancel" onclick="closeCheatModal()">取消</button>
@@ -3354,7 +3353,6 @@
             </div>
             <a href="${mapsUrl}" target="_blank" class="card-action-btn edit-mode-hide" title="Google Map 導航"><i class="bi bi-geo-alt" style="color:#3862AE;"></i></a>
             <div style="display:flex; flex-direction:column; align-items:center; gap:4px; margin-left:4px;" class="read-mode-hide">
-              <span class="drag-handle" title="拖曳排序">⠿</span>
               <button class="icon-btn-more" onclick="openSpotActionMenu(event, ${idx})" title="更多操作">⋮</button>
             </div>
           `;
@@ -3438,7 +3436,11 @@
 
       spotSortableInstance = new Sortable(listEl, {
         animation: 150,
-        handle: '.drag-handle',
+        delay: 350,
+        delayOnTouchOnly: true,
+        touchStartThreshold: 5,
+        filter: 'a, button, .card-img-wrapper, .card-title-link, .guide-link-badge',
+        preventOnFilter: false,
         scroll: false,
         onStart: function () {
           isDraggingSpot = true;
@@ -4627,6 +4629,7 @@
       renderCheatTagSelect(document.getElementById('cheatTagInput').value);
       renderCheatImgEditList();
       document.getElementById('cheatModal').classList.add('active');
+      autoGrowTextarea(document.getElementById('cheatNoteInput'));
     }
 
     function closeCheatModal() {
