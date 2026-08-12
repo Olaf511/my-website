@@ -1331,7 +1331,7 @@
         <input type="text" id="cheatTitleInput" placeholder="例：機場退稅流程">
       </div>
       <div class="form-group">
-        <label>攻略／購買連結</label>
+        <label>連結</label>
         <div id="cheatLinkList" class="cheat-link-edit-list"></div>
         <button type="button" class="cheat-link-add-btn" onclick="addCheatLink()"><i class="bi bi-plus-lg"></i> 新增連結</button>
       </div>
@@ -4649,7 +4649,7 @@
       const box = document.getElementById('cheatLinkList');
       box.innerHTML = cheatModalLinks.map((link, i) => `
         <div class="cheat-link-edit-row">
-          <input type="text" class="cheat-link-name-input" placeholder="名稱，例：迪卡攻略" value="${(link.name || '').replace(/"/g, '&quot;')}" oninput="updateCheatLinkField(${i}, 'name', this.value)">
+          <input type="text" class="cheat-link-name-input" placeholder=" " value="${(link.name || '').replace(/"/g, '&quot;')}" oninput="updateCheatLinkField(${i}, 'name', this.value)">
           <input type="text" class="cheat-link-url-input" placeholder="https://..." value="${(link.url || '').replace(/"/g, '&quot;')}" oninput="updateCheatLinkField(${i}, 'url', this.value)">
           <button type="button" onclick="removeCheatLink(${i})" title="刪除這組連結">✕</button>
         </div>
