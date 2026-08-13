@@ -1115,8 +1115,11 @@
         <button onclick="closeSpotActionSheet()">✕</button>
       </div>
       <div style="display:flex; flex-direction:column; gap:8px;">
-        <button type="button" class="action-sheet-btn" onclick="spotActionSheetEdit()"><i class="bi bi-highlighter" style="color:#3862AE;"></i> 編輯景點</button>
-        <button type="button" class="action-sheet-btn danger" onclick="spotActionSheetDelete()"><i class="bi bi-x" style="color:#3862AE;"></i> 刪除景點</button>
+        <div style="display:flex; gap:8px;">
+          <button type="button" class="action-sheet-btn" style="flex:1; justify-content:center;" onclick="spotActionSheetEdit()">編輯</button>
+          <button type="button" class="action-sheet-btn" style="flex:1; justify-content:center;" onclick="spotActionSheetDuplicate()">複製</button>
+          <button type="button" class="action-sheet-btn danger" style="flex:1; justify-content:center;" onclick="spotActionSheetDelete()">刪除</button>
+        </div>
         <button type="button" class="action-sheet-btn" style="justify-content:center; color:var(--text-muted); background:none; border-color:transparent;" onclick="closeSpotActionSheet()">取消</button>
       </div>
     </div>
@@ -3731,6 +3734,17 @@
       });
     }
 
+    function duplicateSpot(idx) {
+      const day = allTrips[currentTripIdx].days[currentDayIdx];
+      const original = day.spots[idx];
+      if (!original) return;
+      const copy = JSON.parse(JSON.stringify(original));
+      copy.id = Date.now();
+      copy.title = original.title + '（複製）';
+      day.spots.splice(idx + 1, 0, copy);
+      saveData(); renderDayView();
+    }
+
     /* ===== 方案 C：景點「⋮ 更多」操作選單（取代原本的鉛筆編輯 + 叉叉刪除兩顆按鈕） ===== */
     let spotActionSheetIdx = -1;
     function openSpotActionMenu(evt, idx) {
@@ -3748,6 +3762,11 @@
       const idx = spotActionSheetIdx;
       closeSpotActionSheet();
       openSpotModal(idx);
+    }
+    function spotActionSheetDuplicate() {
+      const idx = spotActionSheetIdx;
+      closeSpotActionSheet();
+      duplicateSpot(idx);
     }
     function spotActionSheetDelete() {
       const idx = spotActionSheetIdx;
