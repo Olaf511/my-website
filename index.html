@@ -1070,7 +1070,10 @@
             <i class="bi bi-stars"></i> <span>問 AI 這個地點</span>
           </button>
           <div id="askAiBox" style="display:none;">
-            <textarea id="askAiQuestion" class="textarea-autogrow" placeholder="例如：從這裡去下一個景點方便嗎？附近有什麼推薦？" oninput="autoGrowTextarea(this)"></textarea>
+            <div style="position:relative;">
+              <textarea id="askAiQuestion" class="textarea-autogrow" placeholder="例如：從這裡去下一個景點方便嗎？附近有什麼推薦？" oninput="autoGrowTextarea(this)" style="padding-right:32px;"></textarea>
+              <button type="button" onclick="clearAskAiQuestion()" title="清除文字" style="position:absolute; top:8px; right:6px; width:20px; height:20px; border-radius:50%; border:none; background:#E2E8F0; color:#4A5568; font-size:12px; line-height:1; cursor:pointer; display:flex; align-items:center; justify-content:center; padding:0;">✕</button>
+            </div>
             <button type="button" class="btn-rounded-light" style="width:100%; justify-content:center; margin-top:6px;" onclick="askTravelAI()"><i class="bi bi-send-fill" style="color:#3862AE;"></i> 送出問題</button>
             <div id="askAiAnswer" style="margin-top:8px; font-size:13px; color:var(--text-main); white-space:pre-wrap; line-height:1.6; display:none; background:#F5F8FF; border-radius:10px; padding:10px;"></div>
           </div>
@@ -3696,7 +3699,7 @@
       if (list && input && !list.contains(e.target) && e.target !== input) list.style.display = 'none';
     });
 
-    function closeSpotModal() { document.getElementById('spotModal').classList.remove('active'); }
+    function closeSpotModal() { document.getElementById('spotModal').classList.remove('active'); resetAskAiBox(); }
 
     /* ===== Google 地圖路線：抓「這個景點之前最近的一個景點」當起點，帶去 Google 地圖開路線 ===== */
     function getPrevSpotForDirections() {
@@ -3731,7 +3734,9 @@
         if (origin) url += `&origin=${encodeURIComponent(origin)}`;
       }
       // 沒有前一站的話，不帶 origin，Google 地圖會自動用使用者目前位置當起點
-      window.open(url, '_blank');
+      // 用同一個分頁跳轉（而不是開新分頁），手機上如果有裝 Google 地圖 App 系統會直接接手開 App，
+      // 不會在 Safari 留下一個空白分頁要另外關掉
+      window.location.href = url;
     }
 
     /* ===== 問 AI 這個地點：呼叫自己部署的免費後端（Cloudflare Worker），不能把金鑰直接放前端 =====
@@ -3742,6 +3747,22 @@
     function toggleAskAiBox() {
       const box = document.getElementById('askAiBox');
       box.style.display = (box.style.display === 'none' || !box.style.display) ? 'block' : 'none';
+    }
+
+    function clearAskAiQuestion() {
+      const q = document.getElementById('askAiQuestion');
+      q.value = '';
+      autoGrowTextarea(q);
+      q.focus();
+    }
+
+    function resetAskAiBox() {
+      const q = document.getElementById('askAiQuestion');
+      const a = document.getElementById('askAiAnswer');
+      const box = document.getElementById('askAiBox');
+      if (q) { q.value = ''; autoGrowTextarea(q); }
+      if (a) { a.style.display = 'none'; a.innerText = ''; }
+      if (box) box.style.display = 'none';
     }
 
     async function askTravelAI() {
