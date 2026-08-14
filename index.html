@@ -3912,34 +3912,33 @@
 
     async function sendAiChatMessage() {
       const input = document.getElementById('aiChatInput');
+      if (!input) return;
       const question = input.value.trim();
       if (!question) return;
       const trip = allTrips[currentTripIdx];
-      if (!trip) return;
+      if (!trip) { alert('目前沒有讀到行程資料，請重新整理頁面再試一次'); return; }
       if (!trip.aiChatMessages) trip.aiChatMessages = [];
 
-      trip.aiChatMessages.push({ role: 'user', text: question });
-      input.value = '';
-      autoGrowTextarea(input);
-      renderAiChatMessages(true);
-      saveData();
-
       const sendBtn = document.getElementById('aiChatSendBtn');
-      sendBtn.disabled = true;
-
-      // 先放一個「思考中」的暫時泡泡，回覆回來後再換成真正內容
-      trip.aiChatMessages.push({ role: 'ai', text: '思考中...', pending: true });
-      renderAiChatMessages(true);
-
-      if (!AI_ASSISTANT_ENDPOINT) {
-        trip.aiChatMessages[trip.aiChatMessages.length - 1] = { role: 'ai', text: 'AI 問答功能還沒設定好喔——要先部署 worker-example.js 這個免費後端，並把網址填進程式碼裡的 AI_ASSISTANT_ENDPOINT 才能用。' };
-        renderAiChatMessages(true);
-        saveData();
-        sendBtn.disabled = false;
-        return;
-      }
 
       try {
+        trip.aiChatMessages.push({ role: 'user', text: question });
+        input.value = '';
+        autoGrowTextarea(input);
+        renderAiChatMessages(true);
+        saveData();
+
+        if (sendBtn) sendBtn.disabled = true;
+
+        // 先放一個「思考中」的暫時泡泡，回覆回來後再換成真正內容
+        trip.aiChatMessages.push({ role: 'ai', text: '思考中...', pending: true });
+        renderAiChatMessages(true);
+
+        if (!AI_ASSISTANT_ENDPOINT) {
+          trip.aiChatMessages[trip.aiChatMessages.length - 1] = { role: 'ai', text: 'AI 問答功能還沒設定好喔——要先部署 worker-example.js 這個免費後端，並把網址填進程式碼裡的 AI_ASSISTANT_ENDPOINT 才能用。' };
+          return;
+        }
+
         const res = await fetch(AI_ASSISTANT_ENDPOINT, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -3957,11 +3956,20 @@
         const replyText = data.answer || ('沒有取得回覆：' + (data.error || `未知錯誤（狀態碼 ${res.status}）`));
         trip.aiChatMessages[trip.aiChatMessages.length - 1] = { role: 'ai', text: replyText };
       } catch (e) {
-        trip.aiChatMessages[trip.aiChatMessages.length - 1] = { role: 'ai', text: '問 AI 失敗了，請確認網路連線或稍後再試（' + e.message + '）' };
+        // 不管上面哪一步出錯，都確保畫面上一定會顯示錯誤訊息，而不是靜靜地卡住沒反應
+        const msgs = trip.aiChatMessages || [];
+        const last = msgs[msgs.length - 1];
+        const errText = '發生錯誤，問答沒有成功（' + (e && e.message ? e.message : String(e)) + '）';
+        if (last && last.pending) {
+          msgs[msgs.length - 1] = { role: 'ai', text: errText };
+        } else {
+          msgs.push({ role: 'ai', text: errText });
+        }
+      } finally {
+        renderAiChatMessages(true);
+        saveData();
+        if (sendBtn) sendBtn.disabled = false;
       }
-      renderAiChatMessages(true);
-      saveData();
-      sendBtn.disabled = false;
     }
 
     function endAiChat() {
