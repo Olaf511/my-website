@@ -3734,9 +3734,10 @@
       window.open(url, '_blank');
     }
 
-    /* ===== 問 AI 這個地點：呼叫自己部署的後端（Cloud Function），不能把金鑰直接放前端 =====
-       部署好你自己的中轉服務後，把網址填進下面這個常數即可啟用。範例後端程式見 cloud-function-example.js */
-    const AI_ASSISTANT_ENDPOINT = ''; // 例如 'https://asktravelai-xxxxxxxxx.a.run.app'
+    /* ===== 問 AI 這個地點：呼叫自己部署的免費後端（Cloudflare Worker），不能把金鑰直接放前端 =====
+       部署好你自己的中轉服務後，把網址填進下面這個常數即可啟用。範例後端程式見 worker-example.js
+       （這組是 Cloudflare Workers + Groq，兩邊都是免費方案，不用綁信用卡） */
+    const AI_ASSISTANT_ENDPOINT = 'https://purple-dream-a8e0.zoe11-jpg.workers.dev';
 
     function toggleAskAiBox() {
       const box = document.getElementById('askAiBox');
@@ -3750,7 +3751,7 @@
 
       if (!AI_ASSISTANT_ENDPOINT) {
         answerEl.style.display = 'block';
-        answerEl.innerText = 'AI 問答功能還沒設定好喔——要先部署 cloud-function-example.js 這個後端，並把網址填進程式碼裡的 AI_ASSISTANT_ENDPOINT 才能用。';
+        answerEl.innerText = 'AI 問答功能還沒設定好喔——要先部署 worker-example.js 這個免費後端，並把網址填進程式碼裡的 AI_ASSISTANT_ENDPOINT 才能用。';
         return;
       }
 
