@@ -3768,9 +3768,14 @@
           body: JSON.stringify({ question, place: destTitle, address: destAddr })
         });
         const data = await res.json();
-        answerEl.innerText = data.answer || '沒有取得回覆，請稍後再試';
+        if (data.answer) {
+          answerEl.innerText = data.answer;
+        } else {
+          // 把後端傳回來的實際錯誤原因顯示出來，比較好抓問題
+          answerEl.innerText = '沒有取得回覆：' + (data.error || `未知錯誤（狀態碼 ${res.status}）`);
+        }
       } catch (e) {
-        answerEl.innerText = '問 AI 失敗了，請確認網路連線或稍後再試';
+        answerEl.innerText = '問 AI 失敗了，請確認網路連線或稍後再試（' + e.message + '）';
       }
     }
 
