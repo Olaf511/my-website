@@ -1062,6 +1062,18 @@
           <label>地址</label>
           <input type="text" id="inputAddress" placeholder="" autocomplete="off" oninput="onAddressInput()" onfocus="onAddressInput()">
           <div id="addressSuggestList" class="address-suggest-list"></div>
+          <button type="button" class="btn-rounded-light" style="width:100%; justify-content:center; margin-top:6px;" onclick="openDirectionsToSpot()"><i class="bi bi-signpost-2-fill" style="color:#3862AE;"></i> 在 Google 地圖開路線（從上一個景點出發）</button>
+        </div>
+
+        <div class="form-group">
+          <button type="button" class="expand-link" id="askAiToggleBtn" onclick="toggleAskAiBox()">
+            <i class="bi bi-stars"></i> <span>問 AI 這個地點</span>
+          </button>
+          <div id="askAiBox" style="display:none;">
+            <textarea id="askAiQuestion" class="textarea-autogrow" placeholder="例如：從這裡去下一個景點方便嗎？附近有什麼推薦？" oninput="autoGrowTextarea(this)"></textarea>
+            <button type="button" class="btn-rounded-light" style="width:100%; justify-content:center; margin-top:6px;" onclick="askTravelAI()"><i class="bi bi-send-fill" style="color:#3862AE;"></i> 送出問題</button>
+            <div id="askAiAnswer" style="margin-top:8px; font-size:13px; color:var(--text-main); white-space:pre-wrap; line-height:1.6; display:none; background:#F5F8FF; border-radius:10px; padding:10px;"></div>
+          </div>
         </div>
 
         <button type="button" class="expand-link" id="spotExtraToggleBtn" onclick="toggleSpotExtraFields()">
@@ -3685,6 +3697,81 @@
     });
 
     function closeSpotModal() { document.getElementById('spotModal').classList.remove('active'); }
+
+    /* ===== Google 地圖路線：抓「這個景點之前最近的一個景點」當起點，帶去 Google 地圖開路線 ===== */
+    function getPrevSpotForDirections() {
+      const trip = allTrips[currentTripIdx];
+      if (!trip) return null;
+      const editIdx = parseInt(document.getElementById('editSpotIndex').value);
+      const spots = (trip.days[currentDayIdx] && trip.days[currentDayIdx].spots) || [];
+      const beforeIdx = editIdx >= 0 ? editIdx : spots.length;
+      for (let i = beforeIdx - 1; i >= 0; i--) {
+        if (spots[i] && (spots[i].address || (spots[i].lat && spots[i].lng))) return spots[i];
+      }
+      // 這天前面都還沒排景點，往前找最近一天最後排的景點
+      for (let d = currentDayIdx - 1; d >= 0; d--) {
+        const pSpots = (trip.days[d] && trip.days[d].spots) || [];
+        for (let i = pSpots.length - 1; i >= 0; i--) {
+          if (pSpots[i] && (pSpots[i].address || (pSpots[i].lat && pSpots[i].lng))) return pSpots[i];
+        }
+      }
+      return null;
+    }
+
+    function openDirectionsToSpot() {
+      const destAddr = document.getElementById('inputAddress').value.trim();
+      const destTitle = document.getElementById('inputTitle').value.trim();
+      const destination = addressSelectedLatLng ? `${addressSelectedLatLng.lat},${addressSelectedLatLng.lng}` : (destAddr || destTitle);
+      if (!destination) { alert('請先輸入地址或名稱，才能查路線'); return; }
+
+      let url = `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(destination)}&travelmode=transit`;
+      const prev = getPrevSpotForDirections();
+      if (prev) {
+        const origin = (prev.lat && prev.lng) ? `${prev.lat},${prev.lng}` : prev.address;
+        if (origin) url += `&origin=${encodeURIComponent(origin)}`;
+      }
+      // 沒有前一站的話，不帶 origin，Google 地圖會自動用使用者目前位置當起點
+      window.open(url, '_blank');
+    }
+
+    /* ===== 問 AI 這個地點：呼叫自己部署的後端（Cloud Function），不能把金鑰直接放前端 =====
+       部署好你自己的中轉服務後，把網址填進下面這個常數即可啟用。範例後端程式見 cloud-function-example.js */
+    const AI_ASSISTANT_ENDPOINT = ''; // 例如 'https://asktravelai-xxxxxxxxx.a.run.app'
+
+    function toggleAskAiBox() {
+      const box = document.getElementById('askAiBox');
+      box.style.display = (box.style.display === 'none' || !box.style.display) ? 'block' : 'none';
+    }
+
+    async function askTravelAI() {
+      const question = document.getElementById('askAiQuestion').value.trim();
+      if (!question) return;
+      const answerEl = document.getElementById('askAiAnswer');
+
+      if (!AI_ASSISTANT_ENDPOINT) {
+        answerEl.style.display = 'block';
+        answerEl.innerText = 'AI 問答功能還沒設定好喔——要先部署 cloud-function-example.js 這個後端，並把網址填進程式碼裡的 AI_ASSISTANT_ENDPOINT 才能用。';
+        return;
+      }
+
+      const destTitle = document.getElementById('inputTitle').value.trim();
+      const destAddr = document.getElementById('inputAddress').value.trim();
+
+      answerEl.style.display = 'block';
+      answerEl.innerText = '思考中...';
+
+      try {
+        const res = await fetch(AI_ASSISTANT_ENDPOINT, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ question, place: destTitle, address: destAddr })
+        });
+        const data = await res.json();
+        answerEl.innerText = data.answer || '沒有取得回覆，請稍後再試';
+      } catch (e) {
+        answerEl.innerText = '問 AI 失敗了，請確認網路連線或稍後再試';
+      }
+    }
 
     async function saveSpot() {
       const editIdx = parseInt(document.getElementById('editSpotIndex').value);
