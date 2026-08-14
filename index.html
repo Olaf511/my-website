@@ -712,6 +712,57 @@
     }
     .toast-message.show { opacity: 1; transform: translateX(-50%) translateY(0); }
 
+    /* ===== ＡＩ問旅 聊天頁 ===== */
+    .ai-end-btn {
+      position: absolute; right: 12px; top: 10px; background: none; border: none;
+      color: var(--text-muted); font-size: 12px; font-weight: 700; cursor: pointer;
+      display: flex; align-items: center; gap: 3px; padding: 4px 6px;
+    }
+    .ai-chat-page-body {
+      display: flex; flex-direction: column;
+      height: calc(100vh - 52px); height: calc(100dvh - 52px);
+    }
+    .ai-chat-scroll {
+      flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch;
+      padding: 14px 12px 10px; max-width: 600px; margin: 0 auto; width: 100%; box-sizing: border-box;
+    }
+    .ai-chat-empty {
+      text-align: center; color: var(--text-muted); font-size: 13px; margin-top: 60px; line-height: 1.8;
+    }
+    .ai-chat-empty .bi { font-size: 30px; color: #bee3f8; display: block; margin-bottom: 8px; }
+    .ai-chat-row { display: flex; margin-bottom: 12px; }
+    .ai-chat-row.user { justify-content: flex-end; }
+    .ai-chat-row.ai { justify-content: flex-start; }
+    .ai-chat-bubble {
+      max-width: 78%; padding: 10px 13px; border-radius: 16px; font-size: 13.5px;
+      line-height: 1.6; white-space: pre-wrap; word-break: break-word;
+    }
+    .ai-chat-row.user .ai-chat-bubble {
+      background: var(--primary-navy); color: #fff; border-bottom-right-radius: 4px;
+    }
+    .ai-chat-row.ai .ai-chat-bubble {
+      background: #fff; color: var(--text-main); border: 1px solid var(--border-color);
+      border-bottom-left-radius: 4px; box-shadow: 0 1px 4px rgba(0,0,0,0.03);
+    }
+    .ai-chat-row.ai .ai-chat-bubble.loading { color: var(--text-muted); }
+    .ai-chat-input-bar {
+      flex-shrink: 0; display: flex; align-items: flex-end; gap: 8px;
+      padding: 8px 12px calc(10px + env(safe-area-inset-bottom));
+      background: #fff; border-top: 1px solid var(--border-color);
+      max-width: 600px; margin: 0 auto; width: 100%; box-sizing: border-box;
+    }
+    .ai-chat-input-bar textarea {
+      flex: 1; resize: none; max-height: 100px; border-radius: 18px;
+      padding: 9px 14px; font-size: 13.5px; line-height: 1.5; border: 1px solid var(--border-color);
+      font-family: inherit;
+    }
+    .ai-chat-send-btn {
+      flex-shrink: 0; width: 38px; height: 38px; border-radius: 50%; border: none;
+      background: var(--primary-navy); color: #fff; font-size: 16px; cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .ai-chat-send-btn:disabled { background: #cbd5e0; cursor: default; }
+
     /* ===== 側邊抽屜選單 (漢堡選單) ===== */
     .drawer-overlay {
       position: fixed; inset: 0; background: rgba(0,0,0,0.45); z-index: 2400;
@@ -1062,19 +1113,19 @@
           <label>地址</label>
           <input type="text" id="inputAddress" placeholder="" autocomplete="off" oninput="onAddressInput()" onfocus="onAddressInput()">
           <div id="addressSuggestList" class="address-suggest-list"></div>
-          <button type="button" class="btn-rounded-light" style="width:100%; justify-content:center; margin-top:6px;" onclick="openDirectionsToSpot()"><i class="bi bi-signpost-2-fill" style="color:#3862AE;"></i> 在 Google 地圖開路線（從上一個景點出發）</button>
+          <button type="button" class="btn-rounded-light" style="width:100%; justify-content:center; margin-top:6px;" onclick="openDirectionsToSpot()"><i class="bi bi-signpost-2-fill" style="color:#3862AE;"></i> 看路線（從上一站出發）</button>
         </div>
 
         <div class="form-group">
           <button type="button" class="expand-link" id="askAiToggleBtn" onclick="toggleAskAiBox()">
-            <i class="bi bi-stars"></i> <span>問 AI 這個地點</span>
+            <i class="bi bi-stars"></i> <span>AI 說說這裡</span>
           </button>
           <div id="askAiBox" style="display:none;">
             <div style="position:relative;">
-              <textarea id="askAiQuestion" class="textarea-autogrow" placeholder="例如：從這裡去下一個景點方便嗎？附近有什麼推薦？" oninput="autoGrowTextarea(this)" style="padding-right:32px;"></textarea>
+              <textarea id="askAiQuestion" class="textarea-autogrow" placeholder="例如：怎麼去下一個景點？附近推薦什麼？" oninput="autoGrowTextarea(this)" style="padding-right:32px;"></textarea>
               <button type="button" onclick="clearAskAiQuestion()" title="清除文字" style="position:absolute; top:8px; right:6px; width:20px; height:20px; border-radius:50%; border:none; background:#E2E8F0; color:#4A5568; font-size:12px; line-height:1; cursor:pointer; display:flex; align-items:center; justify-content:center; padding:0;">✕</button>
             </div>
-            <button type="button" class="btn-rounded-light" style="width:100%; justify-content:center; margin-top:6px;" onclick="askTravelAI()"><i class="bi bi-send-fill" style="color:#3862AE;"></i> 送出問題</button>
+            <button type="button" class="btn-rounded-light" style="width:100%; justify-content:center; margin-top:6px;" onclick="askTravelAI()"><i class="bi bi-send-fill" style="color:#3862AE;"></i> 問問看</button>
             <div id="askAiAnswer" style="margin-top:8px; font-size:13px; color:var(--text-main); white-space:pre-wrap; line-height:1.6; display:none; background:#F5F8FF; border-radius:10px; padding:10px;"></div>
           </div>
         </div>
@@ -1533,6 +1584,24 @@
     </div>
   </div>
 
+  <!-- ===== ＡＩ問旅 ===== -->
+  <div id="pageToolAI" class="app-page">
+    <div class="app-header">
+      <button class="menu-btn" onclick="openDrawer()">☰</button>
+      <h1><span class="page-icon-badge" style="background:#fff; border:1.5px solid #D7E9FD; color:#3862AE;"><i class="bi bi-stars"></i></span>ＡＩ問旅</h1>
+      <button class="ai-end-btn" onclick="endAiChat()"><i class="bi bi-x-circle"></i> 結束對話</button>
+    </div>
+    <div class="ai-chat-page-body">
+      <div class="ai-chat-scroll" id="aiChatScroll">
+        <div id="aiChatMessages"></div>
+      </div>
+      <div class="ai-chat-input-bar">
+        <textarea id="aiChatInput" placeholder="想問什麼都可以，例如：這趟行程有什麼要注意的？" rows="1" oninput="autoGrowTextarea(this)" onkeydown="onAiChatKeydown(event)"></textarea>
+        <button type="button" class="ai-chat-send-btn" id="aiChatSendBtn" onclick="sendAiChatMessage()"><i class="bi bi-send-fill"></i></button>
+      </div>
+    </div>
+  </div>
+
   <!-- ===== 7. 事前準備 ===== -->
   <div id="pageToolPrep" class="app-page">
     <div class="app-header">
@@ -1742,6 +1811,9 @@
       </button>
       <button class="drawer-item" data-page="pageToolCheatSheet" onclick="goToSubPage('pageToolCheatSheet')">
         <span class="drawer-item-icon"><i class="bi bi-stickies-fill"></i></span><span>旅行小抄</span>
+      </button>
+      <button class="drawer-item" data-page="pageToolAI" onclick="goToSubPage('pageToolAI')">
+        <span class="drawer-item-icon"><i class="bi bi-stars"></i></span><span>ＡＩ問旅</span>
       </button>
       <button class="drawer-item" data-page="pageToolPrep" onclick="goToSubPage('pageToolPrep')">
         <span class="drawer-item-icon"><i class="bi bi-backpack2-fill"></i></span><span>事前準備</span>
@@ -2058,6 +2130,7 @@
         if (!item.links) item.links = item.url ? [{ name: '', url: item.url }] : [];
       });
       if (!trip.prepList) trip.prepList = [];
+      if (!trip.aiChatMessages) trip.aiChatMessages = [];
       if (!trip.payers) trip.payers = [];
       if (!trip.flightOut) trip.flightOut = {};
       if (!trip.flightIn) trip.flightIn = {};
@@ -3800,6 +3873,106 @@
       }
     }
 
+    /* ===== ＡＩ問旅：獨立聊天頁，跟編輯景點時的「問AI」共用同一個免費後端 ===== */
+    function renderAiChatMessages(scrollToBottom) {
+      const trip = allTrips[currentTripIdx];
+      const wrap = document.getElementById('aiChatMessages');
+      if (!trip || !wrap) return;
+      const msgs = trip.aiChatMessages || [];
+      if (!msgs.length) {
+        wrap.innerHTML = `<div class="ai-chat-empty"><i class="bi bi-chat-heart"></i>想問行程、景點、交通、天氣...<br>什麼都可以直接問我看看！</div>`;
+      } else {
+        wrap.innerHTML = msgs.map(m => `
+          <div class="ai-chat-row ${m.role === 'user' ? 'user' : 'ai'}">
+            <div class="ai-chat-bubble">${escapeHtml(m.text)}</div>
+          </div>
+        `).join('');
+      }
+      if (scrollToBottom) {
+        requestAnimationFrame(() => {
+          const scroll = document.getElementById('aiChatScroll');
+          if (scroll) scroll.scrollTop = scroll.scrollHeight;
+        });
+      }
+    }
+
+    function escapeHtml(str) {
+      const div = document.createElement('div');
+      div.innerText = str == null ? '' : str;
+      return div.innerHTML;
+    }
+
+    function onAiChatKeydown(e) {
+      // 手機上 Enter 通常是換行，這裡只在桌機按 Enter（不含 Shift）時送出，避免手機打字時誤送出
+      if (e.key === 'Enter' && !e.shiftKey && window.matchMedia('(pointer: fine)').matches) {
+        e.preventDefault();
+        sendAiChatMessage();
+      }
+    }
+
+    async function sendAiChatMessage() {
+      const input = document.getElementById('aiChatInput');
+      const question = input.value.trim();
+      if (!question) return;
+      const trip = allTrips[currentTripIdx];
+      if (!trip) return;
+      if (!trip.aiChatMessages) trip.aiChatMessages = [];
+
+      trip.aiChatMessages.push({ role: 'user', text: question });
+      input.value = '';
+      autoGrowTextarea(input);
+      renderAiChatMessages(true);
+      saveData();
+
+      const sendBtn = document.getElementById('aiChatSendBtn');
+      sendBtn.disabled = true;
+
+      // 先放一個「思考中」的暫時泡泡，回覆回來後再換成真正內容
+      trip.aiChatMessages.push({ role: 'ai', text: '思考中...', pending: true });
+      renderAiChatMessages(true);
+
+      if (!AI_ASSISTANT_ENDPOINT) {
+        trip.aiChatMessages[trip.aiChatMessages.length - 1] = { role: 'ai', text: 'AI 問答功能還沒設定好喔——要先部署 worker-example.js 這個免費後端，並把網址填進程式碼裡的 AI_ASSISTANT_ENDPOINT 才能用。' };
+        renderAiChatMessages(true);
+        saveData();
+        sendBtn.disabled = false;
+        return;
+      }
+
+      try {
+        const res = await fetch(AI_ASSISTANT_ENDPOINT, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            question,
+            place: trip.title || '',
+            address: '',
+            history: trip.aiChatMessages
+              .filter(m => !m.pending)
+              .slice(-10)
+              .map(m => ({ role: m.role, text: m.text }))
+          })
+        });
+        const data = await res.json();
+        const replyText = data.answer || ('沒有取得回覆：' + (data.error || `未知錯誤（狀態碼 ${res.status}）`));
+        trip.aiChatMessages[trip.aiChatMessages.length - 1] = { role: 'ai', text: replyText };
+      } catch (e) {
+        trip.aiChatMessages[trip.aiChatMessages.length - 1] = { role: 'ai', text: '問 AI 失敗了，請確認網路連線或稍後再試（' + e.message + '）' };
+      }
+      renderAiChatMessages(true);
+      saveData();
+      sendBtn.disabled = false;
+    }
+
+    function endAiChat() {
+      const trip = allTrips[currentTripIdx];
+      if (!trip || !trip.aiChatMessages || !trip.aiChatMessages.length) return;
+      if (!confirm('確定要結束對話嗎？這會清除本次的對話內容。')) return;
+      trip.aiChatMessages = [];
+      renderAiChatMessages(false);
+      saveData();
+    }
+
     async function saveSpot() {
       const editIdx = parseInt(document.getElementById('editSpotIndex').value);
       const category = document.getElementById('inputCategory').value;
@@ -4013,6 +4186,7 @@
         if (pageId === 'pageToolShoppingGuide') { renderGuideBoxes(); }
         if (pageId === 'pageToolCheatSheet') { renderCheatFilterRow(); renderCheatList(); }
         if (pageId === 'pageToolAccounting') { initAccountingPage(); }
+        if (pageId === 'pageToolAI') { renderAiChatMessages(true); }
         if (pageId === 'pageToolPrep') { renderPrepList(); }
         if (pageId === 'pageToolMembers') { renderMembersList(); }
       } catch (e) {
