@@ -713,14 +713,13 @@
     .toast-message.show { opacity: 1; transform: translateX(-50%) translateY(0); }
 
     /* ===== ＡＩ問旅 聊天頁 ===== */
-    .ai-end-btn {
-      position: absolute; right: 12px; top: 10px; background: none; border: none;
-      color: var(--text-muted); font-size: 12px; font-weight: 700; cursor: pointer;
-      display: flex; align-items: center; gap: 3px; padding: 4px 6px;
+    #pageToolAI .app-header {
+      position: fixed; top: 0; left: 0; right: 0; z-index: 1001;
     }
     .ai-chat-page-body {
       display: flex; flex-direction: column;
-      height: calc(100vh - 52px); height: calc(100dvh - 52px);
+      height: 100vh; height: 100dvh;
+      padding-top: 52px; box-sizing: border-box;
     }
     .ai-chat-scroll {
       flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch;
@@ -733,9 +732,17 @@
     .ai-chat-row { display: flex; margin-bottom: 12px; }
     .ai-chat-row.user { justify-content: flex-end; }
     .ai-chat-row.ai { justify-content: flex-start; }
+    .ai-chat-date-divider { text-align: center; margin: 16px 0 12px; }
+    .ai-chat-date-divider span {
+      display: inline-block; background: #EDF2F7; color: var(--text-muted);
+      font-size: 11px; font-weight: 700; padding: 4px 12px; border-radius: 12px;
+    }
+    .ai-chat-bubble-wrap { display: flex; align-items: flex-end; gap: 5px; max-width: 88%; }
+    .ai-chat-row.user .ai-chat-bubble-wrap { flex-direction: row-reverse; }
+    .ai-chat-time { font-size: 10px; color: var(--text-muted); white-space: nowrap; margin-bottom: 2px; flex-shrink: 0; }
     .ai-chat-bubble {
-      max-width: 78%; padding: 10px 13px; border-radius: 16px; font-size: 13.5px;
-      line-height: 1.6; white-space: pre-wrap; word-break: break-word;
+      padding: 10px 13px; border-radius: 16px; font-size: 13.5px;
+      line-height: 1.6; white-space: pre-wrap; word-break: break-word; min-width: 0;
     }
     .ai-chat-row.user .ai-chat-bubble {
       background: var(--primary-navy); color: #fff; border-bottom-right-radius: 4px;
@@ -746,6 +753,7 @@
     }
     .ai-chat-row.ai .ai-chat-bubble.loading { color: var(--text-muted); }
     .ai-chat-input-bar {
+      position: fixed; left: 0; right: 0; bottom: 0; z-index: 1001;
       flex-shrink: 0; display: flex; align-items: flex-end; gap: 8px;
       padding: 8px 12px calc(10px + env(safe-area-inset-bottom));
       background: #fff; border-top: 1px solid var(--border-color);
@@ -762,6 +770,12 @@
       display: flex; align-items: center; justify-content: center;
     }
     .ai-chat-send-btn:disabled { background: #cbd5e0; cursor: default; }
+    .ai-chat-end-btn-inline {
+      flex-shrink: 0; height: 38px; padding: 0 12px; border-radius: 19px;
+      border: 1.5px solid #FEB2B2; background: #fff; color: #E53E3E;
+      font-size: 11.5px; font-weight: 700; cursor: pointer; white-space: nowrap;
+      display: flex; align-items: center; gap: 3px;
+    }
 
     /* ===== 側邊抽屜選單 (漢堡選單) ===== */
     .drawer-overlay {
@@ -1589,15 +1603,15 @@
     <div class="app-header">
       <button class="menu-btn" onclick="openDrawer()">☰</button>
       <h1><span class="page-icon-badge" style="background:#fff; border:1.5px solid #D7E9FD; color:#3862AE;"><i class="bi bi-stars"></i></span>ＡＩ問旅</h1>
-      <button class="ai-end-btn" onclick="endAiChat()"><i class="bi bi-x-circle"></i> 結束對話</button>
     </div>
     <div class="ai-chat-page-body">
       <div class="ai-chat-scroll" id="aiChatScroll">
         <div id="aiChatMessages"></div>
       </div>
       <div class="ai-chat-input-bar">
-        <textarea id="aiChatInput" placeholder="想問什麼都可以，例如：這趟行程有什麼要注意的？" rows="1" oninput="autoGrowTextarea(this)" onkeydown="onAiChatKeydown(event)"></textarea>
+        <textarea id="aiChatInput" placeholder="例如：這趟行程有什麼要注意的？" rows="1" oninput="autoGrowTextarea(this); syncAiChatScrollPadding();" onkeydown="onAiChatKeydown(event)" onfocus="setTimeout(syncAiChatScrollPadding, 300)"></textarea>
         <button type="button" class="ai-chat-send-btn" id="aiChatSendBtn" onclick="sendAiChatMessage()"><i class="bi bi-send-fill"></i></button>
+        <button type="button" class="ai-chat-end-btn-inline" onclick="endAiChat()"><i class="bi bi-trash"></i> 結束對話</button>
       </div>
     </div>
   </div>
@@ -1742,10 +1756,10 @@
   <!-- ===== 通用刪除確認 Modal（所有「刪除／移除」動作共用同一個外觀跟圖示） ===== -->
   <div class="modal-overlay" id="genericDeleteConfirmModal" style="z-index:2100;">
     <div class="modal-box" style="max-width:300px; text-align:center;">
-      <div style="font-size:32px; margin-bottom:8px; color:#3862AE;"><i class="bi bi-trash"></i></div>
+      <div id="genericDeleteConfirmIcon" style="font-size:32px; margin-bottom:8px; color:#3862AE;"><i class="bi bi-trash"></i></div>
       <div id="genericDeleteConfirmText" style="font-weight:900; font-size:16px; color:var(--primary-navy); margin-bottom:18px;"></div>
       <div id="genericDeleteConfirmSubtext" style="font-size:12px; color:var(--text-muted); margin-bottom:18px; display:none;"></div>
-      <button class="modal-btn" style="width:100%; margin-bottom:8px; background:#e53e3e; color:#fff;" onclick="confirmGenericDelete()">確定刪除</button>
+      <button id="genericDeleteConfirmBtn" class="modal-btn" style="width:100%; margin-bottom:8px; background:#e53e3e; color:#fff;" onclick="confirmGenericDelete()">確定刪除</button>
       <button style="background:none; border:none; color:var(--text-muted); font-size:12px; cursor:pointer; padding:6px;" onclick="closeGenericDeleteConfirmModal()">取消</button>
     </div>
   </div>
@@ -2478,9 +2492,9 @@
       if (auth) auth.signOut();
     }
 
-    // ===== 通用刪除確認 Modal：所有「刪除／移除」動作都呼叫這個，統一外觀跟圖示 =====
+    // ===== 通用確認 Modal：所有「刪除／清除／結束」這類需要二次確認的動作都呼叫這個，統一外觀跟圖示 =====
     let _genericDeleteConfirmCallback = null;
-    function showDeleteConfirm(message, onConfirm, subtext = '') {
+    function showDeleteConfirm(message, onConfirm, subtext = '', confirmLabel = '確定刪除', icon = 'bi-trash') {
       document.getElementById('genericDeleteConfirmText').innerText = message;
       const subEl = document.getElementById('genericDeleteConfirmSubtext');
       if (subtext) {
@@ -2492,6 +2506,8 @@
         subEl.style.display = 'none';
         document.getElementById('genericDeleteConfirmText').style.marginBottom = '18px';
       }
+      document.getElementById('genericDeleteConfirmIcon').innerHTML = `<i class="bi ${icon}"></i>`;
+      document.getElementById('genericDeleteConfirmBtn').innerText = confirmLabel;
       _genericDeleteConfirmCallback = onConfirm;
       document.getElementById('genericDeleteConfirmModal').classList.add('active');
     }
@@ -3874,6 +3890,36 @@
     }
 
     /* ===== ＡＩ問旅：獨立聊天頁，跟編輯景點時的「問AI」共用同一個免費後端 ===== */
+    // 標題列跟輸入框都改用 position:fixed 固定在畫面上下緣（凍結窗格），只有中間的對話內容會捲動；
+    // 因為輸入框高度會隨打字增行、手機鍵盤彈出時畫面可視高度也會變，這裡動態調整捲動區底部留白，
+    // 確保最後一則訊息不會被固定在下面的輸入框擋住
+    function syncAiChatScrollPadding() {
+      const scroll = document.getElementById('aiChatScroll');
+      const bar = document.querySelector('#pageToolAI .ai-chat-input-bar');
+      if (!scroll || !bar) return;
+      scroll.style.paddingBottom = (bar.offsetHeight + 12) + 'px';
+    }
+    if (window.visualViewport) {
+      window.visualViewport.addEventListener('resize', () => {
+        const page = document.getElementById('pageToolAI');
+        if (page && page.classList.contains('active')) syncAiChatScrollPadding();
+      });
+    }
+
+    function formatChatDateDivider(ts) {
+      const d = new Date(ts);
+      const weekdays = ['日', '一', '二', '三', '四', '五', '六'];
+      return `${d.getFullYear()}/${d.getMonth() + 1}/${d.getDate()}（${weekdays[d.getDay()]}）`;
+    }
+
+    function formatChatTime(ts) {
+      // 24 小時制，例如 09:05、23:41
+      const d = new Date(ts);
+      const hh = String(d.getHours()).padStart(2, '0');
+      const mm = String(d.getMinutes()).padStart(2, '0');
+      return `${hh}:${mm}`;
+    }
+
     function renderAiChatMessages(scrollToBottom) {
       const trip = allTrips[currentTripIdx];
       const wrap = document.getElementById('aiChatMessages');
@@ -3882,11 +3928,29 @@
       if (!msgs.length) {
         wrap.innerHTML = `<div class="ai-chat-empty"><i class="bi bi-chat-heart"></i>想問行程、景點、交通、天氣...<br>什麼都可以直接問我看看！</div>`;
       } else {
-        wrap.innerHTML = msgs.map(m => `
-          <div class="ai-chat-row ${m.role === 'user' ? 'user' : 'ai'}">
-            <div class="ai-chat-bubble">${escapeHtml(m.text)}</div>
-          </div>
-        `).join('');
+        let html = '';
+        let lastDateKey = null;
+        msgs.forEach(m => {
+          const ts = m.ts || null;
+          if (ts) {
+            const d = new Date(ts);
+            const dateKey = `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`;
+            if (dateKey !== lastDateKey) {
+              html += `<div class="ai-chat-date-divider"><span>${formatChatDateDivider(ts)}</span></div>`;
+              lastDateKey = dateKey;
+            }
+          }
+          const timeLabel = ts ? formatChatTime(ts) : '';
+          html += `
+            <div class="ai-chat-row ${m.role === 'user' ? 'user' : 'ai'}">
+              <div class="ai-chat-bubble-wrap">
+                <div class="ai-chat-bubble">${escapeHtml(m.text)}</div>
+                ${timeLabel ? `<div class="ai-chat-time">${timeLabel}</div>` : ''}
+              </div>
+            </div>
+          `;
+        });
+        wrap.innerHTML = html;
       }
       if (scrollToBottom) {
         requestAnimationFrame(() => {
@@ -3933,7 +3997,7 @@
       }
 
       try {
-        currentMsgs().push({ role: 'user', text: question });
+        currentMsgs().push({ role: 'user', text: question, ts: Date.now() });
         input.value = '';
         autoGrowTextarea(input);
         renderAiChatMessages(true);
@@ -3942,12 +4006,12 @@
         if (sendBtn) sendBtn.disabled = true;
 
         // 先放一個「思考中」的暫時泡泡，回覆回來後再換成真正內容
-        currentMsgs().push({ role: 'ai', text: '思考中...', pending: true });
+        currentMsgs().push({ role: 'ai', text: '思考中...', pending: true, ts: Date.now() });
         renderAiChatMessages(true);
 
         if (!AI_ASSISTANT_ENDPOINT) {
           const msgs = currentMsgs();
-          msgs[msgs.length - 1] = { role: 'ai', text: 'AI 問答功能還沒設定好喔——要先部署 worker-example.js 這個免費後端，並把網址填進程式碼裡的 AI_ASSISTANT_ENDPOINT 才能用。' };
+          msgs[msgs.length - 1] = { role: 'ai', text: 'AI 問答功能還沒設定好喔——要先部署 worker-example.js 這個免費後端，並把網址填進程式碼裡的 AI_ASSISTANT_ENDPOINT 才能用。', ts: Date.now() };
           return;
         }
 
@@ -3969,8 +4033,8 @@
         const msgs = currentMsgs();
         if (msgs) {
           const pendingIdx = msgs.map(m => m.pending).lastIndexOf(true);
-          if (pendingIdx !== -1) msgs[pendingIdx] = { role: 'ai', text: replyText };
-          else msgs.push({ role: 'ai', text: replyText });
+          if (pendingIdx !== -1) msgs[pendingIdx] = { role: 'ai', text: replyText, ts: Date.now() };
+          else msgs.push({ role: 'ai', text: replyText, ts: Date.now() });
         }
       } catch (e) {
         // 不管上面哪一步出錯，都確保畫面上一定會顯示錯誤訊息，而不是靜靜地卡住沒反應
@@ -3978,8 +4042,8 @@
         if (msgs) {
           const errText = '發生錯誤，問答沒有成功（' + (e && e.message ? e.message : String(e)) + '）';
           const pendingIdx = msgs.map(m => m.pending).lastIndexOf(true);
-          if (pendingIdx !== -1) msgs[pendingIdx] = { role: 'ai', text: errText };
-          else msgs.push({ role: 'ai', text: errText });
+          if (pendingIdx !== -1) msgs[pendingIdx] = { role: 'ai', text: errText, ts: Date.now() };
+          else msgs.push({ role: 'ai', text: errText, ts: Date.now() });
         }
       } finally {
         renderAiChatMessages(true);
@@ -3989,12 +4053,21 @@
     }
 
     function endAiChat() {
-      const trip = allTrips[currentTripIdx];
+      const tripIdx = currentTripIdx;
+      const trip = allTrips[tripIdx];
       if (!trip || !trip.aiChatMessages || !trip.aiChatMessages.length) return;
-      if (!confirm('確定要結束對話嗎？這會清除本次的對話內容。')) return;
-      trip.aiChatMessages = [];
-      renderAiChatMessages(false);
-      saveData();
+      showDeleteConfirm(
+        '確定要結束對話嗎？',
+        () => {
+          if (!allTrips[tripIdx]) return;
+          allTrips[tripIdx].aiChatMessages = [];
+          renderAiChatMessages(false);
+          saveData(tripIdx);
+        },
+        '這會清除本次的對話內容',
+        '結束對話',
+        'bi-trash'
+      );
     }
 
     async function saveSpot() {
@@ -4210,7 +4283,7 @@
         if (pageId === 'pageToolShoppingGuide') { renderGuideBoxes(); }
         if (pageId === 'pageToolCheatSheet') { renderCheatFilterRow(); renderCheatList(); }
         if (pageId === 'pageToolAccounting') { initAccountingPage(); }
-        if (pageId === 'pageToolAI') { renderAiChatMessages(true); }
+        if (pageId === 'pageToolAI') { renderAiChatMessages(true); syncAiChatScrollPadding(); }
         if (pageId === 'pageToolPrep') { renderPrepList(); }
         if (pageId === 'pageToolMembers') { renderMembersList(); }
       } catch (e) {
