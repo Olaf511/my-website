@@ -3915,27 +3915,39 @@
       if (!input) return;
       const question = input.value.trim();
       if (!question) return;
-      const trip = allTrips[currentTripIdx];
-      if (!trip) { alert('目前沒有讀到行程資料，請重新整理頁面再試一次'); return; }
-      if (!trip.aiChatMessages) trip.aiChatMessages = [];
+      // 記住「當下」是哪個行程，後面全部改成即時重讀 allTrips[tripIdx]，不要保留同一份物件參照 ——
+      // 因為 Firebase 即時同步監聽（subscribeTripLive）在存檔後幾乎馬上會把 allTrips[idx] 整個換成
+      // 剛從雲端讀回來的新物件；如果這裡一直改舊的那份參照，畫面（讀取 allTrips[idx] 最新的那份）
+      // 就永遠看不到後續加的訊息，導致「思考中」跟 AI 回覆都像是消失了一樣。
+      const tripIdx = currentTripIdx;
+      if (!allTrips[tripIdx]) { alert('目前沒有讀到行程資料，請重新整理頁面再試一次'); return; }
+      if (!allTrips[tripIdx].aiChatMessages) allTrips[tripIdx].aiChatMessages = [];
 
       const sendBtn = document.getElementById('aiChatSendBtn');
+      const tripTitle = allTrips[tripIdx].title || '';
+
+      function currentMsgs() {
+        if (!allTrips[tripIdx]) return null;
+        if (!allTrips[tripIdx].aiChatMessages) allTrips[tripIdx].aiChatMessages = [];
+        return allTrips[tripIdx].aiChatMessages;
+      }
 
       try {
-        trip.aiChatMessages.push({ role: 'user', text: question });
+        currentMsgs().push({ role: 'user', text: question });
         input.value = '';
         autoGrowTextarea(input);
         renderAiChatMessages(true);
-        saveData();
+        saveData(tripIdx);
 
         if (sendBtn) sendBtn.disabled = true;
 
         // 先放一個「思考中」的暫時泡泡，回覆回來後再換成真正內容
-        trip.aiChatMessages.push({ role: 'ai', text: '思考中...', pending: true });
+        currentMsgs().push({ role: 'ai', text: '思考中...', pending: true });
         renderAiChatMessages(true);
 
         if (!AI_ASSISTANT_ENDPOINT) {
-          trip.aiChatMessages[trip.aiChatMessages.length - 1] = { role: 'ai', text: 'AI 問答功能還沒設定好喔——要先部署 worker-example.js 這個免費後端，並把網址填進程式碼裡的 AI_ASSISTANT_ENDPOINT 才能用。' };
+          const msgs = currentMsgs();
+          msgs[msgs.length - 1] = { role: 'ai', text: 'AI 問答功能還沒設定好喔——要先部署 worker-example.js 這個免費後端，並把網址填進程式碼裡的 AI_ASSISTANT_ENDPOINT 才能用。' };
           return;
         }
 
@@ -3944,9 +3956,9 @@
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             question,
-            place: trip.title || '',
+            place: tripTitle,
             address: '',
-            history: trip.aiChatMessages
+            history: (currentMsgs() || [])
               .filter(m => !m.pending)
               .slice(-10)
               .map(m => ({ role: m.role, text: m.text }))
@@ -3954,20 +3966,24 @@
         });
         const data = await res.json();
         const replyText = data.answer || ('沒有取得回覆：' + (data.error || `未知錯誤（狀態碼 ${res.status}）`));
-        trip.aiChatMessages[trip.aiChatMessages.length - 1] = { role: 'ai', text: replyText };
+        const msgs = currentMsgs();
+        if (msgs) {
+          const pendingIdx = msgs.map(m => m.pending).lastIndexOf(true);
+          if (pendingIdx !== -1) msgs[pendingIdx] = { role: 'ai', text: replyText };
+          else msgs.push({ role: 'ai', text: replyText });
+        }
       } catch (e) {
         // 不管上面哪一步出錯，都確保畫面上一定會顯示錯誤訊息，而不是靜靜地卡住沒反應
-        const msgs = trip.aiChatMessages || [];
-        const last = msgs[msgs.length - 1];
-        const errText = '發生錯誤，問答沒有成功（' + (e && e.message ? e.message : String(e)) + '）';
-        if (last && last.pending) {
-          msgs[msgs.length - 1] = { role: 'ai', text: errText };
-        } else {
-          msgs.push({ role: 'ai', text: errText });
+        const msgs = currentMsgs();
+        if (msgs) {
+          const errText = '發生錯誤，問答沒有成功（' + (e && e.message ? e.message : String(e)) + '）';
+          const pendingIdx = msgs.map(m => m.pending).lastIndexOf(true);
+          if (pendingIdx !== -1) msgs[pendingIdx] = { role: 'ai', text: errText };
+          else msgs.push({ role: 'ai', text: errText });
         }
       } finally {
         renderAiChatMessages(true);
-        saveData();
+        saveData(tripIdx);
         if (sendBtn) sendBtn.disabled = false;
       }
     }
