@@ -3974,6 +3974,26 @@
       }
     }
 
+    // 把目前這個行程的每一天、每個景點整理成一段文字摘要，讓後端 AI 能「看到」使用者已經排了什麼，
+    // 這樣被問到「第二天還能排什麼」之類的問題時，才回答得出目前的空檔、已排景點、時間等資訊。
+    function buildItineraryContext(trip) {
+      if (!trip || !trip.days || !trip.days.length) return '（目前這個行程還沒有排任何天數或景點）';
+      return trip.days.map(day => {
+        const label = `第${day.dayNum}天（${day.dateStr || ''}${day.area ? '・' + day.area : ''}）`;
+        if (!day.spots || !day.spots.length) return `${label}：目前還沒有排景點`;
+        const spotsText = day.spots.map(s => {
+          const parts = [];
+          if (s.time) parts.push(s.time);
+          if (s.title) parts.push(s.title);
+          if (s.category) parts.push(`[${s.category}]`);
+          if (s.address) parts.push(`@${s.address}`);
+          if (s.reserved) parts.push(`(已預約${s.reservedTime ? ' ' + s.reservedTime : ''})`);
+          return '  - ' + parts.join(' ');
+        }).join('\n');
+        return `${label}：\n${spotsText}`;
+      }).join('\n');
+    }
+
     async function sendAiChatMessage() {
       const input = document.getElementById('aiChatInput');
       if (!input) return;
@@ -4022,6 +4042,7 @@
             question,
             place: tripTitle,
             address: '',
+            itinerary: buildItineraryContext(allTrips[tripIdx]),
             history: (currentMsgs() || [])
               .filter(m => !m.pending)
               .slice(-10)
