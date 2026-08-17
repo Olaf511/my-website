@@ -3861,7 +3861,7 @@
 
       if (!AI_ASSISTANT_ENDPOINT) {
         answerEl.style.display = 'block';
-        answerEl.innerText = 'AI 問答功能還沒設定好喔——要先部署 worker-example.js 這個免費後端，並把網址填進程式碼裡的 AI_ASSISTANT_ENDPOINT 才能用。';
+        answerEl.innerHTML = escapeHtml('AI 問答功能還沒設定好喔——要先部署 worker-example.js 這個免費後端，並把網址填進程式碼裡的 AI_ASSISTANT_ENDPOINT 才能用。');
         return;
       }
 
@@ -3869,7 +3869,7 @@
       const destAddr = document.getElementById('inputAddress').value.trim();
 
       answerEl.style.display = 'block';
-      answerEl.innerText = '思考中...';
+      answerEl.innerHTML = escapeHtml('思考中...');
 
       try {
         const res = await fetch(AI_ASSISTANT_ENDPOINT, {
@@ -3879,13 +3879,13 @@
         });
         const data = await res.json();
         if (data.answer) {
-          answerEl.innerText = data.answer;
+          answerEl.innerHTML = renderAiTextWithIcons(data.answer);
         } else {
           // 把後端傳回來的實際錯誤原因顯示出來，比較好抓問題
-          answerEl.innerText = '沒有取得回覆：' + (data.error || `未知錯誤（狀態碼 ${res.status}）`);
+          answerEl.innerHTML = escapeHtml('沒有取得回覆：' + (data.error || `未知錯誤（狀態碼 ${res.status}）`));
         }
       } catch (e) {
-        answerEl.innerText = '問 AI 失敗了，請確認網路連線或稍後再試（' + e.message + '）';
+        answerEl.innerHTML = escapeHtml('問 AI 失敗了，請確認網路連線或稍後再試（' + e.message + '）');
       }
     }
 
@@ -3944,7 +3944,7 @@
           html += `
             <div class="ai-chat-row ${m.role === 'user' ? 'user' : 'ai'}">
               <div class="ai-chat-bubble-wrap">
-                <div class="ai-chat-bubble">${escapeHtml(m.text)}</div>
+                <div class="ai-chat-bubble">${m.role === 'ai' ? renderAiTextWithIcons(m.text) : escapeHtml(m.text)}</div>
                 ${timeLabel ? `<div class="ai-chat-time">${timeLabel}</div>` : ''}
               </div>
             </div>
@@ -3966,6 +3966,14 @@
       return div.innerHTML;
     }
 
+    // AI 回覆裡可以用 [icon:圖示名稱] 這種格式插入 Bootstrap Icons（跟 App 其他地方用的圖示庫一樣），
+    // 取代掉 emoji。一定要先跑過 escapeHtml 逃逸過，這裡才把 [icon:xxx] 換成真正的 <i> 標籤，
+    // 圖示名稱只允許小寫英文字母/數字/連字號，避免被塞進奇怪的東西
+    function renderAiTextWithIcons(text) {
+      const escaped = escapeHtml(text);
+      return escaped.replace(/\[icon:([a-z0-9-]+)\]/g, '<i class="bi bi-$1"></i>');
+    }
+
     function onAiChatKeydown(e) {
       // 手機上 Enter 通常是換行，這裡只在桌機按 Enter（不含 Shift）時送出，避免手機打字時誤送出
       if (e.key === 'Enter' && !e.shiftKey && window.matchMedia('(pointer: fine)').matches) {
@@ -3981,13 +3989,17 @@
       const lines = [];
       const dateRange = (trip.startDate && trip.endDate) ? `（${trip.startDate} ~ ${trip.endDate}）` : '';
       lines.push(`行程名稱：${trip.title || '未命名行程'}${dateRange}`);
+      // 這個 App 預設不特別顯示/使用時間，景點的先後順序是用「排列順序」表示（使用者用拖曳調整順序），
+      // 每個景點時間欄位背後其實都預設是 09:00，不是真的時鐘時間，所以不能拿時間去判斷行程鬆緊或有沒有排好，
+      // 這裡改成用「第幾個景點」表示順序，並明確跟 AI 說清楚，避免它誤會使用者行程都卡在早上9點
+      lines.push('（注意：這個 App 不特別使用時間欄位，行程先後順序是用清單排列順序表示，不是真的時鐘時間，請不要用時間去判斷行程有沒有排好或會不會太趕）');
       (trip.days || []).forEach(day => {
         const spots = day.spots || [];
         if (!spots.length) {
           lines.push(`Day${day.dayNum}（${day.dateStr || ''}）：目前還沒有安排任何景點`);
         } else {
           const spotList = spots
-            .map(s => `${s.time || ''} ${s.title || ''}${s.category ? `[${s.category}]` : ''}`.trim())
+            .map((s, i) => `${i + 1}. ${s.title || ''}${s.category ? `[${s.category}]` : ''}`)
             .join('、');
           lines.push(`Day${day.dayNum}（${day.dateStr || ''}）：${spotList}`);
         }
