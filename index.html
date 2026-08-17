@@ -737,6 +737,12 @@
       display: inline-block; background: #EDF2F7; color: var(--text-muted);
       font-size: 11px; font-weight: 700; padding: 4px 12px; border-radius: 12px;
     }
+    .ai-chat-memory-note {
+      text-align: center; margin: 8px auto 14px; max-width: 90%;
+      display: block; background: #FFFBEA; color: #975A16; border: 1px solid #FEEBC8;
+      font-size: 11px; font-weight: 700; padding: 5px 12px; border-radius: 12px;
+    }
+    .ai-chat-memory-note .bi { margin-right: 3px; }
     .ai-chat-bubble-wrap { display: flex; align-items: flex-end; gap: 5px; max-width: 88%; }
     .ai-chat-row.user .ai-chat-bubble-wrap { flex-direction: row-reverse; }
     .ai-chat-time { font-size: 10px; color: var(--text-muted); white-space: nowrap; margin-bottom: 2px; flex-shrink: 0; }
@@ -1603,6 +1609,7 @@
     <div class="app-header">
       <button class="menu-btn" onclick="openDrawer()">☰</button>
       <h1><span class="page-icon-badge" style="background:#fff; border:1.5px solid #D7E9FD; color:#3862AE;"><i class="bi bi-stars"></i></span>ＡＩ問旅</h1>
+      <button class="mode-toggle-btn btn-rounded-light" style="font-size:11px; padding:5px 10px;" onclick="openAiMemoryModal()"><i class="bi bi-lightbulb"></i> AI記憶</button>
     </div>
     <div class="ai-chat-page-body">
       <div class="ai-chat-scroll" id="aiChatScroll">
@@ -1613,6 +1620,20 @@
         <button type="button" class="ai-chat-send-btn" id="aiChatSendBtn" onclick="sendAiChatMessage()"><i class="bi bi-send-fill"></i></button>
         <button type="button" class="ai-chat-end-btn-inline" onclick="endAiChat()" title="結束對話"><i class="bi bi-trash"></i></button>
       </div>
+    </div>
+  </div>
+
+  <!-- ===== AI 長期記憶 查看/刪除 Modal ===== -->
+  <div class="modal-overlay" id="aiMemoryModal">
+    <div class="modal-box">
+      <div class="modal-header">
+        <span class="modal-title-with-icon"><i class="bi bi-lightbulb" style="color:#3862AE;"></i> AI 記得的事</span>
+        <button onclick="closeAiMemoryModal()">✕</button>
+      </div>
+      <div style="font-size:12px; color:var(--text-muted); margin-bottom:12px; line-height:1.6;">
+        跟 AI 聊天時，它會自動記住一些跟你旅行偏好有關的事情（例如飲食禁忌、喜歡的步調），不管開哪趟行程都會參考這些。覺得記錯了可以刪掉。
+      </div>
+      <div id="aiMemoryList"></div>
     </div>
   </div>
 
@@ -2066,6 +2087,7 @@
     let db = null;
     let auth = null;
     let currentUser = null; // { uid, nickname, avatar }
+    let aiMemoryList = []; // AI 從聊天內容自動記住的長期偏好，跨行程共用（存在帳號底下，沒登入則存這台裝置）
     if (firebaseConfig.databaseURL) {
       try {
         firebase.initializeApp(firebaseConfig);
@@ -2664,6 +2686,8 @@
                 const profile = snap.val() || {};
                 currentUser.nickname = profile.nickname || '我';
                 currentUser.avatar = profile.avatar || '';
+                aiMemoryList = Array.isArray(profile.aiMemory) ? profile.aiMemory : [];
+                renderAiMemoryModalIfOpen();
                 updateDrawerProfileUI();
               });
               hideAuthGate();
@@ -2674,7 +2698,7 @@
             });
           } else {
             currentUser = null;
-            allTrips = []; myTripRefs = [];
+            allTrips = []; myTripRefs = []; aiMemoryList = [];
             showAuthGate();
             hideLoadingSplash();
           }
@@ -2682,8 +2706,25 @@
       } else {
         hideAuthGate();
         loadDataLocalOnly();
+        loadAiMemoryGuest();
         restoreLastView();
         hideLoadingSplash();
+      }
+    }
+
+    /* ===== AI 長期記憶：跨行程共用，登入的話存 Firebase，沒登入存這台裝置的 localStorage ===== */
+    function loadAiMemoryGuest() {
+      try {
+        const raw = localStorage.getItem('AI_MEMORY_GUEST');
+        aiMemoryList = raw ? JSON.parse(raw) : [];
+      } catch (e) { aiMemoryList = []; }
+    }
+
+    function saveAiMemory() {
+      if (currentUser && db) {
+        db.ref('users/' + currentUser.uid + '/aiMemory').set(aiMemoryList);
+      } else {
+        try { localStorage.setItem('AI_MEMORY_GUEST', JSON.stringify(aiMemoryList)); } catch (e) {}
       }
     }
 
@@ -3875,11 +3916,12 @@
         const res = await fetch(AI_ASSISTANT_ENDPOINT, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ question, place: destTitle, address: destAddr })
+          body: JSON.stringify({ question, place: destTitle, address: destAddr, memory: aiMemoryList })
         });
         const data = await res.json();
         if (data.answer) {
           answerEl.innerHTML = renderAiTextWithIcons(data.answer);
+          addAiMemoryItems(data.newMemories);
         } else {
           // 把後端傳回來的實際錯誤原因顯示出來，比較好抓問題
           answerEl.innerHTML = escapeHtml('沒有取得回覆：' + (data.error || `未知錯誤（狀態碼 ${res.status}）`));
@@ -3941,6 +3983,10 @@
             }
           }
           const timeLabel = ts ? formatChatTime(ts) : '';
+          if (m.role === 'memory') {
+            html += `<div class="ai-chat-memory-note"><i class="bi bi-lightbulb"></i> ${escapeHtml(m.text)}</div>`;
+            return;
+          }
           html += `
             <div class="ai-chat-row ${m.role === 'user' ? 'user' : 'ai'}">
               <div class="ai-chat-bubble-wrap">
@@ -4056,8 +4102,9 @@
             place: tripTitle,
             address: '',
             itinerary: buildItinerarySummaryForAI(allTrips[tripIdx]),
+            memory: aiMemoryList,
             history: (currentMsgs() || [])
-              .filter(m => !m.pending)
+              .filter(m => !m.pending && m.role !== 'memory')
               .slice(-10)
               .map(m => ({ role: m.role, text: m.text }))
           })
@@ -4069,6 +4116,12 @@
           const pendingIdx = msgs.map(m => m.pending).lastIndexOf(true);
           if (pendingIdx !== -1) msgs[pendingIdx] = { role: 'ai', text: replyText, ts: Date.now() };
           else msgs.push({ role: 'ai', text: replyText, ts: Date.now() });
+
+          // 如果這次對話裡 AI 發現了新的長期偏好，默默記起來，並在對話裡留一個小提示讓使用者知道
+          const added = addAiMemoryItems(data.newMemories);
+          if (added.length) {
+            msgs.push({ role: 'memory', text: '記住了：' + added.join('、'), ts: Date.now() });
+          }
         }
       } catch (e) {
         // 不管上面哪一步出錯，都確保畫面上一定會顯示錯誤訊息，而不是靜靜地卡住沒反應
@@ -4102,6 +4155,60 @@
         '結束對話',
         'bi-trash'
       );
+    }
+
+    /* ===== AI 長期記憶：查看/刪除 ===== */
+    let aiMemoryModalOpen = false;
+
+    function renderAiMemoryList() {
+      const wrap = document.getElementById('aiMemoryList');
+      if (!wrap) return;
+      if (!aiMemoryList.length) {
+        wrap.innerHTML = `<div style="text-align:center; color:var(--text-muted); font-size:13px; padding:24px 0;">還沒有記住任何事，多聊幾句它就會慢慢記起來囉</div>`;
+        return;
+      }
+      wrap.innerHTML = aiMemoryList.map((item, idx) => `
+        <div style="display:flex; align-items:center; gap:8px; padding:10px 0; border-bottom:1px solid var(--border-color);">
+          <i class="bi bi-lightbulb" style="color:#3862AE; flex-shrink:0;"></i>
+          <span style="flex:1; font-size:13.5px; color:var(--text-main); line-height:1.5;">${escapeHtml(item)}</span>
+          <button onclick="deleteAiMemoryItem(${idx})" style="background:none; border:none; color:var(--text-muted); font-size:16px; cursor:pointer; padding:4px; flex-shrink:0;" title="刪除"><i class="bi bi-x-lg"></i></button>
+        </div>
+      `).join('');
+    }
+
+    function renderAiMemoryModalIfOpen() {
+      if (aiMemoryModalOpen) renderAiMemoryList();
+    }
+
+    function openAiMemoryModal() {
+      aiMemoryModalOpen = true;
+      renderAiMemoryList();
+      document.getElementById('aiMemoryModal').classList.add('active');
+    }
+
+    function closeAiMemoryModal() {
+      aiMemoryModalOpen = false;
+      document.getElementById('aiMemoryModal').classList.remove('active');
+    }
+
+    function deleteAiMemoryItem(idx) {
+      aiMemoryList.splice(idx, 1);
+      saveAiMemory();
+      renderAiMemoryList();
+    }
+
+    // AI 回答時如果偵測到新的長期偏好，會呼叫這個把它加進記憶清單（呼叫端已經做過字串比對去重）
+    function addAiMemoryItems(newItems) {
+      if (!Array.isArray(newItems) || !newItems.length) return [];
+      const added = [];
+      newItems.forEach(text => {
+        const clean = (text || '').trim();
+        if (!clean) return;
+        const isDup = aiMemoryList.some(existing => existing.trim() === clean || existing.includes(clean) || clean.includes(existing.trim()));
+        if (!isDup) { aiMemoryList.push(clean); added.push(clean); }
+      });
+      if (added.length) { saveAiMemory(); renderAiMemoryModalIfOpen(); }
+      return added;
     }
 
     async function saveSpot() {
