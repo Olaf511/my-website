@@ -3974,24 +3974,25 @@
       }
     }
 
-    // 把目前這個行程的每一天、每個景點整理成一段文字摘要，讓後端 AI 能「看到」使用者已經排了什麼，
-    // 這樣被問到「第二天還能排什麼」之類的問題時，才回答得出目前的空檔、已排景點、時間等資訊。
-    function buildItineraryContext(trip) {
-      if (!trip || !trip.days || !trip.days.length) return '（目前這個行程還沒有排任何天數或景點）';
-      return trip.days.map(day => {
-        const label = `第${day.dayNum}天（${day.dateStr || ''}${day.area ? '・' + day.area : ''}）`;
-        if (!day.spots || !day.spots.length) return `${label}：目前還沒有排景點`;
-        const spotsText = day.spots.map(s => {
-          const parts = [];
-          if (s.time) parts.push(s.time);
-          if (s.title) parts.push(s.title);
-          if (s.category) parts.push(`[${s.category}]`);
-          if (s.address) parts.push(`@${s.address}`);
-          if (s.reserved) parts.push(`(已預約${s.reservedTime ? ' ' + s.reservedTime : ''})`);
-          return '  - ' + parts.join(' ');
-        }).join('\n');
-        return `${label}：\n${spotsText}`;
-      }).join('\n');
+    /* ===== 幫 AI 問旅整理一份「現在行程長怎樣」的摘要，這樣問「第二天還要排什麼」它才看得到目前排了什麼 =====
+       只帶標題/日期/景點的時間+名稱+分類，不帶地址、備註等細節，避免內容太長浪費 token */
+    function buildItinerarySummaryForAI(trip) {
+      if (!trip) return '';
+      const lines = [];
+      const dateRange = (trip.startDate && trip.endDate) ? `（${trip.startDate} ~ ${trip.endDate}）` : '';
+      lines.push(`行程名稱：${trip.title || '未命名行程'}${dateRange}`);
+      (trip.days || []).forEach(day => {
+        const spots = day.spots || [];
+        if (!spots.length) {
+          lines.push(`Day${day.dayNum}（${day.dateStr || ''}）：目前還沒有安排任何景點`);
+        } else {
+          const spotList = spots
+            .map(s => `${s.time || ''} ${s.title || ''}${s.category ? `[${s.category}]` : ''}`.trim())
+            .join('、');
+          lines.push(`Day${day.dayNum}（${day.dateStr || ''}）：${spotList}`);
+        }
+      });
+      return lines.join('\n');
     }
 
     async function sendAiChatMessage() {
@@ -4042,7 +4043,7 @@
             question,
             place: tripTitle,
             address: '',
-            itinerary: buildItineraryContext(allTrips[tripIdx]),
+            itinerary: buildItinerarySummaryForAI(allTrips[tripIdx]),
             history: (currentMsgs() || [])
               .filter(m => !m.pending)
               .slice(-10)
