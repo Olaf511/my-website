@@ -224,14 +224,14 @@
     }
     .card-img { width: 100%; height: 100%; object-fit: cover; }
     .card-order-tag {
-      position: absolute; top: 0; left: 0; background: var(--accent-orange); color: #fff;
+      position: absolute; top: 0; left: 0; background: var(--primary-navy); color: #fff;
       font-size: 11px; font-weight: 900; padding: 2px 8px; border-bottom-right-radius: 8px;
     }
     .card-main { flex: 1; display: flex; flex-direction: column; justify-content: center; min-width: 0; }
     .card-header-row { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; margin-bottom: 2px; }
     .card-time { font-size: 12px; font-weight: 800; color: var(--primary-navy); }
     .tag-badge { font-size: 10px; font-weight: bold; color: #fff; padding: 1px 6px; border-radius: 10px; }
-    .tag-spot { background: #3182ce; } .tag-food { background: #dd6b20; } .tag-shop { background: #d69e2e; } .tag-hotel { background: #319795; } .tag-park { background: #805ad5; } .tag-flight { background: #4a5568; }
+    .tag-spot { background: #3182ce; } .tag-food { background: #dd6b20; } .tag-shop { background: #d69e2e; } .tag-hotel { background: #319795; } .tag-park { background: #805ad5; } .tag-flight { background: #4a5568; } .tag-transport { background: #2b6690; }
     .tag-reserved { font-size: 10px; font-weight: bold; color: #7a1f28; padding: 1px 6px; border-radius: 10px; background: #FDA9AF; margin-left: 4px; }
 
     /* ===== 逛街攻略 / 旅行小抄 共用樣式 ===== */
@@ -365,7 +365,7 @@
       font-size: 12px; color: var(--text-muted); margin-top: 4px; background: #f7fafc;
       padding: 6px 8px; border-radius: 6px; white-space: pre-wrap; word-break: break-word;
     }
-    .is-read-mode .card-note { margin-right: 36px; }
+    .is-read-mode .card-main { padding-right: 38px; box-sizing: border-box; }
     .spot-meta-row {
       font-size: 12px; color: var(--text-muted); margin-top: 3px;
       display: flex; align-items: flex-start; gap: 5px; line-height: 1.4;
@@ -1106,6 +1106,7 @@
               <option value="逛街">逛街</option>
               <option value="樂園">樂園</option>
               <option value="住宿">住宿</option>
+              <option value="交通">交通</option>
               <option value="飛機">飛機</option>
             </select>
           </div>
@@ -3452,7 +3453,7 @@
       if (!currentDay) return;
 
       const bounds = [];
-      const categoryColors = { "景點": "#3182ce", "餐廳": "#dd6b20", "逛街": "#d69e2e", "樂園": "#805ad5", "住宿": "#319795", "飛機": "#4a5568" };
+      const categoryColors = { "景點": "#3182ce", "餐廳": "#dd6b20", "逛街": "#d69e2e", "樂園": "#805ad5", "住宿": "#319795", "交通": "#2b6690", "飛機": "#4a5568" };
       currentDay.spots.forEach((spot, idx) => {
         if (spot.lat && spot.lng) {
           const badgeColor = categoryColors[spot.category] || "var(--accent-orange)";
@@ -3533,6 +3534,7 @@
           if (spot.category === "逛街") tagClass = "tag-shop";
           if (spot.category === "樂園") tagClass = "tag-park";
           if (spot.category === "住宿") tagClass = "tag-hotel";
+          if (spot.category === "交通") tagClass = "tag-transport";
           if (spot.category === "飛機") tagClass = "tag-flight";
           const reservedBadge = spot.reserved ? `<span class="tag-reserved">已預約 ${spot.reservedTime || ''}</span>` : '';
 
@@ -4265,7 +4267,6 @@
       if (!original) return;
       const copy = JSON.parse(JSON.stringify(original));
       copy.id = Date.now();
-      copy.title = original.title + '（複製）';
       day.spots.splice(idx + 1, 0, copy);
       saveData(); renderDayView();
     }
