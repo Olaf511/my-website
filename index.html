@@ -609,6 +609,10 @@
     .address-suggest-main { font-size: 13px; font-weight: 800; color: var(--text-main); }
     .address-suggest-sub { font-size: 11px; color: var(--text-muted); margin-top: 2px; line-height: 1.4; }
     .address-suggest-empty { padding: 12px; font-size: 12px; color: var(--text-muted); text-align: center; }
+    .address-link-status { font-size: 11px; font-weight: 700; margin-top: 4px; display: none; }
+    .address-link-status.ok { color: #2f855a; display: block; }
+    .address-link-status.loading { color: #3182ce; display: block; }
+    .address-link-status.fail { color: #c53030; display: block; }
     .modal-btn-save { background: var(--primary-navy); color: #fff; box-shadow: 0 6px 16px rgba(43,108,176,0.28); }
     .modal-btn-cancel { background: #fff; color: var(--text-muted); border: 1.5px solid #e2e8f0; }
 
@@ -1132,7 +1136,8 @@
 
         <div class="form-group" style="position:relative;">
           <label>地址</label>
-          <input type="text" id="inputAddress" placeholder="" autocomplete="off" oninput="onAddressInput()" onfocus="onAddressInput()">
+          <input type="text" id="inputAddress" placeholder="" autocomplete="off" oninput="onAddressInput()" onfocus="onAddressInput()" onpaste="onAddressPaste(event)">
+          <div id="addressLinkStatus" class="address-link-status"></div>
           <div id="addressSuggestList" class="address-suggest-list"></div>
           <button type="button" class="btn-rounded-light" style="width:100%; justify-content:center; margin-top:6px;" onclick="openDirectionsToSpot()"><i class="bi bi-signpost-2-fill" style="color:#3862AE;"></i> 看路線（從上一站出發）</button>
         </div>
@@ -3711,6 +3716,7 @@
       document.getElementById('editSpotIndex').value = spotIdx;
       const modal = document.getElementById('spotModal');
       document.getElementById('addressSuggestList').style.display = 'none';
+      document.getElementById('addressLinkStatus').style.display = 'none';
       spotImageRemoved = false;
       populateSpotGuideLinkSelect();
 
@@ -3790,11 +3796,91 @@
     let addressSearchTimer = null;
     let addressCandidates = [];
 
+    /* ===== 貼上 Google Maps 連結：自動解析座標 ===== */
+    function isGoogleMapsUrl(text) {
+      return /^https?:\/\/(www\.)?(google\.[a-z.]+\/maps|maps\.app\.goo\.gl|goo\.gl\/maps)/i.test(text.trim());
+    }
+
+    function extractLatLngFromText(text) {
+      // 涵蓋常見的 Google Maps 連結座標格式
+      let m = text.match(/@(-?\d+\.\d+),(-?\d+\.\d+)/);
+      if (m) return { lat: parseFloat(m[1]), lng: parseFloat(m[2]) };
+      m = text.match(/!3d(-?\d+\.\d+)!4d(-?\d+\.\d+)/);
+      if (m) return { lat: parseFloat(m[1]), lng: parseFloat(m[2]) };
+      m = text.match(/[?&](?:q|ll|query)=(-?\d+\.\d+),(-?\d+\.\d+)/);
+      if (m) return { lat: parseFloat(m[1]), lng: parseFloat(m[2]) };
+      return null;
+    }
+
+    async function resolveShortMapsLink(url) {
+      // 短網址 (maps.app.goo.gl / goo.gl/maps) 需要先展開才拿得到座標，瀏覽器擋跨網域，
+      // 借助公開的 CORS 代理服務取得展開後的網址內容再解析。
+      try {
+        const proxied = `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`;
+        const res = await fetch(proxied);
+        const text = await res.text();
+        return extractLatLngFromText(text);
+      } catch (e) {
+        return null;
+      }
+    }
+
+    async function reverseGeocode(lat, lng) {
+      try {
+        const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&accept-language=zh-TW&lat=${lat}&lon=${lng}`);
+        const data = await res.json();
+        return (data && data.display_name) ? data.display_name : null;
+      } catch (e) {
+        return null;
+      }
+    }
+
+    async function onAddressPaste(event) {
+      const pasted = (event.clipboardData || window.clipboardData).getData('text');
+      if (!pasted || !isGoogleMapsUrl(pasted)) return; // 不是地圖連結，交給原本的自動搜尋處理
+
+      event.preventDefault();
+      const input = document.getElementById('inputAddress');
+      const statusEl = document.getElementById('addressLinkStatus');
+      const listEl = document.getElementById('addressSuggestList');
+      listEl.style.display = 'none';
+
+      input.value = pasted;
+      statusEl.className = 'address-link-status loading';
+      statusEl.textContent = '解析 Google Maps 連結中…';
+
+      let coords = extractLatLngFromText(pasted);
+      if (!coords) {
+        coords = await resolveShortMapsLink(pasted); // 短網址要多一步展開
+      }
+
+      if (!coords) {
+        statusEl.className = 'address-link-status fail';
+        statusEl.textContent = '無法從這個連結抓到座標，可以改貼「桌面版網址列」的完整連結，或手動輸入地址';
+        addressSelectedLatLng = null;
+        return;
+      }
+
+      addressSelectedLatLng = coords;
+      statusEl.className = 'address-link-status ok';
+      statusEl.textContent = `✓ 已抓到座標 (${coords.lat.toFixed(5)}, ${coords.lng.toFixed(5)})，正在補上地址名稱…`;
+
+      const address = await reverseGeocode(coords.lat, coords.lng);
+      if (address) {
+        input.value = address;
+        statusEl.textContent = `✓ 已從 Google Maps 連結定位成功`;
+      } else {
+        statusEl.textContent = `✓ 已抓到座標 (${coords.lat.toFixed(5)}, ${coords.lng.toFixed(5)})`;
+      }
+    }
+
     function onAddressInput() {
       addressSelectedLatLng = null;
+      document.getElementById('addressLinkStatus').style.display = 'none';
       const q = document.getElementById('inputAddress').value.trim();
       const listEl = document.getElementById('addressSuggestList');
       clearTimeout(addressSearchTimer);
+      if (isGoogleMapsUrl(q)) { listEl.innerHTML = ''; listEl.style.display = 'none'; return; } // 貼上連結交給 onAddressPaste 處理，這裡不用再跑地址搜尋
       if (!q) { listEl.innerHTML = ''; listEl.style.display = 'none'; return; }
 
       addressSearchTimer = setTimeout(async () => {
