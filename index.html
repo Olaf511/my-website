@@ -3458,7 +3458,7 @@
       if (!currentDay) return;
 
       const bounds = [];
-      const categoryColors = { "景點": "#3182ce", "餐廳": "#dd6b20", "逛街": "#d69e2e", "樂園": "#805ad5", "住宿": "#319795", "交通": "#2b6690", "飛機": "#4a5568" };
+      const categoryColors = { "景點": "#7F77DD", "餐廳": "#E24B4A", "逛街": "#378ADD", "樂園": "#D4537E", "住宿": "#1D9E75", "交通": "#888780", "飛機": "#64748B" };
       currentDay.spots.forEach((spot, idx) => {
         if (spot.lat && spot.lng) {
           const badgeColor = categoryColors[spot.category] || "var(--accent-orange)";
