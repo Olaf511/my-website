@@ -3803,11 +3803,13 @@
 
     function extractLatLngFromText(text) {
       // 涵蓋常見的 Google Maps 連結座標格式
-      let m = text.match(/@(-?\d+\.\d+),(-?\d+\.\d+)/);
-      if (m) return { lat: parseFloat(m[1]), lng: parseFloat(m[2]) };
-      m = text.match(/!3d(-?\d+\.\d+)!4d(-?\d+\.\d+)/);
+      // !3d..!4d.. 是「該地點 pin」的精準座標，優先比對；
+      // @lat,lng 只是地圖視窗置中位置，不一定等於地點本身，放後面當備用
+      let m = text.match(/!3d(-?\d+\.\d+)!4d(-?\d+\.\d+)/);
       if (m) return { lat: parseFloat(m[1]), lng: parseFloat(m[2]) };
       m = text.match(/[?&](?:q|ll|query)=(-?\d+\.\d+),(-?\d+\.\d+)/);
+      if (m) return { lat: parseFloat(m[1]), lng: parseFloat(m[2]) };
+      m = text.match(/@(-?\d+\.\d+),(-?\d+\.\d+)/);
       if (m) return { lat: parseFloat(m[1]), lng: parseFloat(m[2]) };
       return null;
     }
