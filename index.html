@@ -3912,11 +3912,20 @@
       }
     }
 
+    function looksLikeCoordinateText(text) {
+      // Nominatim 對沒有明確地標的地點（山區、步道、景點內某個點...），
+      // 常會直接回傳「35°02'22.3"N 135°43'46.3"E」這種座標格式當地址，
+      // 這種結果對使用者沒有意義，要濾掉。
+      return /\d+°\s*\d+['’]\s*[\d.]+["”]?\s*[NSEW]/i.test(text);
+    }
+
     async function reverseGeocode(lat, lng) {
       try {
         const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&accept-language=zh-TW&lat=${lat}&lon=${lng}`);
         const data = await res.json();
-        return (data && data.display_name) ? data.display_name : null;
+        if (!data || !data.display_name) return null;
+        if (looksLikeCoordinateText(data.display_name)) return null; // 濾掉沒意義的座標式地址
+        return data.display_name;
       } catch (e) {
         return null;
       }
@@ -3957,7 +3966,10 @@
         input.value = address;
         statusEl.textContent = `✓ 已從 Google Maps 連結定位成功`;
       } else {
-        statusEl.textContent = `✓ 已抓到座標 (${coords.lat.toFixed(5)}, ${coords.lng.toFixed(5)})`;
+        // 查不到有意義的地址名稱（常見於山區、步道、景點內部某個點），
+        // 保留原本貼上的 Google Maps 連結文字，至少還能點回去看，且座標已經精準記下。
+        input.value = pasted;
+        statusEl.textContent = `✓ 已抓到精準座標，這個點沒有明確地址名稱，已保留原連結`;
       }
     }
 
