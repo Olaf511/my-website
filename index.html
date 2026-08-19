@@ -3615,7 +3615,9 @@
         currentDay.spots.forEach((spot, idx) => {
           const card = document.createElement('div');
           card.className = 'card';
-          const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(spot.address || spot.title)}&hl=zh-TW`;
+          const mapsUrl = (spot.lat && spot.lng)
+            ? `https://www.google.com/maps/search/?api=1&query=${spot.lat},${spot.lng}&hl=zh-TW`
+            : `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(spot.address || spot.title)}&hl=zh-TW`;
 
           let tagClass = "tag-spot";
           if (spot.category === "餐廳") tagClass = "tag-food";
