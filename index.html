@@ -3793,6 +3793,7 @@
     }
 
     let addressSelectedLatLng = null;
+    let addressSelectedCid = null; // 從 Google Maps 連結解析出來的地點專屬 ID（CID），有的話點出去保證定位到同一個地點
     let spotImageRemoved = false;
 
     function openSpotModal(spotIdx = -1) {
@@ -3819,6 +3820,7 @@
         document.getElementById('inputTransport').value = spot.transport || "";
         toggleSpotExtraFields(!!(spot.hours || spot.transport));
         addressSelectedLatLng = (spot.lat && spot.lng) ? { lat: spot.lat, lng: spot.lng } : null;
+        addressSelectedCid = spot.cid || null;
         document.getElementById('inputGuideLink').value = spot.linkedGuideId || "";
         onSpotGuideLinkChange();
         if (spot.img) {
@@ -3840,6 +3842,7 @@
         document.getElementById('inputTransport').value = "";
         toggleSpotExtraFields(false);
         addressSelectedLatLng = null;
+        addressSelectedCid = null;
         document.getElementById('inputGuideLink').value = "";
         onSpotGuideLinkChange();
       }
@@ -3897,16 +3900,30 @@
       return null;
     }
 
+    function extractCidFromText(text) {
+      // Google Maps 分享連結（含短網址展開後的內容）裡藏著一組地點專屬 ID（CID）：
+      // 常見長相是 "!1s0x<hex>:0x<hex>!8m2"，冒號後面那段 hex 轉成十進位就是 CID，
+      // 用 https://www.google.com/maps?cid=<CID> 開啟，保證是「當初分享的那個地點」，
+      // 不受名稱是否跟 Google 資料庫完全一致影響，比純文字搜尋精準。
+      let m = text.match(/!1s0x[0-9a-fA-F]+:0x([0-9a-fA-F]+)/);
+      if (m) {
+        try { return BigInt('0x' + m[1]).toString(10); } catch (e) {}
+      }
+      m = text.match(/[?&]cid=(\d+)/);
+      if (m) return m[1];
+      return null;
+    }
+
     async function resolveShortMapsLink(url) {
-      // 短網址 (maps.app.goo.gl / goo.gl/maps) 需要先展開才拿得到座標，瀏覽器擋跨網域，
+      // 短網址 (maps.app.goo.gl / goo.gl/maps) 需要先展開才拿得到座標跟 CID，瀏覽器擋跨網域，
       // 借助公開的 CORS 代理服務取得展開後的網址內容再解析。
       try {
         const proxied = `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`;
         const res = await fetch(proxied);
         const text = await res.text();
-        return extractLatLngFromText(text);
+        return { coords: extractLatLngFromText(text), cid: extractCidFromText(text) };
       } catch (e) {
-        return null;
+        return { coords: null, cid: null };
       }
     }
 
@@ -3918,9 +3935,14 @@
     }
 
     function buildSpotMapsUrl(spot) {
-      // 點出去要直接開到「正確地點」而不是一顆沒有名字的座標點：
-      // 用 Google Maps 的 place/名稱/@座標 格式，同時帶上座標（精準定位）跟名稱（顯示正確標籤），
-      // 這樣既不會被純文字搜尋帶去同名的別家分店，也不會只顯示一串醜醜的座標數字。
+      // 點出去要直接開到「正確地點」而不是一顆沒有名字的座標點。
+      // 最優先：如果有從 Google Maps 連結解析出來的 CID，直接用它開，保證是同一個地點，
+      // 不受名稱跟 Google 資料庫是否完全一致影響。
+      if (spot.cid) {
+        return `https://www.google.com/maps?cid=${spot.cid}&hl=zh-TW`;
+      }
+      // 沒有 CID 時退回「place/名稱/@座標」格式，同時帶上座標（精準定位）跟名稱（顯示正確標籤），
+      // 這樣至少不會只顯示一串醜醜的座標數字。
       const hasCoords = !!(spot.lat && spot.lng);
       const rawLabel = (spot.address || spot.title || '').trim();
       const isUrl = /^https?:\/\//i.test(rawLabel);
@@ -3964,18 +3986,23 @@
       statusEl.textContent = '解析 Google Maps 連結中…';
 
       let coords = extractLatLngFromText(pasted);
-      if (!coords) {
-        coords = await resolveShortMapsLink(pasted); // 短網址要多一步展開
+      let cid = extractCidFromText(pasted);
+      if (!coords || !cid) {
+        const resolved = await resolveShortMapsLink(pasted); // 短網址要多一步展開才拿得到座標跟 CID
+        if (!coords) coords = resolved.coords;
+        if (!cid) cid = resolved.cid;
       }
 
       if (!coords) {
         statusEl.className = 'address-link-status fail';
         statusEl.textContent = '無法從這個連結抓到座標，可以改貼「桌面版網址列」的完整連結，或手動輸入地址';
         addressSelectedLatLng = null;
+        addressSelectedCid = null;
         return;
       }
 
       addressSelectedLatLng = coords;
+      addressSelectedCid = cid;
       statusEl.className = 'address-link-status ok';
       statusEl.textContent = `✓ 已抓到座標 (${coords.lat.toFixed(5)}, ${coords.lng.toFixed(5)})，正在補上地址名稱…`;
 
@@ -3993,6 +4020,7 @@
 
     function onAddressInput() {
       addressSelectedLatLng = null;
+      addressSelectedCid = null;
       document.getElementById('addressLinkStatus').style.display = 'none';
       const q = document.getElementById('inputAddress').value.trim();
       const listEl = document.getElementById('addressSuggestList');
@@ -4025,6 +4053,7 @@
       if (!item) return;
       document.getElementById('inputAddress').value = item.display_name;
       addressSelectedLatLng = { lat: parseFloat(item.lat), lng: parseFloat(item.lon) };
+      addressSelectedCid = null; // 這是地址搜尋選出來的，不是貼連結解析出來的，沒有 CID
       document.getElementById('addressSuggestList').style.display = 'none';
     }
 
@@ -4448,7 +4477,8 @@
         } catch (e) {}
       }
 
-      const spotObj = { id: Date.now(), category, time, title, address, img, note, lat, lng, reserved, reservedTime, hours, transport, linkedGuideId };
+      const cid = addressSelectedLatLng ? addressSelectedCid : null;
+      const spotObj = { id: Date.now(), category, time, title, address, img, note, lat, lng, cid, reserved, reservedTime, hours, transport, linkedGuideId };
       const currentDay = allTrips[currentTripIdx].days[currentDayIdx];
 
       if (editIdx >= 0) { currentDay.spots[editIdx] = spotObj; }
