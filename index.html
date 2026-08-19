@@ -3644,7 +3644,7 @@
               ${spot.hours ? `<div class="spot-meta-row"><i class="bi bi-clock"></i><span>${spot.hours}</span></div>` : ''}
               ${spot.transport ? `<div class="spot-meta-row"><i class="bi bi-bus-front-fill"></i><span>${spot.transport}</span></div>` : ''}
               ${spot.note ? `<div class="card-note">${spot.note}</div>` : ''}
-              ${spot.linkedGuideId ? `<div class="guide-link-badge" onclick="event.stopPropagation(); openGuideDetailFromSpot(${idx})"><i class="bi bi-link-45deg"></i><span>逛街攻略清單</span></div>` : ''}
+              ${spot.linkedGuideId ? `<div class="guide-link-badge" onclick="event.stopPropagation(); openGuideDetailFromSpot(${idx})"><i class="bi bi-link-45deg"></i><span>攻略</span></div>` : ''}
             </div>
             <a href="${mapsUrl}" target="_blank" class="card-action-btn edit-mode-hide" title="Google Map 導航"><i class="bi bi-geo-alt" style="color:#3862AE;"></i></a>
             <div style="display:flex; flex-direction:column; align-items:center; gap:4px; margin-left:4px;" class="read-mode-hide">
@@ -5103,7 +5103,12 @@
       const trip = allTrips[currentTripIdx];
       const current = select.value;
       select.innerHTML = '<option value="">不連結</option>';
-      (trip.shoppingGuide || []).forEach(place => {
+      const sortedPlaces = [...(trip.shoppingGuide || [])].sort((a, b) => {
+        const regionCmp = (a.region || '').localeCompare(b.region || '', 'zh-Hant');
+        if (regionCmp !== 0) return regionCmp;
+        return (a.name || '').localeCompare(b.name || '', 'zh-Hant');
+      });
+      sortedPlaces.forEach(place => {
         select.innerHTML += `<option value="${place.id}">${place.region}・${place.name}</option>`;
       });
       select.value = current || '';
