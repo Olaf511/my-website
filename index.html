@@ -3615,9 +3615,7 @@
         currentDay.spots.forEach((spot, idx) => {
           const card = document.createElement('div');
           card.className = 'card';
-          const mapsUrl = (spot.lat && spot.lng)
-            ? `https://www.google.com/maps/search/?api=1&query=${spot.lat},${spot.lng}&hl=zh-TW`
-            : `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(spot.address || spot.title)}&hl=zh-TW`;
+          const mapsUrl = buildSpotMapsUrl(spot);
 
           let tagClass = "tag-spot";
           if (spot.category === "餐廳") tagClass = "tag-food";
@@ -3918,6 +3916,26 @@
       // 這種結果對使用者沒有意義，要濾掉。
       return /\d+°\s*\d+['’]\s*[\d.]+["”]?\s*[NSEW]/i.test(text);
     }
+
+    function buildSpotMapsUrl(spot) {
+      // 點出去要直接開到「正確地點」而不是一顆沒有名字的座標點：
+      // 用 Google Maps 的 place/名稱/@座標 格式，同時帶上座標（精準定位）跟名稱（顯示正確標籤），
+      // 這樣既不會被純文字搜尋帶去同名的別家分店，也不會只顯示一串醜醜的座標數字。
+      const hasCoords = !!(spot.lat && spot.lng);
+      const rawLabel = (spot.address || spot.title || '').trim();
+      const isUrl = /^https?:\/\//i.test(rawLabel);
+      const isCoordText = looksLikeCoordinateText(rawLabel);
+      const label = (rawLabel && !isUrl && !isCoordText) ? rawLabel : (spot.title || '').trim();
+
+      if (hasCoords) {
+        if (label) {
+          return `https://www.google.com/maps/place/${encodeURIComponent(label)}/@${spot.lat},${spot.lng},17z?hl=zh-TW`;
+        }
+        return `https://www.google.com/maps/search/?api=1&query=${spot.lat},${spot.lng}&hl=zh-TW`;
+      }
+      return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(label || spot.title || '')}&hl=zh-TW`;
+    }
+
 
     async function reverseGeocode(lat, lng) {
       try {
