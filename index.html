@@ -2240,6 +2240,82 @@
       });
     }
 
+    // 手機切到背景一段時間後，跟 Firebase 的即時連線常常會被系統暫停，
+    // 回到前景時光靠原本的 .on('value') 不一定會馬上補推播，導致畫面停在舊資料。
+    // 這裡強制用 .once('value') 重新跟伺服器要一次最新資料，確保回到前景一定看得到最新的。
+    let isResyncing = false;
+    function forceResyncAllTrips(showFeedback) {
+      if (!db || isResyncing || !myTripRefs.length) return Promise.resolve();
+      isResyncing = true;
+      const tasks = myTripRefs.map((ref, idx) =>
+        db.ref('trips/' + ref.code).once('value').then(snapshot => {
+          const val = snapshot.val();
+          if (val) {
+            val.inviteCode = ref.code;
+            normalizeTripData(val);
+            generateDaysFromDates(val);
+            allTrips[idx] = val;
+            try { localStorage.setItem('TRIP_DATA_' + ref.code, JSON.stringify(val)); } catch (e) {}
+          }
+        }).catch(err => console.error('重新整理行程失敗', ref.code, err))
+      );
+      return Promise.all(tasks).then(() => {
+        isResyncing = false;
+        refreshCurrentUI();
+        if (showFeedback) showToast('已更新最新資料');
+      }).catch(() => { isResyncing = false; });
+    }
+
+    // App 從背景切回前景時，自動重新拉一次最新資料
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'visible') forceResyncAllTrips(false);
+    });
+    window.addEventListener('pageshow', () => forceResyncAllTrips(false));
+
+    // 下拉重新整理：只有在頁面已經滾到最頂端時，往下拖曳超過門檻才會觸發，
+    // 避免跟一般滾動、swipe 側滑抽屜互相干擾。
+    (function setupPullToRefresh() {
+      let startY = 0;
+      let pulling = false;
+      const THRESHOLD = 70;
+      let indicator = null;
+
+      function getIndicator() {
+        if (indicator) return indicator;
+        indicator = document.createElement('div');
+        indicator.id = 'pullRefreshIndicator';
+        indicator.style.cssText = 'position:fixed; left:0; right:0; top:0; text-align:center; padding:8px; font-size:13px; font-weight:700; color:#3862AE; background:transparent; transform:translateY(-100%); transition:transform 0.15s ease; z-index:2000; pointer-events:none;';
+        indicator.textContent = '↓ 下拉重新整理';
+        document.body.appendChild(indicator);
+        return indicator;
+      }
+
+      document.addEventListener('touchstart', (e) => {
+        if (window.scrollY > 0) { pulling = false; return; }
+        startY = e.touches[0].clientY;
+        pulling = true;
+      }, { passive: true });
+
+      document.addEventListener('touchmove', (e) => {
+        if (!pulling) return;
+        const dy = e.touches[0].clientY - startY;
+        if (dy <= 0) return;
+        const el = getIndicator();
+        const dist = Math.min(dy, THRESHOLD * 1.5);
+        el.style.transform = `translateY(${dist - THRESHOLD}px)`;
+        el.textContent = dy > THRESHOLD ? '↑ 放開重新整理' : '↓ 下拉重新整理';
+      }, { passive: true });
+
+      document.addEventListener('touchend', (e) => {
+        if (!pulling) return;
+        pulling = false;
+        const dy = (e.changedTouches[0].clientY - startY);
+        const el = getIndicator();
+        el.style.transform = 'translateY(-100%)';
+        if (dy > THRESHOLD) forceResyncAllTrips(true);
+      });
+    })();
+
     // 舊版本（單一裝置、無帳號機制）資料自動搬遷，不會遺失原本已經存好的行程
     function migrateOldDataIfNeeded(nicknameOverride) {
       if (localStorage.getItem(MY_TRIPS_KEY)) return;
