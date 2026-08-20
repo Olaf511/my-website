@@ -3125,10 +3125,12 @@
 
         // 放大倍率的上限，依照這張照片實際解析度動態算出來，
         // 避免使用者把裁切框拉到比輸出尺寸還小的原始像素範圍(那樣輸出時就得硬把小圖放大，造成模糊)。
+        // 但無論解析度多低，都至少保留一段可以拖動的範圍，不然滑桿會卡在同一個值完全不能調。
         const MIN_CROP_SOURCE_PX = 400; // 裁切框最小可以對應到的原始像素，低於這個才會開始損失畫質
+        const MIN_USABLE_ZOOM_PERCENT = 150; // 滑桿至少要能拉到這個倍率，保證還能微調
         const nativeMinDim = Math.min(cropperState.naturalW, cropperState.naturalH);
         let maxZoomPercent = Math.round((nativeMinDim / MIN_CROP_SOURCE_PX) * 100);
-        maxZoomPercent = Math.max(100, Math.min(300, maxZoomPercent));
+        maxZoomPercent = Math.max(MIN_USABLE_ZOOM_PERCENT, Math.min(300, maxZoomPercent));
         const zoomSliderEl = document.getElementById('cropperZoomSlider');
         zoomSliderEl.max = maxZoomPercent;
         zoomSliderEl.value = 100;
