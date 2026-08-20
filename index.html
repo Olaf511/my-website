@@ -3122,7 +3122,17 @@
         cropperState.scale = minScale;
         cropperState.offsetX = (stageSize - cropperState.naturalW * minScale) / 2;
         cropperState.offsetY = (stageSize - cropperState.naturalH * minScale) / 2;
-        document.getElementById('cropperZoomSlider').value = 100;
+
+        // 放大倍率的上限，依照這張照片實際解析度動態算出來，
+        // 避免使用者把裁切框拉到比輸出尺寸還小的原始像素範圍(那樣輸出時就得硬把小圖放大，造成模糊)。
+        const MIN_CROP_SOURCE_PX = 400; // 裁切框最小可以對應到的原始像素，低於這個才會開始損失畫質
+        const nativeMinDim = Math.min(cropperState.naturalW, cropperState.naturalH);
+        let maxZoomPercent = Math.round((nativeMinDim / MIN_CROP_SOURCE_PX) * 100);
+        maxZoomPercent = Math.max(100, Math.min(300, maxZoomPercent));
+        const zoomSliderEl = document.getElementById('cropperZoomSlider');
+        zoomSliderEl.max = maxZoomPercent;
+        zoomSliderEl.value = 100;
+
         applyCropperTransform();
       };
       img.onerror = function() {
@@ -3213,18 +3223,21 @@
     function confirmCrop() {
       const stage = document.getElementById('cropperStage');
       const stageSize = stage.clientWidth;
-      const outputSize = 500;
-      const canvas = document.createElement('canvas');
-      canvas.width = outputSize; canvas.height = outputSize;
-      const ctx = canvas.getContext('2d');
 
       const img = document.getElementById('cropperImg');
       const sx = -cropperState.offsetX / cropperState.scale;
       const sy = -cropperState.offsetY / cropperState.scale;
       const sSize = stageSize / cropperState.scale;
 
+      // 輸出解析度貼著實際框選到的原始像素範圍走，而不是死板固定 500px：
+      // 框選範圍本身夠大時就不用刻意放大(避免模糊)，範圍很大時則封頂避免檔案太肥。
+      const outputSize = Math.round(Math.max(400, Math.min(800, sSize)));
+      const canvas = document.createElement('canvas');
+      canvas.width = outputSize; canvas.height = outputSize;
+      const ctx = canvas.getContext('2d');
+
       ctx.drawImage(img, sx, sy, sSize, sSize, 0, 0, outputSize, outputSize);
-      const resultDataUrl = canvas.toDataURL('image/jpeg', 0.85);
+      const resultDataUrl = canvas.toDataURL('image/jpeg', 0.88);
 
       if (cropperState.callback) cropperState.callback(resultDataUrl);
       closeCropperModal();
