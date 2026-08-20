@@ -2153,8 +2153,32 @@
       if (!trip || !ref) return;
       try {
         localStorage.setItem('TRIP_DATA_' + ref.code, JSON.stringify(trip));
-        if (db) db.ref('trips/' + ref.code).set(trip);
-      } catch (e) {}
+      } catch (e) {
+        console.error('本機暫存失敗', e);
+      }
+      if (db) {
+        // db.set() 回傳的是 Promise，失敗時是「非同步拒絕」，
+        // 舊版只用同步的 try/catch 完全接不到這種失敗，導致存檔失敗時使用者毫無所覺。
+        // 這裡改成明確用 .then()/.catch() 處理，存檔失敗時務必讓使用者看到提示。
+        db.ref('trips/' + ref.code).set(trip).then(() => {
+          markSyncStatus(ref.code, true);
+        }).catch(err => {
+          console.error('雲端同步失敗', err);
+          markSyncStatus(ref.code, false);
+          showToast('⚠️ 尚未同步到雲端：' + (err && err.message ? err.message : '請檢查網路'), 4000);
+        });
+      }
+    }
+
+    // 記錄目前這個行程的同步狀態，方便除錯與未來擴充 UI 指示燈。
+    const tripSyncStatus = {};
+    function markSyncStatus(code, ok) {
+      tripSyncStatus[code] = { ok, at: Date.now() };
+      const el = document.getElementById('syncStatusIndicator');
+      if (el) {
+        el.textContent = ok ? '✅ 已同步' : '⚠️ 未同步';
+        el.style.color = ok ? '' : '#e74c3c';
+      }
     }
 
     // Firebase Realtime Database 存空陣列(如 expenses: [])時，讀回來這個欄位會整個消失(變成 undefined)。
@@ -2428,12 +2452,24 @@
       }
     }
 
+    // 手機瀏覽器（尤其是 iOS Safari／加到主畫面的獨立模式）用彈窗登入常常不穩，
+    // Firebase 官方建議手機一律改用整頁重新導向登入。
+    function isMobileBrowser() {
+      return /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent);
+    }
+
     function doGoogleLogin() {
       if (!auth) { alert("尚未啟用雲端同步功能，無法登入。"); return; }
       const provider = new firebase.auth.GoogleAuthProvider();
       // 每次登入都跳出 Google 帳號選擇畫面，而不是自動用上次登入過的帳號登入
       provider.setCustomParameters({ prompt: 'select_account' });
       justLoggedIn = true;
+      if (isMobileBrowser()) {
+        // 整頁導向登入：離開頁面前先記一個旗標，回來後在 init() 裡用 getRedirectResult() 接續處理
+        localStorage.setItem('PENDING_GOOGLE_REDIRECT', '1');
+        auth.signInWithRedirect(provider);
+        return;
+      }
       auth.signInWithPopup(provider).then(result => {
         document.getElementById('googleRegNickname').value = result.user.displayName || '';
       }).catch(err => { justLoggedIn = false; if (err.code !== 'auth/popup-closed-by-user') alert("Google 登入失敗：" + authErrorMessage(err)); });
@@ -2677,6 +2713,20 @@
       if (document.getElementById('inputReserved')) toggleReservedTime();
 
       if (auth) {
+        // 手機用 signInWithRedirect 登入後，頁面會整個重新載入，
+        // 必須靠 getRedirectResult() 才能拿到剛登入的使用者資料（例如 Google 顯示名稱）。
+        if (localStorage.getItem('PENDING_GOOGLE_REDIRECT') === '1') {
+          localStorage.removeItem('PENDING_GOOGLE_REDIRECT');
+          auth.getRedirectResult().then(result => {
+            if (result && result.user) {
+              const nicknameEl = document.getElementById('googleRegNickname');
+              if (nicknameEl) nicknameEl.value = result.user.displayName || '';
+            }
+          }).catch(err => {
+            justLoggedIn = false;
+            alert("Google 登入失敗：" + authErrorMessage(err));
+          });
+        }
         auth.onAuthStateChanged(user => {
           if (user) {
             db.ref('users/' + user.uid).once('value').then(snapshot => {
