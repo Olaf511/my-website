@@ -3767,7 +3767,7 @@
           if (spot.category === "交通") tagClass = "tag-transport";
           if (spot.category === "飛機") tagClass = "tag-flight";
           if (spot.category === "夫夫") tagClass = "tag-fufu";
-          const categoryBadgeContent = spot.category === "夫夫" ? `<i class="bi bi-star-fill" style="margin-right:2px;"></i>夫夫` : (spot.category || '景點');
+          const categoryBadgeContent = spot.category === "夫夫" ? `<i class="bi bi-star-fill" style="margin-right:2px;"></i>夫` : (spot.category || '景點');
           const reservedBadge = spot.reserved ? `<span class="tag-reserved">已預約 ${spot.reservedTime || ''}</span>` : '';
 
           const defaultImg = DEFAULT_SPOT_IMAGE;
