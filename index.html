@@ -4290,7 +4290,7 @@
       const destAddr = document.getElementById('inputAddress').value.trim();
 
       answerEl.style.display = 'block';
-      answerEl.innerHTML = escapeHtml('思考中...');
+      answerEl.innerHTML = escapeHtml('我看看喔…');
 
       try {
         const res = await fetch(AI_ASSISTANT_ENDPOINT, {
@@ -4476,7 +4476,7 @@
         if (sendBtn) sendBtn.disabled = true;
 
         // 先放一個「思考中」的暫時泡泡，回覆回來後再換成真正內容
-        currentMsgs().push({ role: 'ai', text: '思考中...', pending: true, ts: Date.now() });
+        currentMsgs().push({ role: 'ai', text: '我看看喔…', pending: true, ts: Date.now() });
         renderAiChatMessages('bottom');
 
         if (!AI_ASSISTANT_ENDPOINT) {
