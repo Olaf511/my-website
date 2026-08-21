@@ -3520,7 +3520,6 @@
       updateTripHeaderInfo();
       document.querySelectorAll('.app-page').forEach(p => p.classList.remove('active'));
       document.getElementById('pageDetail').classList.add('active');
-      window.scrollTo(0, 0);
 
       saveLastView('pageDetail');
 
@@ -3532,7 +3531,6 @@
       if (!allTrips[currentTripIdx]) { goToHome(); return; }
       document.querySelectorAll('.app-page').forEach(p => p.classList.remove('active'));
       document.getElementById('pageDetail').classList.add('active');
-      window.scrollTo(0, 0);
       saveLastView('pageDetail');
     }
 
@@ -3994,6 +3992,8 @@
       }
       syncFakeDateTimeDisplay('inputTime');
       modal.classList.add('active');
+      const spotModalScrollArea = modal.querySelector('.modal-scroll-area');
+      if (spotModalScrollArea) spotModalScrollArea.scrollTop = 0;
     }
 
     // 已預約勾選框：打勾才能點選下面的時間欄位，沒打勾就是灰階不能選
