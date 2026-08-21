@@ -4391,7 +4391,14 @@
           const aiRows = wrap.querySelectorAll('.ai-chat-row.ai');
           const lastAiRow = aiRows[aiRows.length - 1];
           if (scroll && lastAiRow) {
-            scroll.scrollTop = Math.max(0, lastAiRow.offsetTop - 8);
+            // 用 getBoundingClientRect 算出「最後一則 AI 回覆」相對於捲動容器目前捲動位置的距離，
+            // 不依賴 offsetTop／offsetParent（.ai-chat-scroll 本身沒有設 position，
+            // offsetTop 會往上找到別的定位祖先層，算出來的數字經常遠大於實際可捲動範圍，
+            // 導致 scrollTop 被瀏覽器夾在最大值，看起來就像「跳到最下面」）。
+            const scrollRect = scroll.getBoundingClientRect();
+            const rowRect = lastAiRow.getBoundingClientRect();
+            const delta = rowRect.top - scrollRect.top;
+            scroll.scrollTop = Math.max(0, scroll.scrollTop + delta - 8);
           }
         });
       }
