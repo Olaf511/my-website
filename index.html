@@ -1625,7 +1625,7 @@
       <div class="ai-chat-input-bar">
         <textarea id="aiChatInput" placeholder="例如：這趟行程有什麼要注意的？" rows="1" oninput="autoGrowTextarea(this); syncAiChatScrollPadding();" onkeydown="onAiChatKeydown(event)" onfocus="setTimeout(syncAiChatScrollPadding, 300)"></textarea>
         <button type="button" class="ai-chat-send-btn" id="aiChatSendBtn" onclick="sendAiChatMessage()"><i class="bi bi-send-fill"></i></button>
-        <button type="button" class="ai-chat-end-btn-inline" onclick="endAiChat()" title="結束對話"><i class="bi bi-trash"></i></button>
+        <button type="button" class="ai-chat-end-btn-inline" onclick="endAiChat()" title="清除對話"><i class="bi bi-trash"></i></button>
       </div>
     </div>
   </div>
@@ -4342,7 +4342,9 @@
       return `${hh}:${mm}`;
     }
 
-    function renderAiChatMessages(scrollToBottom) {
+    // scrollMode: 'bottom' 捲到最底（送出訊息、顯示「思考中」時用）
+    //             'top-of-last-ai' 捲到「最新一則 AI 回覆」的最上面，方便長回覆可以從頭開始看，不用自己往上滑
+    function renderAiChatMessages(scrollMode) {
       const trip = allTrips[currentTripIdx];
       const wrap = document.getElementById('aiChatMessages');
       if (!trip || !wrap) return;
@@ -4378,10 +4380,19 @@
         });
         wrap.innerHTML = html;
       }
-      if (scrollToBottom) {
+      if (scrollMode === 'bottom') {
         requestAnimationFrame(() => {
           const scroll = document.getElementById('aiChatScroll');
           if (scroll) scroll.scrollTop = scroll.scrollHeight;
+        });
+      } else if (scrollMode === 'top-of-last-ai') {
+        requestAnimationFrame(() => {
+          const scroll = document.getElementById('aiChatScroll');
+          const aiRows = wrap.querySelectorAll('.ai-chat-row.ai');
+          const lastAiRow = aiRows[aiRows.length - 1];
+          if (scroll && lastAiRow) {
+            scroll.scrollTop = Math.max(0, lastAiRow.offsetTop - 8);
+          }
         });
       }
     }
@@ -4459,14 +4470,14 @@
         currentMsgs().push({ role: 'user', text: question, ts: Date.now() });
         input.value = '';
         autoGrowTextarea(input);
-        renderAiChatMessages(true);
+        renderAiChatMessages('bottom');
         saveData(tripIdx);
 
         if (sendBtn) sendBtn.disabled = true;
 
         // 先放一個「思考中」的暫時泡泡，回覆回來後再換成真正內容
         currentMsgs().push({ role: 'ai', text: '思考中...', pending: true, ts: Date.now() });
-        renderAiChatMessages(true);
+        renderAiChatMessages('bottom');
 
         if (!AI_ASSISTANT_ENDPOINT) {
           const msgs = currentMsgs();
@@ -4513,7 +4524,9 @@
           else msgs.push({ role: 'ai', text: errText, ts: Date.now() });
         }
       } finally {
-        renderAiChatMessages(true);
+        // 回覆完成後，捲到「這則回覆」的最上面而不是整個對話串的最下面，
+        // 這樣長回覆才能從頭開始讀，不用自己再往上滑
+        renderAiChatMessages('top-of-last-ai');
         saveData(tripIdx);
         if (sendBtn) sendBtn.disabled = false;
       }
@@ -4524,15 +4537,15 @@
       const trip = allTrips[tripIdx];
       if (!trip || !trip.aiChatMessages || !trip.aiChatMessages.length) return;
       showDeleteConfirm(
-        '確定要結束對話嗎？',
+        '確定要清除對話嗎？',
         () => {
           if (!allTrips[tripIdx]) return;
           allTrips[tripIdx].aiChatMessages = [];
           renderAiChatMessages(false);
           saveData(tripIdx);
         },
-        '這會清除本次的對話內容',
-        '結束對話',
+        '',
+        '清除對話',
         'bi-trash'
       );
     }
@@ -4804,7 +4817,7 @@
         if (pageId === 'pageToolShoppingGuide') { renderGuideBoxes(); }
         if (pageId === 'pageToolCheatSheet') { renderCheatFilterRow(); renderCheatList(); }
         if (pageId === 'pageToolAccounting') { initAccountingPage(); }
-        if (pageId === 'pageToolAI') { renderAiChatMessages(true); syncAiChatScrollPadding(); }
+        if (pageId === 'pageToolAI') { renderAiChatMessages('bottom'); syncAiChatScrollPadding(); }
         if (pageId === 'pageToolPrep') { renderPrepList(); }
         if (pageId === 'pageToolMembers') { renderMembersList(); }
       } catch (e) {
